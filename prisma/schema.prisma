@@ -1,0 +1,597 @@
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  CUSTOMER
+  SUPER_ADMIN
+  OUTLET_ADMIN
+  WORKER
+  DRIVER
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+}
+
+enum AccountStatus {
+  INVITED
+  ACTIVE
+  INACTIVE
+}
+
+enum DutyStatus {
+  ON_DUTY
+  OFF_DUTY
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+}
+
+enum StationType {
+  WASHING
+  IRONING
+  PACKING
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  ACCOUNT_INVITATION
+}
+
+enum HandoverMethod {
+  DIRECT
+  CONTACTLESS
+}
+
+/// TODO: cocokkan lagi sama dokumen §17 punya partner kamu
+enum CustomerStatus {
+  WAITING_DRIVER_PICKUP
+  ON_THE_WAY_TO_OUTLET
+  ARRIVED_AT_OUTLET
+  WASHING
+  IRONING
+  PACKING
+  WAITING_PAYMENT
+  READY_FOR_DELIVERY
+  ON_THE_WAY_TO_CUSTOMER
+  RECEIVED_BY_CUSTOMER
+}
+
+enum InternalStatus {
+  ON_HOLD_BYPASS
+  PAUSED_OFF_HOURS
+}
+
+enum BillPaymentStatus {
+  UNPAID
+  PAID
+}
+
+enum PickupDeliveryType {
+  PICKUP
+  DELIVERY
+}
+
+enum DriverAssignmentStatus {
+  QUEUED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkerAssignmentStatus {
+  QUEUED
+  ASSIGNED
+  IN_PROGRESS
+  PAUSED_OFF_HOURS
+  ON_HOLD_BYPASS
+  COMPLETED
+}
+
+enum BypassStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentTransactionStatus {
+  PENDING
+  SETTLEMENT
+  CAPTURE
+  DENY
+  CANCEL
+  EXPIRE
+}
+
+enum ComplaintCategory {
+  TIDAK_SESUAI
+  RUSAK
+  HILANG
+}
+
+enum ComplaintStatus {
+  OPEN
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum NotificationType {
+  PAYMENT_DUE
+  DRIVER_ASSIGNMENT
+  WORKER_ASSIGNMENT
+  BYPASS_REQUEST
+  NEW_COMPLAINT
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+
+model User {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role               Role
+  name               String
+  email              String              @unique
+  passwordHash       String?             @map("password_hash")
+  authProvider       AuthProvider        @default(EMAIL) @map("auth_provider")
+  isEmailVerified    Boolean             @default(false) @map("is_email_verified")
+  profilePhotoUrl    String?             @map("profile_photo_url")
+  phone              String?
+  accountStatus      AccountStatus?      @map("account_status")
+  dutyStatus         DutyStatus?         @map("duty_status")
+  availabilityStatus AvailabilityStatus? @map("availability_status")
+  currentOutletId    String?             @map("current_outlet_id") @db.Uuid
+  stationType        StationType?        @map("station_type")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @default(now()) @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  currentOutlet Outlet? @relation("UserCurrentOutlet", fields: [currentOutletId], references: [id])
+
+  authTokens        AuthToken[]
+  addresses         CustomerAddress[]
+  ordersAsCustomer  Order[]            @relation("OrderCustomer")
+  ordersReceived    Order[]            @relation("OrderReceivedBy")
+  driverTasks       DriverAssignment[] @relation("DriverAssignmentDriver")
+  reassignedTasks   DriverAssignment[] @relation("DriverAssignmentReassignedFrom")
+  workerTasks       WorkerAssignment[]
+  bypassRequested   BypassRequest[]    @relation("BypassRequestedBy")
+  bypassDecided     BypassRequest[]    @relation("BypassDecidedBy")
+  complaintsFiled   Complaint[]        @relation("ComplaintCustomer")
+  complaintsHandled Complaint[]        @relation("ComplaintHandledBy")
+  attendances       Attendance[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([role, currentOutletId])
+  @@map("users")
+}
+
+model AuthToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  type      AuthTokenType
+  tokenHash String        @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, type])
+  @@index([tokenHash])
+  @@map("auth_tokens")
+}
+
+// ============================================================
+// OUTLETS & ADDRESSES
+// ============================================================
+
+model Outlet {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  address   String
+  latitude  Decimal   @db.Decimal(10, 7)
+  longitude Decimal   @db.Decimal(10, 7)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  staffOnDuty       User[]             @relation("UserCurrentOutlet")
+  orders            Order[]
+  driverAssignments DriverAssignment[]
+  workerAssignments WorkerAssignment[]
+  attendances       Attendance[]
+
+  @@map("outlets")
+}
+
+model CustomerAddress {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId        String    @map("customer_id") @db.Uuid
+  label             String?
+  formattedAddress  String    @map("formatted_address")
+  latitude          Decimal   @db.Decimal(10, 7)
+  longitude         Decimal   @db.Decimal(10, 7)
+  phone             String
+  isPrimary         Boolean   @default(false) @map("is_primary")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  customer User @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@map("customer_addresses")
+}
+
+// ============================================================
+// PRICING
+// ============================================================
+
+model LaundryPricing {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pricePerKg  Decimal   @map("price_per_kg") @db.Decimal(12, 2)
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  bills Bill[]
+
+  @@map("laundry_pricings")
+}
+
+model ShippingRate {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  maxDistanceMeters Int       @map("max_distance_meters")
+  price             Decimal   @db.Decimal(12, 2)
+  deletedAt         DateTime? @map("deleted_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  bills Bill[]
+
+  @@map("shipping_rates")
+}
+
+model LaundryItem {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  orderItems OrderItem[]
+
+  @@map("laundry_items")
+}
+
+// ============================================================
+// ORDERS & BILLS
+// ============================================================
+
+model Order {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderCode              String    @unique @map("order_code")
+  customerId             String    @map("customer_id") @db.Uuid
+  outletId               String    @map("outlet_id") @db.Uuid
+  addressSnapshot        String    @map("address_snapshot")
+  addressPhoneSnapshot   String    @map("address_phone_snapshot")
+  addressLatitude        Decimal   @map("address_latitude") @db.Decimal(10, 7)
+  addressLongitude       Decimal   @map("address_longitude") @db.Decimal(10, 7)
+  distanceMeters         Decimal   @map("distance_meters") @db.Decimal(10, 2)
+  handoverMethod         HandoverMethod  @map("handover_method")
+  contactlessInstruction String?         @map("contactless_instruction")
+  pickupDate             DateTime        @map("pickup_date") @db.Date
+  customerStatus         CustomerStatus  @map("customer_status")
+  internalStatus         InternalStatus? @map("internal_status")
+  receivedAt             DateTime? @map("received_at")
+  receivedBy             String?   @map("received_by") @db.Uuid
+  cancelledAt            DateTime? @map("cancelled_at")
+  cancelReason           String?   @map("cancel_reason")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @default(now()) @map("updated_at")
+
+  customer       User   @relation("OrderCustomer", fields: [customerId], references: [id])
+  outlet         Outlet @relation(fields: [outletId], references: [id])
+  receivedByUser User?  @relation("OrderReceivedBy", fields: [receivedBy], references: [id])
+
+  bill              Bill?
+  orderItems        OrderItem[]
+  driverAssignments DriverAssignment[]
+  workerAssignments WorkerAssignment[]
+  bypassRequests    BypassRequest[]
+  complaint         Complaint?
+  notifications     Notification[]
+
+  @@index([customerId])
+  @@index([outletId])
+  @@index([customerStatus])
+  @@index([pickupDate])
+  @@map("orders")
+}
+
+/// Tagihan per order (1-1). Dipisah dari Order supaya perhitungan biaya
+/// (pricing snapshot, berat, ongkir, total) nggak numpuk di satu model
+/// dengan status perjalanan order.
+model Bill {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId             String   @unique @map("order_id") @db.Uuid
+  laundryPricingId    String?  @map("laundry_pricing_id") @db.Uuid
+  pricePerKgSnapshot  Decimal? @map("price_per_kg_snapshot") @db.Decimal(12, 2)
+  shippingRateId      String?  @map("shipping_rate_id") @db.Uuid
+  shippingFeeSnapshot Decimal? @map("shipping_fee_snapshot") @db.Decimal(12, 2)
+  weightKg            Decimal? @map("weight_kg") @db.Decimal(10, 2)
+  totalAmount         Decimal? @map("total_amount") @db.Decimal(12, 2)
+  paymentStatus       BillPaymentStatus @default(UNPAID) @map("payment_status")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @default(now()) @map("updated_at")
+
+  order          Order           @relation(fields: [orderId], references: [id])
+  laundryPricing LaundryPricing? @relation(fields: [laundryPricingId], references: [id])
+  shippingRate   ShippingRate?   @relation(fields: [shippingRateId], references: [id])
+
+  payments Payment[]
+
+  @@index([orderId])
+  @@index([paymentStatus])
+  @@map("bills")
+}
+
+model OrderItem {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String @map("order_id") @db.Uuid
+  laundryItemId String @map("laundry_item_id") @db.Uuid
+  quantity      Int
+
+  order       Order       @relation(fields: [orderId], references: [id])
+  laundryItem LaundryItem @relation(fields: [laundryItemId], references: [id])
+
+  @@map("order_items")
+}
+
+// ============================================================
+// DRIVER & WORKER ASSIGNMENTS
+// ============================================================
+
+model DriverAssignment {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId        String    @map("order_id") @db.Uuid
+  driverId       String    @map("driver_id") @db.Uuid
+  outletId       String    @map("outlet_id") @db.Uuid
+  taskType       PickupDeliveryType @map("task_type")
+  queuedAt       DateTime  @map("queued_at")
+  assignedAt     DateTime? @map("assigned_at")
+  departedAt     DateTime? @map("departed_at")
+  pickedUpAt     DateTime? @map("picked_up_at")
+  deliveredAt    DateTime? @map("delivered_at")
+  completedAt    DateTime? @map("completed_at")
+  cancelledAt    DateTime? @map("cancelled_at")
+  cancelReason   String?                 @map("cancel_reason")
+  status         DriverAssignmentStatus
+  reassignedFrom String?                 @map("reassigned_from") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @map("updated_at")
+
+  order              Order  @relation(fields: [orderId], references: [id])
+  driver             User   @relation("DriverAssignmentDriver", fields: [driverId], references: [id])
+  outlet             Outlet @relation(fields: [outletId], references: [id])
+  reassignedFromUser User?  @relation("DriverAssignmentReassignedFrom", fields: [reassignedFrom], references: [id])
+
+  proofPhotos ProofPhoto[]
+
+  @@index([outletId, status])
+  @@index([driverId])
+  @@index([orderId])
+  @@map("driver_assignments")
+}
+
+model ProofPhoto {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  driverAssignmentId String   @map("driver_assignment_id") @db.Uuid
+  photoType          PickupDeliveryType @map("photo_type")
+  photoUrl           String   @map("photo_url")
+  uploadedAt         DateTime @default(now()) @map("uploaded_at")
+
+  driverAssignment DriverAssignment @relation(fields: [driverAssignmentId], references: [id])
+
+  @@map("proof_photos")
+}
+
+model WorkerAssignment {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String    @map("order_id") @db.Uuid
+  workerId    String    @map("worker_id") @db.Uuid
+  outletId    String    @map("outlet_id") @db.Uuid
+  stationType StationType             @map("station_type")
+  queuedAt    DateTime                @map("queued_at")
+  assignedAt  DateTime?               @map("assigned_at")
+  startedAt   DateTime?               @map("started_at")
+  completedAt DateTime?               @map("completed_at")
+  status      WorkerAssignmentStatus
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @map("updated_at")
+
+  order  Order  @relation(fields: [orderId], references: [id])
+  worker User   @relation(fields: [workerId], references: [id])
+  outlet Outlet @relation(fields: [outletId], references: [id])
+
+  bypassRequests BypassRequest[]
+
+  @@index([outletId, stationType, status])
+  @@index([workerId])
+  @@index([orderId])
+  @@map("worker_assignments")
+}
+
+model BypassRequest {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId            String    @map("order_id") @db.Uuid
+  workerAssignmentId String    @map("worker_assignment_id") @db.Uuid
+  stationType        StationType   @map("station_type")
+  requestedBy        String        @map("requested_by") @db.Uuid
+  quantityDiffJson   String?       @map("quantity_diff_json")
+  status             BypassStatus  @default(PENDING)
+  decidedBy          String?   @map("decided_by") @db.Uuid
+  decidedAt          DateTime? @map("decided_at")
+  approvalNote       String?   @map("approval_note")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  order            Order            @relation(fields: [orderId], references: [id])
+  workerAssignment WorkerAssignment @relation(fields: [workerAssignmentId], references: [id])
+  requestedByUser  User             @relation("BypassRequestedBy", fields: [requestedBy], references: [id])
+  decidedByUser    User?            @relation("BypassDecidedBy", fields: [decidedBy], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+  @@map("bypass_requests")
+}
+
+// ============================================================
+// PAYMENTS
+// ============================================================
+
+/// gatewayOrderId = order_id unik yang KITA generate & kirim ke Midtrans
+/// tiap attempt (wajib unik per attempt, Midtrans menolak reuse).
+/// midtransTransactionId = transaction_id yang DIBALIKIN Midtrans.
+model Payment {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  billId                String    @map("bill_id") @db.Uuid
+  gatewayOrderId        String    @unique @map("gateway_order_id")
+  midtransTransactionId String?   @unique @map("midtrans_transaction_id")
+  amount                Decimal                   @db.Decimal(12, 2)
+  status                PaymentTransactionStatus
+  isFinal               Boolean                   @default(false) @map("is_final")
+  paidAt                DateTime? @map("paid_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @map("updated_at")
+
+  bill     Bill             @relation(fields: [billId], references: [id])
+  webhooks PaymentWebhook[]
+
+  @@index([billId])
+  @@index([status])
+  @@map("payments")
+}
+
+/// Histori tiap notifikasi webhook dari Midtrans — dipisah dari Payment
+/// supaya retry notifikasi dari Midtrans tetap kesimpen semua (audit &
+/// idempotency), bukan cuma payload yang terakhir.
+model PaymentWebhook {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId  String   @map("payment_id") @db.Uuid
+  eventType  String?  @map("event_type")
+  rawPayload String   @map("raw_payload")
+  signature  String?
+  isValid    Boolean  @default(false) @map("is_valid")
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@map("payment_webhooks")
+}
+
+// ============================================================
+// COMPLAINTS, ATTENDANCE, NOTIFICATIONS, AUDIT
+// ============================================================
+
+model Complaint {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String    @unique @map("order_id") @db.Uuid
+  customerId    String    @map("customer_id") @db.Uuid
+  category      ComplaintCategory
+  description   String
+  proofPhotoUrl String            @map("proof_photo_url")
+  status        ComplaintStatus   @default(OPEN)
+  handledBy     String?   @map("handled_by") @db.Uuid
+  responseNote  String?   @map("response_note")
+  decidedAt     DateTime? @map("decided_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  order         Order @relation(fields: [orderId], references: [id])
+  customer      User  @relation("ComplaintCustomer", fields: [customerId], references: [id])
+  handledByUser User? @relation("ComplaintHandledBy", fields: [handledBy], references: [id])
+
+  @@map("complaints")
+}
+
+model Attendance {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  outletId       String    @map("outlet_id") @db.Uuid
+  attendanceDate DateTime  @map("attendance_date") @db.Date
+  clockInAt      DateTime? @map("clock_in_at")
+  clockOutAt     DateTime? @map("clock_out_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  outlet Outlet @relation(fields: [outletId], references: [id])
+
+  @@index([userId, attendanceDate])
+  @@index([outletId])
+  @@map("attendances")
+}
+
+model Notification {
+  id      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId  String   @map("user_id") @db.Uuid
+  orderId String?  @map("order_id") @db.Uuid
+  type    NotificationType
+  channel NotificationChannel
+  title   String
+  message String
+  isRead  Boolean  @default(false) @map("is_read")
+  sentAt  DateTime @default(now()) @map("sent_at")
+
+  user  User   @relation(fields: [userId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId     String?  @map("actor_id") @db.Uuid
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id") @db.Uuid
+  oldRefId    String?  @map("old_ref_id") @db.Uuid
+  newRefId    String?  @map("new_ref_id") @db.Uuid
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@map("audit_logs")
+}
