@@ -72,6 +72,7 @@ enum CustomerStatus {
   WAITING_PAYMENT
   READY_FOR_DELIVERY
   ON_THE_WAY_TO_CUSTOMER
+  WAITING_CUSTOMER_CONFIRMATION
   RECEIVED_BY_CUSTOMER
 }
 
@@ -165,6 +166,7 @@ model User {
   accountStatus      AccountStatus?      @map("account_status")
   dutyStatus         DutyStatus?         @map("duty_status")
   availabilityStatus AvailabilityStatus? @map("availability_status")
+  availableSinceAt   DateTime?           @map("available_since_at")
   currentOutletId    String?             @map("current_outlet_id") @db.Uuid
   stationType        StationType?        @map("station_type")
   createdAt          DateTime  @default(now()) @map("created_at")
@@ -384,7 +386,7 @@ model OrderItem {
 model DriverAssignment {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orderId        String    @map("order_id") @db.Uuid
-  driverId       String    @map("driver_id") @db.Uuid
+  driverId       String?    @map("driver_id") @db.Uuid
   outletId       String    @map("outlet_id") @db.Uuid
   taskType       PickupDeliveryType @map("task_type")
   queuedAt       DateTime  @map("queued_at")
@@ -401,7 +403,7 @@ model DriverAssignment {
   updatedAt      DateTime  @default(now()) @map("updated_at")
 
   order              Order  @relation(fields: [orderId], references: [id])
-  driver             User   @relation("DriverAssignmentDriver", fields: [driverId], references: [id])
+  driver             User?   @relation("DriverAssignmentDriver", fields: [driverId], references: [id])
   outlet             Outlet @relation(fields: [outletId], references: [id])
   reassignedFromUser User?  @relation("DriverAssignmentReassignedFrom", fields: [reassignedFrom], references: [id])
 
@@ -428,7 +430,7 @@ model ProofPhoto {
 model WorkerAssignment {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orderId     String    @map("order_id") @db.Uuid
-  workerId    String    @map("worker_id") @db.Uuid
+  workerId    String?    @map("worker_id") @db.Uuid
   outletId    String    @map("outlet_id") @db.Uuid
   stationType StationType             @map("station_type")
   queuedAt    DateTime                @map("queued_at")
@@ -440,7 +442,7 @@ model WorkerAssignment {
   updatedAt   DateTime  @default(now()) @map("updated_at")
 
   order  Order  @relation(fields: [orderId], references: [id])
-  worker User   @relation(fields: [workerId], references: [id])
+  worker User?   @relation(fields: [workerId], references: [id])
   outlet Outlet @relation(fields: [outletId], references: [id])
 
   bypassRequests BypassRequest[]
@@ -547,6 +549,7 @@ model Attendance {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         String    @map("user_id") @db.Uuid
   outletId       String    @map("outlet_id") @db.Uuid
+  role           Role      @map("role")
   attendanceDate DateTime  @map("attendance_date") @db.Date
   clockInAt      DateTime? @map("clock_in_at")
   clockOutAt     DateTime? @map("clock_out_at")
@@ -555,7 +558,8 @@ model Attendance {
   user   User   @relation(fields: [userId], references: [id])
   outlet Outlet @relation(fields: [outletId], references: [id])
 
-  @@index([userId, attendanceDate])
+
+  @@unique([userId, attendanceDate])
   @@index([outletId])
   @@map("attendances")
 }
