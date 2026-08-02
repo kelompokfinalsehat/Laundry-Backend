@@ -2,7 +2,7 @@ import express from 'express';
 import routes from "./routes";
 import cors from "cors";
 import { API_PREFIX, NODE_ENV, PORT, WHITE_LIST } from './configs/env.config';
-import { ErrorMiddleware } from './middlewares/error.midleware';
+import { errorHandler } from './middlewares/error-handler.midleware';
 
 
 
@@ -28,7 +28,7 @@ app.use(express.json());
 
 app.use(`${API_PREFIX}/v1`, routes);
 
-app.use(ErrorMiddleware);
+app.use(errorHandler);
 
 if (NODE_ENV === "development") {
   app.listen(PORT, () => {
