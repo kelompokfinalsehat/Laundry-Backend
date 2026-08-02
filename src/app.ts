@@ -2,7 +2,7 @@ import express from 'express';
 import routes from "./routes";
 import cors from "cors";
 import { API_PREFIX, NODE_ENV, PORT, WHITE_LIST } from './configs/env.config';
-import { ErrorMiddleware } from './middlewares/error.midleware';
+import { ErrorMiddleware } from './middlewares/error-handler.midleware';
 
 
 
