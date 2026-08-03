@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -9,7 +8,6 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-
 
 // ============================================================
 // ENUMS
@@ -36,14 +34,20 @@ enum AccountStatus {
 
 /// Pengganti DutyStatus + AvailabilityStatus (digabung jadi satu sumber
 /// kebenaran). OFF_DUTY = belum/sudah selesai kerja. AVAILABLE = sedang
-/// bertugas dan siap menerima assignment. BUSY = sedang mengerjakan satu
-/// assignment aktif.
+/// bertugas dan siap mengambil job dari daftar tugas tersedia (assignment
+/// v2.1 bersifat MANUAL, worker/driver memilih sendiri -- lihat BR-DRV dan
+/// BR-WRK). BUSY = sedang mengerjakan satu assignment aktif.
 enum WorkStatus {
   OFF_DUTY
   AVAILABLE
   BUSY
 }
 
+/// v2.1: StationType TIDAK LAGI melekat permanen ke Employee (Worker).
+/// Enum ini sekarang HANYA dipakai di WorkerAssignment, untuk menandai
+/// station APA yang sedang dikerjakan pada satu job tertentu. Worker
+/// bersifat dinamis -- boleh mengambil job dari station manapun kapan
+/// saja. Lihat BR-WRK-01 (v2.1).
 enum StationType {
   WASHING
   IRONING
@@ -56,8 +60,17 @@ enum AuthTokenType {
   ACCOUNT_INVITATION
 }
 
-/// Status customer-facing yang dipakai bersama oleh backend dan frontend.
+/// Status customer-facing. v2.1 menambahkan SCHEDULED (sebelum
+/// WAITING_DRIVER_PICKUP) dan OVERDUE (menggantikan WAITING_PAYMENT
+/// setelah 7 hari tanpa pembayaran).
+///
+/// PERHATIAN -- OVERDUE ADALAH STATUS FINAL/TERMINAL:
+/// Begitu Order berstatus OVERDUE, aplikasi TIDAK memproses order ini
+/// lebih lanjut. Tidak ada transisi otomatis keluar dari OVERDUE.
+/// Penyelesaian (termasuk pembayaran susulan) ditangani MANUAL oleh admin
+/// DI LUAR aplikasi. Lihat BR-PAY-04 untuk detail lengkap.
 enum CustomerStatus {
+  SCHEDULED
   WAITING_DRIVER_PICKUP
   ON_THE_WAY_TO_OUTLET
   ARRIVED_AT_OUTLET
@@ -65,6 +78,7 @@ enum CustomerStatus {
   IRONING
   PACKING
   WAITING_PAYMENT
+  OVERDUE
   READY_FOR_DELIVERY
   ON_THE_WAY_TO_CUSTOMER
   WAITING_CUSTOMER_CONFIRMATION
@@ -81,6 +95,9 @@ enum PickupDeliveryType {
   DELIVERY
 }
 
+/// v2.1: assignment bersifat MANUAL (worker/driver claim sendiri dari
+/// daftar tugas tersedia), bukan FIFO otomatis. Status QUEUED tetap
+/// dipakai untuk menandai "job tersedia, belum diambil siapapun".
 enum DriverAssignmentStatus {
   QUEUED
   ASSIGNED
@@ -88,10 +105,10 @@ enum DriverAssignmentStatus {
   COMPLETED
 }
 
-/// PAUSED_OFF_HOURS dihapus — lihat kesepakatan Fitur 3, bagian 4 (Absen
-/// Pulang Opsi A). Worker/driver tidak dapat absen pulang selama masih
-/// ASSIGNED/IN_PROGRESS, sehingga tidak pernah ada assignment yang
-/// "ditinggal" dan butuh status jeda terpisah.
+/// PAUSED_OFF_HOURS dihapus -- lihat kesepakatan Fitur 3. Worker/driver
+/// tidak dapat clock out selama masih ASSIGNED/IN_PROGRESS (BR-ATT-03),
+/// sehingga tidak pernah ada assignment yang "ditinggal" dan butuh status
+/// jeda terpisah.
 enum WorkerAssignmentStatus {
   QUEUED
   ASSIGNED
@@ -127,70 +144,94 @@ enum ComplaintStatus {
   REJECTED
 }
 
-enum NotificationType {
-  PAYMENT_DUE
-  DRIVER_ASSIGNMENT
-  WORKER_ASSIGNMENT
-  BYPASS_REQUEST
-  NEW_COMPLAINT
+// ============================================================
+// CUSTOMER & EMPLOYEE (v2.1: dipecah dari model User tunggal)
+// ============================================================
+
+/// v2.1: dipisah dari Employee. Sebelumnya digabung dalam satu tabel User
+/// bersama Employee, menyebabkan banyak kolom nullable yang hanya relevan
+/// untuk salah satu sisi (workStatus, stationType, currentOutletId, dst
+/// selalu null untuk customer). Login Customer terpisah dari login
+/// Employee -- lihat BR-AUTH-01 (v2.1).
+model Customer {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role             Role     @default(CUSTOMER)
+  name            String
+  email           String    @unique
+  passwordHash    String?   @map("password_hash")
+  authProvider    AuthProvider @default(EMAIL) @map("auth_provider")
+  isEmailVerified Boolean   @default(false) @map("is_email_verified")
+  profilePhotoUrl String?   @map("profile_photo_url")
+  phone           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  authTokens     AuthToken[]
+  addresses      CustomerAddress[]
+  orders         Order[]
+  complaintsFiled Complaint[]
+
+  @@index([email])
+  @@map("customers")
 }
 
-// ============================================================
-// USERS & AUTH
-// ============================================================
-
-model User {
+/// v2.1: dipisah dari Customer. Mewakili SUPER_ADMIN, OUTLET_ADMIN,
+/// WORKER, dan DRIVER. stationType DIHAPUS TOTAL dari model ini (worker
+/// dinamis -- lihat BR-WRK-01 v2.1). workStatus dan availableSinceAt
+/// tetap nullable karena SUPER_ADMIN tidak memakainya.
+model Employee {
   id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   role             Role
   name             String
   email            String        @unique
-  passwordHash     String?       @map("password_hash")
-  authProvider     AuthProvider  @default(EMAIL) @map("auth_provider")
-  isEmailVerified  Boolean       @default(false) @map("is_email_verified")
+  passwordHash     String        @map("password_hash")
   profilePhotoUrl  String?       @map("profile_photo_url")
   phone            String?
-  accountStatus    AccountStatus? @map("account_status")
-  workStatus       WorkStatus?    @map("work_status")
-  availableSinceAt DateTime?      @map("available_since_at")
-  currentOutletId  String?        @map("current_outlet_id") @db.Uuid
-  stationType      StationType?   @map("station_type")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @default(now()) @map("updated_at")
-  deletedAt        DateTime? @map("deleted_at")
+  accountStatus    AccountStatus @map("account_status")
+  workStatus       WorkStatus?   @map("work_status")
+  availableSinceAt DateTime?     @map("available_since_at")
+  currentOutletId  String?       @map("current_outlet_id") @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @map("updated_at")
+  deletedAt        DateTime?     @map("deleted_at")
 
-  currentOutlet Outlet? @relation("UserCurrentOutlet", fields: [currentOutletId], references: [id])
+  currentOutlet Outlet? @relation("EmployeeCurrentOutlet", fields: [currentOutletId], references: [id])
 
   authTokens        AuthToken[]
-  addresses         CustomerAddress[]
-  ordersAsCustomer  Order[]            @relation("OrderCustomer")
   ordersReceived    Order[]            @relation("OrderReceivedBy")
   driverTasks       DriverAssignment[] @relation("DriverAssignmentDriver")
   workerTasks       WorkerAssignment[]
   bypassRequested   BypassRequest[]    @relation("BypassRequestedBy")
   bypassDecided     BypassRequest[]    @relation("BypassDecidedBy")
-  complaintsFiled   Complaint[]        @relation("ComplaintCustomer")
   complaintsHandled Complaint[]        @relation("ComplaintHandledBy")
   attendances       Attendance[]
-  notifications     Notification[]
 
-  @@index([email])
   @@index([role])
   @@index([role, currentOutletId])
-  @@map("users")
+  @@map("employees")
 }
 
 model AuthToken {
-  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String        @map("user_id") @db.Uuid
-  type      AuthTokenType
-  tokenHash String        @map("token_hash")
-  expiresAt DateTime  @map("expires_at")
-  usedAt    DateTime? @map("used_at")
-  createdAt DateTime  @default(now()) @map("created_at")
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type       AuthTokenType
+  tokenHash  String        @map("token_hash")
+  expiresAt  DateTime      @map("expires_at")
+  usedAt     DateTime?     @map("used_at")
+  createdAt  DateTime      @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
+  // v2.1: hanya salah satu dari customerId/employeeId yang diisi,
+  // tergantung pemilik token. Divalidasi di level aplikasi (bukan di
+  // level constraint database) karena Prisma tidak mendukung XOR check
+  // native.
+  customerId String?  @map("customer_id") @db.Uuid
+  employeeId String?  @map("employee_id") @db.Uuid
 
-  @@index([userId, type])
+  customer Customer? @relation(fields: [customerId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([customerId, type])
+  @@index([employeeId, type])
   @@index([tokenHash])
   @@map("auth_tokens")
 }
@@ -210,11 +251,12 @@ model Outlet {
   updatedAt DateTime  @default(now()) @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  staffOnDuty       User[]             @relation("UserCurrentOutlet")
+  staffOnDuty       Employee[]         @relation("EmployeeCurrentOutlet")
   orders            Order[]
   driverAssignments DriverAssignment[]
   workerAssignments WorkerAssignment[]
   attendances       Attendance[]
+  notifications     Notification[]
 
   @@map("outlets")
 }
@@ -232,7 +274,7 @@ model CustomerAddress {
   updatedAt        DateTime  @default(now()) @map("updated_at")
   deletedAt        DateTime? @map("deleted_at")
 
-  customer User @relation(fields: [customerId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
 
   @@index([customerId])
   @@map("customer_addresses")
@@ -244,21 +286,19 @@ model CustomerAddress {
 
 /// Tidak ada versioning/soft-delete: harga di-update langsung (overwrite).
 /// Konsistensi order lama dijamin oleh snapshot di Bill (pricePerKgSnapshot),
-/// bukan oleh histori record di sini. deletedAt disediakan untuk fleksibilitas
-/// tapi TIDAK dipakai untuk multi-record aktif.
+/// bukan oleh histori record di sini.
 model LaundryPricing {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   pricePerKg Decimal   @map("price_per_kg") @db.Decimal(12, 2)
   deletedAt  DateTime? @map("deleted_at")
   createdAt  DateTime  @default(now()) @map("created_at")
 
-
   bills Bill[]
 
   @@map("laundry_pricings")
 }
 
-/// Sama seperti LaundryPricing — di-update langsung tanpa histori multi-record.
+/// Sama seperti LaundryPricing -- di-update langsung tanpa histori multi-record.
 model ShippingRate {
   id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   maxDistanceMeters Int       @map("max_distance_meters")
@@ -297,16 +337,25 @@ model Order {
   addressLatitude      Decimal   @map("address_latitude") @db.Decimal(10, 7)
   addressLongitude     Decimal   @map("address_longitude") @db.Decimal(10, 7)
   distanceMeters       Decimal   @map("distance_meters") @db.Decimal(10, 2)
+
+  /// Tanggal pickup yang dipilih customer (existing).
   pickupDate           DateTime  @map("pickup_date") @db.Date
+
+  /// v2.1 BARU. Jam pickup yang diminta customer, PADA HARI YANG SAMA
+  /// dengan pickupDate (tidak ada pickup lintas hari). Dipakai oleh cron
+  /// job untuk memindahkan status SCHEDULED -> WAITING_DRIVER_PICKUP,
+  /// 30 menit sebelum jam ini. Lihat BR-PICKUP-04 (v2.1).
+  pickupScheduledAt    DateTime  @map("pickup_scheduled_at")
+
   customerStatus       CustomerStatus @map("customer_status")
   receivedAt           DateTime? @map("received_at")
   receivedBy           String?   @map("received_by") @db.Uuid
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @default(now()) @map("updated_at")
 
-  customer       User   @relation("OrderCustomer", fields: [customerId], references: [id])
-  outlet         Outlet @relation(fields: [outletId], references: [id])
-  receivedByUser User?  @relation("OrderReceivedBy", fields: [receivedBy], references: [id])
+  customer       Customer  @relation(fields: [customerId], references: [id])
+  outlet         Outlet    @relation(fields: [outletId], references: [id])
+  receivedByUser Employee? @relation("OrderReceivedBy", fields: [receivedBy], references: [id])
 
   bill              Bill?
   orderItems        OrderItem[]
@@ -314,23 +363,27 @@ model Order {
   workerAssignments WorkerAssignment[]
   bypassRequests    BypassRequest[]
   complaint         Complaint?
-  notifications     Notification[]
 
   @@index([customerId])
   @@index([outletId])
   @@index([customerStatus])
   @@index([pickupDate])
+  @@index([pickupScheduledAt])
   @@map("orders")
 }
 
-/// Tagihan per order (1-1). Dipisah dari Order supaya perhitungan biaya
-/// (pricing snapshot, berat, ongkir, total) nggak numpuk di satu model
-/// dengan status perjalanan order.
+/// Tagihan per order (1-1).
 ///
 /// pricePerKgSnapshot & shippingFeeSnapshot adalah SATU-SATUNYA sumber
-/// kebenaran harga untuk order yang sudah berjalan (karena LaundryPricing/
-/// ShippingRate tidak punya histori). Jangan pernah tampilkan harga order
-/// dengan join ulang ke master harga terkini.
+/// kebenaran harga untuk order yang sudah berjalan.
+///
+/// v2.1: createdAt pada model ini adalah acuan waktu untuk DUA mekanisme:
+/// 1. Notifikasi "tagihan menunggu pembayaran" dikirim SEKALI, tepat saat
+///    baris Bill ini dibuat (BR-ORDER-02).
+/// 2. Cron job OVERDUE menghitung 7 hari sejak createdAt ini untuk
+///    memutuskan kapan Order.customerStatus dipindah ke OVERDUE
+///    (BR-PAY-04). TIDAK ADA kolom tambahan untuk overdue -- cukup
+///    dihitung dari createdAt + paymentStatus setiap cron berjalan.
 model Bill {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orderId             String   @unique @map("order_id") @db.Uuid
@@ -344,7 +397,7 @@ model Bill {
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @default(now()) @map("updated_at")
 
-  order          Order           @relation(fields: [orderId], references: [id])
+  order          Order          @relation(fields: [orderId], references: [id])
   laundryPricing LaundryPricing @relation(fields: [laundryPricingId], references: [id])
   shippingRate   ShippingRate   @relation(fields: [shippingRateId], references: [id])
 
@@ -352,6 +405,7 @@ model Bill {
 
   @@index([orderId])
   @@index([paymentStatus])
+  @@index([createdAt])
   @@map("bills")
 }
 
@@ -368,41 +422,53 @@ model OrderItem {
 }
 
 // ============================================================
-// DRIVER & WORKER ASSIGNMENTS
+// DRIVER & WORKER ASSIGNMENTS (v2.1: manual claim, bukan FIFO otomatis)
 // ============================================================
 
+/// v2.1: queuedAt DIHAPUS. Job selalu dibuat langsung berstatus QUEUED
+/// (tidak pernah ada state sebelumnya), sehingga queuedAt selalu identik
+/// dengan createdAt -- kolom duplikat tanpa nilai tambah. Urutan tampilan
+/// daftar tugas tersedia memakai createdAt. Assignment TIDAK LAGI otomatis
+/// (FIFO dihapus) -- Driver memilih sendiri job dari daftar QUEUED di
+/// outletnya. Lihat BR-DRV-01 (v2.1).
 model DriverAssignment {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId        String    @map("order_id") @db.Uuid
-  driverId       String?   @map("driver_id") @db.Uuid
-  outletId       String    @map("outlet_id") @db.Uuid
-  taskType       PickupDeliveryType @map("task_type")
-  queuedAt       DateTime  @map("queued_at")
-  assignedAt     DateTime? @map("assigned_at")
-  departedAt     DateTime? @map("departed_at")
-  pickedUpAt     DateTime? @map("picked_up_at")
-  deliveredAt    DateTime? @map("delivered_at")
-  completedAt    DateTime? @map("completed_at")
-  status         DriverAssignmentStatus
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @default(now()) @map("updated_at")
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String    @map("order_id") @db.Uuid
+  driverId    String?   @map("driver_id") @db.Uuid
+  outletId    String    @map("outlet_id") @db.Uuid
+  taskType    PickupDeliveryType @map("task_type")
+  assignedAt  DateTime? @map("assigned_at")
+  departedAt  DateTime? @map("departed_at")
+  pickedUpAt  DateTime? @map("picked_up_at")
+  deliveredAt DateTime? @map("delivered_at")
+  completedAt DateTime? @map("completed_at")
+  status      DriverAssignmentStatus
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @map("updated_at")
 
-  order              Order  @relation(fields: [orderId], references: [id])
-  driver             User?  @relation("DriverAssignmentDriver", fields: [driverId], references: [id])
-  outlet             Outlet @relation(fields: [outletId], references: [id])
+  order  Order     @relation(fields: [orderId], references: [id])
+  driver Employee? @relation("DriverAssignmentDriver", fields: [driverId], references: [id])
+  outlet Outlet    @relation(fields: [outletId], references: [id])
+
   @@index([outletId, status])
   @@index([driverId])
   @@index([orderId])
   @@map("driver_assignments")
 }
 
+/// v2.1: queuedAt DIHAPUS (alasan sama seperti DriverAssignment, lihat
+/// komentar di atas). stationType TETAP ADA di model ini -- ini justru
+/// menjadi SATU-SATUNYA sumber kebenaran "job ini station apa", karena
+/// Employee/Worker tidak lagi punya stationType permanen (worker
+/// dinamis). Assignment TIDAK LAGI otomatis per station -- Worker melihat
+/// SEMUA job QUEUED lintas station pada outletnya dan memilih sendiri.
+/// Lihat BR-WRK-01 (v2.1).
 model WorkerAssignment {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orderId     String    @map("order_id") @db.Uuid
   workerId    String?   @map("worker_id") @db.Uuid
   outletId    String    @map("outlet_id") @db.Uuid
   stationType StationType @map("station_type")
-  queuedAt    DateTime    @map("queued_at")
   assignedAt  DateTime?   @map("assigned_at")
   startedAt   DateTime?   @map("started_at")
   completedAt DateTime?   @map("completed_at")
@@ -410,13 +476,13 @@ model WorkerAssignment {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @default(now()) @map("updated_at")
 
-  order  Order  @relation(fields: [orderId], references: [id])
-  worker User?  @relation(fields: [workerId], references: [id])
-  outlet Outlet @relation(fields: [outletId], references: [id])
+  order  Order     @relation(fields: [orderId], references: [id])
+  worker Employee? @relation(fields: [workerId], references: [id])
+  outlet Outlet    @relation(fields: [outletId], references: [id])
 
   bypassRequests BypassRequest[]
 
-  @@index([outletId, stationType, status])
+  @@index([outletId, status])
   @@index([workerId])
   @@index([orderId])
   @@map("worker_assignments")
@@ -437,8 +503,8 @@ model BypassRequest {
 
   order            Order            @relation(fields: [orderId], references: [id])
   workerAssignment WorkerAssignment @relation(fields: [workerAssignmentId], references: [id])
-  requestedByUser  User             @relation("BypassRequestedBy", fields: [requestedBy], references: [id])
-  decidedByUser    User?            @relation("BypassDecidedBy", fields: [decidedBy], references: [id])
+  requestedByUser  Employee         @relation("BypassRequestedBy", fields: [requestedBy], references: [id])
+  decidedByUser    Employee?        @relation("BypassDecidedBy", fields: [decidedBy], references: [id])
 
   @@index([orderId])
   @@index([status])
@@ -456,6 +522,9 @@ model BypassRequest {
 /// Status pembayaran diperbarui dari callback Midtrans yang telah diverifikasi.
 /// Setiap callback disimpan pada PaymentWebhook. Perubahan state Payment dan Bill
 /// wajib idempotent agar callback berulang tidak memproses pembayaran dua kali.
+///
+/// v2.1: webhook WAJIB menolak proses jika Order.customerStatus == OVERDUE.
+/// Lihat BR-PAY-04.
 model Payment {
   id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   billId                String    @map("bill_id") @db.Uuid
@@ -490,8 +559,9 @@ model PaymentWebhook {
   @@index([paymentId])
   @@map("payment_webhooks")
 }
+
 // ============================================================
-// COMPLAINTS, ATTENDANCE, NOTIFICATIONS
+// COMPLAINTS, ATTENDANCE
 // ============================================================
 
 model Complaint {
@@ -507,47 +577,55 @@ model Complaint {
   decidedAt     DateTime? @map("decided_at")
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  order         Order @relation(fields: [orderId], references: [id])
-  customer      User  @relation("ComplaintCustomer", fields: [customerId], references: [id])
-  handledByUser User? @relation("ComplaintHandledBy", fields: [handledBy], references: [id])
+  order         Order     @relation(fields: [orderId], references: [id])
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  handledByUser Employee? @relation("ComplaintHandledBy", fields: [handledBy], references: [id])
 
   @@map("complaints")
 }
 
-/// role dihapus — diambil lewat relasi ke User.role, tidak perlu disimpan
-/// ulang di sini.
+/// role dihapus -- diambil lewat relasi ke Employee.role, tidak perlu
+/// disimpan ulang di sini. Customer tidak memiliki Attendance.
 model Attendance {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId         String    @map("user_id") @db.Uuid
+  employeeId     String    @map("employee_id") @db.Uuid
   outletId       String    @map("outlet_id") @db.Uuid
   attendanceDate DateTime  @map("attendance_date") @db.Date
   clockInAt      DateTime? @map("clock_in_at")
   clockOutAt     DateTime? @map("clock_out_at")
   createdAt      DateTime  @default(now()) @map("created_at")
 
-  user   User   @relation(fields: [userId], references: [id])
-  outlet Outlet @relation(fields: [outletId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+  outlet   Outlet   @relation(fields: [outletId], references: [id])
 
-  @@unique([userId, attendanceDate])
+  @@unique([employeeId, attendanceDate])
   @@index([outletId])
   @@map("attendances")
 }
 
-/// Hanya untuk kanal in-app. Email dikirim langsung (fire-and-forget) dan
-/// tidak disimpan sebagai record — tidak perlu kolom channel.
+/// Hanya untuk Driver & Worker (Employee) -- Customer tidak menerima
+/// notifikasi. Bersifat BROADCAST per role + outlet (bukan per individu
+/// employee) -- semua driver di outlet X dapat notifikasi yang sama,
+/// begitu pula semua worker di outlet X. Siapapun yang match kriteria
+/// targetRole + outletId akan melihatnya, termasuk employee yang baru
+/// online setelah notifikasi dibuat.
+/// Sengaja dibuat SANGAT SIMPLE:
+/// - Tidak ada isRead/status baca, tidak ada mark-as-read.
+/// - Tidak ada retention/cleanup job -- data lama DIBIARKAN menumpuk di DB
+///   (keputusan sadar, bukan oversight; lihat diskusi terkait).
+/// - Frontend HANYA menampilkan notifikasi hari berjalan, dengan cara
+///   memfilter `sentAt >= awal hari ini` saat query. Begitu ganti hari,
+///   notifikasi kemarin otomatis tidak tampil lagi tanpa logic tambahan.
 model Notification {
-  id      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId  String   @map("user_id") @db.Uuid
-  orderId String?  @map("order_id") @db.Uuid
-  type    NotificationType
-  title   String
-  message String
-  isRead  Boolean  @default(false) @map("is_read")
-  sentAt  DateTime @default(now()) @map("sent_at")
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  targetRole Role     @map("target_role")
+  outletId   String   @map("outlet_id") @db.Uuid
+  title      String
+  message    String
+  sentAt     DateTime @default(now()) @map("sent_at")
 
-  user  User   @relation(fields: [userId], references: [id])
-  order Order? @relation(fields: [orderId], references: [id])
+  outlet Outlet @relation(fields: [outletId], references: [id])
 
-  @@index([userId, isRead])
+  @@index([targetRole, outletId, sentAt])
   @@map("notifications")
 }
