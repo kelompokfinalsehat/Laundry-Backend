@@ -5,3 +5,5 @@ node_modules
 generated/prisma
 /src/generated/prisma
 generated/prisma/
+
+*.zip

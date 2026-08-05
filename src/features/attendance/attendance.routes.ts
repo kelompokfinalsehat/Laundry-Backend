@@ -1,0 +1,14 @@
+import { Router } from "express";
+import { fakeAuth } from "../../middlewares/fake-auth.middleware";
+import { AttendanceController } from "./attendance.controllers";
+// ini fakeAuth nanti jangan lupa dihapus brok
+
+export const AttendanceRoute = Router();
+
+AttendanceRoute.post(
+  "/clock-in",
+  //Authenticated
+  //Authorized
+  fakeAuth,
+  AttendanceController.clockIn,
+);
