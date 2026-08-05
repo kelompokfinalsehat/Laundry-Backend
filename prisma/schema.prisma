@@ -185,7 +185,7 @@ model Employee {
   role             Role
   name             String
   email            String        @unique
-  passwordHash     String        @map("password_hash")
+  passwordHash     String?        @map("password_hash")
   profilePhotoUrl  String?       @map("profile_photo_url")
   phone            String?
   accountStatus    AccountStatus @map("account_status")
