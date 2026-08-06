@@ -1,5 +1,5 @@
 
-export const AttendanceDateWIB = (date: Date = new Date()): Date => {
+export const getAttendanceDateWIB = (date: Date = new Date()): Date => {
   const dateWIB = date.toLocaleDateString("en-CA", {
     timeZone: "Asia/Jakarta",
   });

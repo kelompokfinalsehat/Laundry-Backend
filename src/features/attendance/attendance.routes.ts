@@ -12,3 +12,5 @@ AttendanceRoute.post(
   fakeAuth,
   AttendanceController.clockIn,
 );
+
+AttendanceRoute.post("/clock-out", fakeAuth, AttendanceController.clockOut);

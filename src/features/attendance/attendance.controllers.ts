@@ -12,11 +12,19 @@ export class AttendanceController {
 
     const payload = res.locals.payload;
 
-    const attendance = await AttendanceService.clockIn(payload);
+    const clockIn = await AttendanceService.clockIn(payload);
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: "Clock in berhasil!",
-      data: attendance,
+      data: clockIn,
     });
+  }
+
+  static async clockOut(req: Request, res: Response) {
+    validate(AttendanceValidation.CLOCK_OUT, { body: req.body });
+
+    const payload = res.locals.payload;
+    const clockOut = await AttendanceService.clockOut(payload)
+    
   }
 }

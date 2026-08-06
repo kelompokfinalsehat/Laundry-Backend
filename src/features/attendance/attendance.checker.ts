@@ -1,4 +1,3 @@
-
 import {
   AccountStatus,
   Role,
@@ -8,7 +7,7 @@ import {
 import { ResponseError } from "../../utils/response-error.utils";
 
 export class AttendanceChecker {
-  static verifyClockIn(
+  static verifyEmployee(
     employee: Employee | null,
   ): asserts employee is Employee {
     if (!employee) {
@@ -26,11 +25,16 @@ export class AttendanceChecker {
         "Karyawan belum diinput ke dalam outlet, hubungi admin outlet",
       );
     }
-    if (
-      employee.workStatus !== WorkStatus.OFF_DUTY &&
-      employee.workStatus !== null
-    ) {
-      throw new ResponseError("INVALID_STATE_TRANSITION");
+  }
+
+  static verifyWorkStatus(employee: Employee, expected: (WorkStatus | null)[]) {
+    if (!expected.includes(employee.workStatus)) {
+      throw new ResponseError(
+        "INVALID_STATE_TRANSITION",
+        "Status kerja tidak sesuai",
+      );
     }
   }
+  
+  
 }
