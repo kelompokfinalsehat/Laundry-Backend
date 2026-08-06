@@ -154,23 +154,24 @@ enum ComplaintStatus {
 /// selalu null untuk customer). Login Customer terpisah dari login
 /// Employee -- lihat BR-AUTH-01 (v2.1).
 model Customer {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  role             Role     @default(CUSTOMER)
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role            Role         @default(CUSTOMER)
   name            String
-  email           String    @unique
-  passwordHash    String?   @map("password_hash")
+  email           String       @unique
+  passwordHash    String?      @map("password_hash")
   authProvider    AuthProvider @default(EMAIL) @map("auth_provider")
-  isEmailVerified Boolean   @default(false) @map("is_email_verified")
-  profilePhotoUrl String?   @map("profile_photo_url")
+  isEmailVerified Boolean      @default(false) @map("is_email_verified")
+  profilePhotoUrl String?      @map("profile_photo_url")
   phone           String?
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @default(now()) @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @default(now()) @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
 
-  authTokens     AuthToken[]
-  addresses      CustomerAddress[]
-  orders         Order[]
+  authTokens      AuthToken[]
+  addresses       CustomerAddress[]
+  orders          Order[]
   complaintsFiled Complaint[]
+  refreshTokens   RefreshToken[]
 
   @@index([email])
   @@map("customers")
@@ -185,7 +186,7 @@ model Employee {
   role             Role
   name             String
   email            String        @unique
-  passwordHash     String?        @map("password_hash")
+  passwordHash     String?       @map("password_hash")
   profilePhotoUrl  String?       @map("profile_photo_url")
   phone            String?
   accountStatus    AccountStatus @map("account_status")
@@ -199,6 +200,7 @@ model Employee {
   currentOutlet Outlet? @relation("EmployeeCurrentOutlet", fields: [currentOutletId], references: [id])
 
   authTokens        AuthToken[]
+  refreshTokens     RefreshToken[]
   ordersReceived    Order[]            @relation("OrderReceivedBy")
   driverTasks       DriverAssignment[] @relation("DriverAssignmentDriver")
   workerTasks       WorkerAssignment[]
@@ -213,19 +215,19 @@ model Employee {
 }
 
 model AuthToken {
-  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type       AuthTokenType
-  tokenHash  String        @map("token_hash")
-  expiresAt  DateTime      @map("expires_at")
-  usedAt     DateTime?     @map("used_at")
-  createdAt  DateTime      @default(now()) @map("created_at")
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type      AuthTokenType
+  tokenHash String        @map("token_hash")
+  expiresAt DateTime      @map("expires_at")
+  usedAt    DateTime?     @map("used_at")
+  createdAt DateTime      @default(now()) @map("created_at")
 
   // v2.1: hanya salah satu dari customerId/employeeId yang diisi,
   // tergantung pemilik token. Divalidasi di level aplikasi (bukan di
   // level constraint database) karena Prisma tidak mendukung XOR check
   // native.
-  customerId String?  @map("customer_id") @db.Uuid
-  employeeId String?  @map("employee_id") @db.Uuid
+  customerId String? @map("customer_id") @db.Uuid
+  employeeId String? @map("employee_id") @db.Uuid
 
   customer Customer? @relation(fields: [customerId], references: [id])
   employee Employee? @relation(fields: [employeeId], references: [id])
@@ -234,6 +236,31 @@ model AuthToken {
   @@index([employeeId, type])
   @@index([tokenHash])
   @@map("auth_tokens")
+}
+
+/// Refresh token — beda dari AuthToken (yang sekali pakai untuk
+/// verifikasi/reset/invitation). RefreshToken dipakai BERKALI-KALI untuk
+/// menerbitkan access token baru tanpa user login ulang, dan bisa dicabut
+/// (revokedAt) kapan saja — misal saat logout.
+///
+/// Pola polymorphic sama seperti AuthToken: hanya salah satu dari
+/// customerId/employeeId yang diisi, divalidasi di level aplikasi.
+model RefreshToken {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId String?   @map("customer_id") @db.Uuid
+  employeeId String?   @map("employee_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([customerId])
+  @@index([employeeId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
 }
 
 // ============================================================
@@ -328,30 +355,30 @@ model LaundryItem {
 // ============================================================
 
 model Order {
-  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderCode            String    @unique @map("order_code")
-  customerId           String    @map("customer_id") @db.Uuid
-  outletId             String    @map("outlet_id") @db.Uuid
-  addressSnapshot      String    @map("address_snapshot")
-  addressPhoneSnapshot String    @map("address_phone_snapshot")
-  addressLatitude      Decimal   @map("address_latitude") @db.Decimal(10, 7)
-  addressLongitude     Decimal   @map("address_longitude") @db.Decimal(10, 7)
-  distanceMeters       Decimal   @map("distance_meters") @db.Decimal(10, 2)
+  id                   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderCode            String  @unique @map("order_code")
+  customerId           String  @map("customer_id") @db.Uuid
+  outletId             String  @map("outlet_id") @db.Uuid
+  addressSnapshot      String  @map("address_snapshot")
+  addressPhoneSnapshot String  @map("address_phone_snapshot")
+  addressLatitude      Decimal @map("address_latitude") @db.Decimal(10, 7)
+  addressLongitude     Decimal @map("address_longitude") @db.Decimal(10, 7)
+  distanceMeters       Decimal @map("distance_meters") @db.Decimal(10, 2)
 
   /// Tanggal pickup yang dipilih customer (existing).
-  pickupDate           DateTime  @map("pickup_date") @db.Date
+  pickupDate DateTime @map("pickup_date") @db.Date
 
   /// v2.1 BARU. Jam pickup yang diminta customer, PADA HARI YANG SAMA
   /// dengan pickupDate (tidak ada pickup lintas hari). Dipakai oleh cron
   /// job untuk memindahkan status SCHEDULED -> WAITING_DRIVER_PICKUP,
   /// 30 menit sebelum jam ini. Lihat BR-PICKUP-04 (v2.1).
-  pickupScheduledAt    DateTime  @map("pickup_scheduled_at")
+  pickupScheduledAt DateTime @map("pickup_scheduled_at")
 
-  customerStatus       CustomerStatus @map("customer_status")
-  receivedAt           DateTime? @map("received_at")
-  receivedBy           String?   @map("received_by") @db.Uuid
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @default(now()) @map("updated_at")
+  customerStatus CustomerStatus @map("customer_status")
+  receivedAt     DateTime?      @map("received_at")
+  receivedBy     String?        @map("received_by") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @default(now()) @map("updated_at")
 
   customer       Customer  @relation(fields: [customerId], references: [id])
   outlet         Outlet    @relation(fields: [outletId], references: [id])
@@ -385,17 +412,17 @@ model Order {
 ///    (BR-PAY-04). TIDAK ADA kolom tambahan untuk overdue -- cukup
 ///    dihitung dari createdAt + paymentStatus setiap cron berjalan.
 model Bill {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId             String   @unique @map("order_id") @db.Uuid
-  laundryPricingId    String   @map("laundry_pricing_id") @db.Uuid
-  pricePerKgSnapshot  Decimal  @map("price_per_kg_snapshot") @db.Decimal(12, 2)
-  shippingRateId      String   @map("shipping_rate_id") @db.Uuid
-  shippingFeeSnapshot Decimal  @map("shipping_fee_snapshot") @db.Decimal(12, 2)
-  weightKg            Decimal? @map("weight_kg") @db.Decimal(10, 2)
-  totalAmount         Decimal? @map("total_amount") @db.Decimal(12, 2)
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId             String            @unique @map("order_id") @db.Uuid
+  laundryPricingId    String            @map("laundry_pricing_id") @db.Uuid
+  pricePerKgSnapshot  Decimal           @map("price_per_kg_snapshot") @db.Decimal(12, 2)
+  shippingRateId      String            @map("shipping_rate_id") @db.Uuid
+  shippingFeeSnapshot Decimal           @map("shipping_fee_snapshot") @db.Decimal(12, 2)
+  weightKg            Decimal?          @map("weight_kg") @db.Decimal(10, 2)
+  totalAmount         Decimal?          @map("total_amount") @db.Decimal(12, 2)
   paymentStatus       BillPaymentStatus @default(UNPAID) @map("payment_status")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @default(now()) @map("updated_at")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @default(now()) @map("updated_at")
 
   order          Order          @relation(fields: [orderId], references: [id])
   laundryPricing LaundryPricing @relation(fields: [laundryPricingId], references: [id])
@@ -432,19 +459,19 @@ model OrderItem {
 /// (FIFO dihapus) -- Driver memilih sendiri job dari daftar QUEUED di
 /// outletnya. Lihat BR-DRV-01 (v2.1).
 model DriverAssignment {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId     String    @map("order_id") @db.Uuid
-  driverId    String?   @map("driver_id") @db.Uuid
-  outletId    String    @map("outlet_id") @db.Uuid
-  taskType    PickupDeliveryType @map("task_type")
-  assignedAt  DateTime? @map("assigned_at")
-  departedAt  DateTime? @map("departed_at")
-  pickedUpAt  DateTime? @map("picked_up_at")
-  deliveredAt DateTime? @map("delivered_at")
-  completedAt DateTime? @map("completed_at")
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String                 @map("order_id") @db.Uuid
+  driverId    String?                @map("driver_id") @db.Uuid
+  outletId    String                 @map("outlet_id") @db.Uuid
+  taskType    PickupDeliveryType     @map("task_type")
+  assignedAt  DateTime?              @map("assigned_at")
+  departedAt  DateTime?              @map("departed_at")
+  pickedUpAt  DateTime?              @map("picked_up_at")
+  deliveredAt DateTime?              @map("delivered_at")
+  completedAt DateTime?              @map("completed_at")
   status      DriverAssignmentStatus
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @default(now()) @map("updated_at")
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @default(now()) @map("updated_at")
 
   order  Order     @relation(fields: [orderId], references: [id])
   driver Employee? @relation("DriverAssignmentDriver", fields: [driverId], references: [id])
@@ -464,17 +491,17 @@ model DriverAssignment {
 /// SEMUA job QUEUED lintas station pada outletnya dan memilih sendiri.
 /// Lihat BR-WRK-01 (v2.1).
 model WorkerAssignment {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId     String    @map("order_id") @db.Uuid
-  workerId    String?   @map("worker_id") @db.Uuid
-  outletId    String    @map("outlet_id") @db.Uuid
-  stationType StationType @map("station_type")
-  assignedAt  DateTime?   @map("assigned_at")
-  startedAt   DateTime?   @map("started_at")
-  completedAt DateTime?   @map("completed_at")
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String                 @map("order_id") @db.Uuid
+  workerId    String?                @map("worker_id") @db.Uuid
+  outletId    String                 @map("outlet_id") @db.Uuid
+  stationType StationType            @map("station_type")
+  assignedAt  DateTime?              @map("assigned_at")
+  startedAt   DateTime?              @map("started_at")
+  completedAt DateTime?              @map("completed_at")
   status      WorkerAssignmentStatus
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @default(now()) @map("updated_at")
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @default(now()) @map("updated_at")
 
   order  Order     @relation(fields: [orderId], references: [id])
   worker Employee? @relation(fields: [workerId], references: [id])
@@ -489,17 +516,17 @@ model WorkerAssignment {
 }
 
 model BypassRequest {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId            String    @map("order_id") @db.Uuid
-  workerAssignmentId String    @map("worker_assignment_id") @db.Uuid
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId            String       @map("order_id") @db.Uuid
+  workerAssignmentId String       @map("worker_assignment_id") @db.Uuid
   stationType        StationType  @map("station_type")
   requestedBy        String       @map("requested_by") @db.Uuid
   quantityDiffJson   String?      @map("quantity_diff_json")
   status             BypassStatus @default(PENDING)
-  decidedBy          String?   @map("decided_by") @db.Uuid
-  decidedAt          DateTime? @map("decided_at")
-  approvalNote       String?   @map("approval_note")
-  createdAt          DateTime  @default(now()) @map("created_at")
+  decidedBy          String?      @map("decided_by") @db.Uuid
+  decidedAt          DateTime?    @map("decided_at")
+  approvalNote       String?      @map("approval_note")
+  createdAt          DateTime     @default(now()) @map("created_at")
 
   order            Order            @relation(fields: [orderId], references: [id])
   workerAssignment WorkerAssignment @relation(fields: [workerAssignmentId], references: [id])
@@ -526,16 +553,16 @@ model BypassRequest {
 /// v2.1: webhook WAJIB menolak proses jika Order.customerStatus == OVERDUE.
 /// Lihat BR-PAY-04.
 model Payment {
-  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  billId                String    @map("bill_id") @db.Uuid
-  gatewayOrderId        String    @unique @map("gateway_order_id")
-  midtransTransactionId String?   @unique @map("midtrans_transaction_id")
-  amount                Decimal                   @db.Decimal(12, 2)
+  id                    String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  billId                String                   @map("bill_id") @db.Uuid
+  gatewayOrderId        String                   @unique @map("gateway_order_id")
+  midtransTransactionId String?                  @unique @map("midtrans_transaction_id")
+  amount                Decimal                  @db.Decimal(12, 2)
   status                PaymentTransactionStatus
-  isFinal               Boolean                   @default(false) @map("is_final")
-  paidAt                DateTime? @map("paid_at")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @default(now()) @map("updated_at")
+  isFinal               Boolean                  @default(false) @map("is_final")
+  paidAt                DateTime?                @map("paid_at")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @default(now()) @map("updated_at")
 
   bill     Bill             @relation(fields: [billId], references: [id])
   webhooks PaymentWebhook[]
@@ -565,17 +592,17 @@ model PaymentWebhook {
 // ============================================================
 
 model Complaint {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId       String    @unique @map("order_id") @db.Uuid
-  customerId    String    @map("customer_id") @db.Uuid
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String            @unique @map("order_id") @db.Uuid
+  customerId    String            @map("customer_id") @db.Uuid
   category      ComplaintCategory
   description   String
   proofPhotoUrl String            @map("proof_photo_url")
   status        ComplaintStatus   @default(OPEN)
-  handledBy     String?   @map("handled_by") @db.Uuid
-  responseNote  String?   @map("response_note")
-  decidedAt     DateTime? @map("decided_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
+  handledBy     String?           @map("handled_by") @db.Uuid
+  responseNote  String?           @map("response_note")
+  decidedAt     DateTime?         @map("decided_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
 
   order         Order     @relation(fields: [orderId], references: [id])
   customer      Customer  @relation(fields: [customerId], references: [id])
