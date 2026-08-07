@@ -1,5 +1,5 @@
 
-import { EMAIL_VERIFICATION_EXPIRY_HOURS} from "../../configs/env.config";
+import { EMAIL_VERIFICATION_EXPIRY_HOURS, PASSWORD_RESET_EXPIRY_HOURS} from "../../configs/env.config";
 import { MailerUtil } from "../../utils/mailer/mailer.utils";
 import { TemplateUtil } from "../../utils/mailer/template/tamplate.util";
  
@@ -10,6 +10,7 @@ type SendEmailVerificationParams = {
   to: string;
   token: string; 
 };
+
  
 export class MailerService {
   static async sendEmailVerification({ to, token }: SendEmailVerificationParams) {
@@ -23,6 +24,21 @@ export class MailerService {
     return MailerUtil.sendMail({
       to,
       subject: "Verifikasi email Popo Laundry kamu",
+      html,
+    });
+  }
+
+   static async sendPasswordReset({ to, token }: SendEmailVerificationParams) {
+    const resetUrl = `${APP_BASE_URL}/reset-password?token=${encodeURIComponent(token)}`;
+ 
+    const html = TemplateUtil.compile("password-reset", {
+      resetUrl,
+      expiryHours: PASSWORD_RESET_EXPIRY_HOURS,
+    });
+ 
+    return MailerUtil.sendMail({
+      to,
+      subject: "Reset password Popo Laundry kamu",
       html,
     });
   }

@@ -1,17 +1,17 @@
-import { response } from "express";
 import { prisma } from "../../configs/prisma-client.config";
 import { BcryptUtil } from "../../utils/Auth/bcrypt.utils";
 import { AuthTokenUtil } from "../../utils/Auth/token.utils";
-import { ResponseError } from "../../utils/errors/response-error.utils";
-import { EmailVerificationTokenHelper } from "../mailers/emailVerification.helpers";
 import {
+  ForgotPasswordInput,
   LoginCustomerInput,
   LoginGoogleInput,
   RegisterCustomerInput,
+  ResetPasswordInput,
   VerifyEmailInput,
 } from "./AuthCustomer.validation";
 import { GoogleAuthService } from "../../utils/Auth/google.utils";
-
+import { AuthTokenIssuer } from "../mailers/emailVerification.helpers";
+import { AuthCustomerHelper } from "./authCustomer.helpers";
 
 export class AuthCustomerService {
   static async register({ body }: RegisterCustomerInput) {
@@ -19,7 +19,8 @@ export class AuthCustomerService {
       where: { email: body.email },
     });
 
-    if (existing) throw new ResponseError("EMAIL_ALREADY_REGISTERED");
+    AuthCustomerHelper.assertEmailAvailable(existing);
+
     const customer = await prisma.customer.create({
       data: {
         email: body.email,
@@ -30,7 +31,7 @@ export class AuthCustomerService {
       },
     });
 
-    await EmailVerificationTokenHelper.issue(customer.id, customer.email);
+    await AuthTokenIssuer.issueEmailVerificationToken(customer.id, customer.email);
 
     return {
       email: customer.email,
@@ -45,37 +46,18 @@ export class AuthCustomerService {
       where: { tokenHash, type: "EMAIL_VERIFICATION" },
     });
 
-    if (!record || !record.customerId) {
-      throw new ResponseError("INVALID_TOKEN", "Link verifikasi tidak valid.");
-    }
-
-    if (record.usedAt) {
-      throw new ResponseError(
-        "TOKEN_ALREADY_USED",
-        "Link verifikasi ini sudah pernah dipakai.",
-      );
-    }
-
-    if (record.expiresAt <= new Date()) {
-      throw new ResponseError(
-        "TOKEN_EXPIRED",
-        "Link verifikasi sudah kedaluwarsa. Silakan minta link baru.",
-      );
-    }
-
-    const authTokenId = record.id;
-
-    const customerId = record.customerId;
+    AuthCustomerHelper.assertValidAuthToken(record, "EMAIL_VERIFICATION");
+    // setelah baris di atas, TypeScript tahu record.customerId pasti string
 
     const passwordHash = await BcryptUtil.hash(body.password);
 
     await prisma.$transaction(async (tx) => {
       await tx.customer.update({
-        where: { id: customerId },
+        where: { id: record.customerId },
         data: { name: body.name, passwordHash, isEmailVerified: true },
       });
       await tx.authToken.update({
-        where: { id: authTokenId },
+        where: { id: record.id },
         data: { usedAt: new Date() },
       });
     });
@@ -88,63 +70,29 @@ export class AuthCustomerService {
       where: { email: body.email },
     });
 
-    // Pesan generik dipertahankan walau email nggak ketemu — sama alasannya
-    // kayak di login, biar nggak jadi cara buat nebak email mana yang terdaftar.
     if (!customer) {
       return {
         message: "Jika email terdaftar, link verifikasi baru telah dikirim.",
       };
     }
 
-    if (customer.isEmailVerified) {
-      throw new ResponseError(
-        "EMAIL_ALREADY_REGISTERED",
-        "Email ini sudah terverifikasi. Silakan login.",
-      );
-    }
+    AuthCustomerHelper.assertNotYetVerified(customer);
 
-    await EmailVerificationTokenHelper.issue(customer.id, customer.email);
+    await AuthTokenIssuer.issueEmailVerificationToken(customer.id, customer.email);
 
-    return {
-      message: "link verifikasi baru telah dikirim.",
-    };
+    return { message: "link verifikasi baru telah dikirim." };
   }
+
   static async login({ body }: LoginCustomerInput) {
     const customer = await prisma.customer.findUnique({
       where: { email: body.email },
     });
 
-    if (!customer || customer.deletedAt) {
-      throw new ResponseError(
-        "INVALID_CREDENTIALS",
-        "Email atau password salah.",
-      );
-    }
+    AuthCustomerHelper.assertCustomerCanLogin(customer);
+    // setelah baris di atas, TypeScript tahu customer.passwordHash pasti string
 
-    if (customer.isEmailVerified === false)
-      throw new ResponseError(
-        "EMAIL_NOT_VERIFIED",
-        "Akun ini belum terverifikasi",
-      );
-
-    if (customer.authProvider !== "EMAIL" || !customer.passwordHash) {
-      throw new ResponseError(
-        "GOOGLE_ACCOUNT_NO_PASSWORD",
-        "Akun ini terdaftar via Google. Silakan login dengan Google.",
-      );
-    }
-
-    const isPasswordValid = await BcryptUtil.compare(
-      body.password,
-      customer.passwordHash,
-    );
-
-    if (!isPasswordValid) {
-      throw new ResponseError(
-        "INVALID_CREDENTIALS",
-        "Email atau password salah.",
-      );
-    }
+    const isPasswordValid = await BcryptUtil.compare(body.password, customer.passwordHash);
+    AuthCustomerHelper.assertPasswordMatches(isPasswordValid);
 
     return {
       id: customer.id,
@@ -162,12 +110,7 @@ export class AuthCustomerService {
       where: { email: profile.email },
     });
 
-    if (existing && existing.authProvider !== "GOOGLE") {
-      throw new ResponseError(
-        "EMAIL_ALREADY_REGISTERED",
-        "Email ini sudah terdaftar menggunakan email/password. Silakan login dengan cara itu.",
-      );
-    }
+    AuthCustomerHelper.assertGoogleLoginAllowed(existing);
 
     const customer =
       existing ??
@@ -181,9 +124,8 @@ export class AuthCustomerService {
         },
       }));
 
-    if (customer.deletedAt) {
-      throw new ResponseError("ACCOUNT_NOT_ACTIVE", "Akun ini tidak aktif.");
-    }
+    AuthCustomerHelper.assertAccountActive(customer);
+
     return {
       id: customer.id,
       name: customer.name,
@@ -191,5 +133,48 @@ export class AuthCustomerService {
       role: customer.role,
       isEmailVerified: customer.isEmailVerified,
     };
+  }
+
+  static async forgotPassword({ body }: ForgotPasswordInput) {
+  const genericResponse = {
+    message: "Jika email terdaftar, link reset password telah dikirim.",
+  };
+
+  const customer = await prisma.customer.findUnique({
+    where: { email: body.email },
+  });
+
+  if (!AuthCustomerHelper.assertPasswordResetEligible(customer)) {
+    return genericResponse;
+  }
+
+  await AuthTokenIssuer.issuePasswordResetToken(customer.id, customer.email);
+
+  return genericResponse;
+}
+
+  static async resetPassword({ body }: ResetPasswordInput) {
+    const tokenHash = AuthTokenUtil.hashToken(body.token);
+
+    const record = await prisma.authToken.findFirst({
+      where: { tokenHash, type: "PASSWORD_RESET" },
+    });
+
+    AuthCustomerHelper.assertValidAuthToken(record, "PASSWORD_RESET");
+
+    const passwordHash = await BcryptUtil.hash(body.newPassword);
+
+    await prisma.$transaction([
+      prisma.customer.update({
+        where: { id: record.customerId },
+        data: { passwordHash },
+      }),
+      prisma.authToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    return { message: "Password berhasil diperbarui. Silakan login dengan password baru." };
   }
 }

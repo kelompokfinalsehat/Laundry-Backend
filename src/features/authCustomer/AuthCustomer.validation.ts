@@ -32,6 +32,19 @@ export class AuthCustomerValidation {
   static readonly GOOGLE_LOGIN = z.object({
     body: z.object({ idToken: z.string().min(1, "idToken wajib diisi") }),
   });
+
+  static readonly FORGOT_PASSWORD = z.object({
+    body: z.object({
+      email: z.string().email("Format email tidak valid"),
+    }),
+  });
+
+  static readonly RESET_PASSWORD = z.object({
+    body: z.object({
+      token: z.string().min(1, "Token wajib diisi"),
+      newPassword: z.string().min(8, "Password minimal 8 karakter"),
+    }),
+  });
 }
 
 export type RegisterCustomerInput = z.infer<
@@ -45,4 +58,10 @@ export type LoginCustomerInput = z.infer<
 >;
 export type LoginGoogleInput = z.infer<
   typeof AuthCustomerValidation.GOOGLE_LOGIN
+>;
+export type ForgotPasswordInput = z.infer<
+  typeof AuthCustomerValidation.FORGOT_PASSWORD
+>;
+export type ResetPasswordInput = z.infer<
+  typeof AuthCustomerValidation.RESET_PASSWORD
 >;

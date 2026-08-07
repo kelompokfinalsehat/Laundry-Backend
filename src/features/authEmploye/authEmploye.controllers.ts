@@ -1,8 +1,12 @@
 import { Request, Response } from "express";
 
 export class AuthEmployeController {
-  static async register(req: Request, res: Response) {
+  static async login(req: Request, res: Response) {
+
   }
-  static async login() {}
-  static async logout() {}
+  static async acceptInfitation (req: Request, res: Response){
+
+  }
+  
+  
 }

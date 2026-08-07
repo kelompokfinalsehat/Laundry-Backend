@@ -19,6 +19,7 @@ export class AuthCustomerController {
       data: result,
     });
   }
+
   static async verifyCustomerEmail(req: Request, res: Response) {
     const { body } = validate(AuthCustomerValidation.VERIFY_EMAIL_CUSTOMER, {
       body: req.body,
@@ -60,9 +61,11 @@ export class AuthCustomerController {
       role: customer.role,
     });
 
-    const refreshToken = await RefreshTokenService.issue({ customerId: customer.id });
+    const refreshToken = await RefreshTokenService.issue({
+      customerId: customer.id,
+    });
 
-    AuthCookieUtil.setAuthCookies(res,accessToken,refreshToken)
+    AuthCookieUtil.setAuthCookies(res, accessToken, refreshToken);
 
     return res.status(StatusCodes.OK).json({
       success: true,
@@ -76,7 +79,7 @@ export class AuthCustomerController {
       body: req.body,
     });
 
-   const customer = await AuthCustomerService.loginGoogle({body})
+    const customer = await AuthCustomerService.loginGoogle({ body });
 
     const accessToken = JWTUtil.signAccessToken({
       sub: customer.id,
@@ -84,14 +87,41 @@ export class AuthCustomerController {
       role: customer.role,
     });
 
-    const refreshToken = await RefreshTokenService.issue({ customerId: customer.id });
+    const refreshToken = await RefreshTokenService.issue({
+      customerId: customer.id,
+    });
 
-    AuthCookieUtil.setAuthCookies(res,accessToken,refreshToken)
+    AuthCookieUtil.setAuthCookies(res, accessToken, refreshToken);
 
     return res.status(StatusCodes.OK).json({
       success: true,
       data: { user: customer, homeUrl: "/beranda" },
     });
+  }
 
+  static async forgotPassword(req: Request, res: Response) {
+    const { body } = validate(AuthCustomerValidation.FORGOT_PASSWORD, {
+      body: req.body,
+    });
+
+   const result = await AuthCustomerService.forgotPassword({body})
+    
+   return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
+  }
+
+  static async resetPassword(req: Request, res: Response) {
+    const { body } = validate(AuthCustomerValidation.RESET_PASSWORD, {
+      body: req.body,
+    });
+
+    const result = await AuthCustomerService.resetPassword({body})
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
   }
 }
