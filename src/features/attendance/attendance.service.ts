@@ -1,10 +1,12 @@
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/response-error.utils";
 import { AttendanceChecker } from "./attendance.checker";
-import { getAttendanceDateWIB } from "./attendance.date-helper";
+import { getAttendanceDateWIB, getBulanIni, getMingguIni } from "./attendance.date-helper";
 import { EmployeeRepository } from "./employee.repository";
 import { AttendanceRepository } from "./attendance.repository";
-import { WorkStatus } from "../../../generated/prisma";
+import { WorkStatus, type Prisma } from "../../../generated/prisma";
+import type { AttendanceHistoryInput } from "./attendance.validation";
+import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 
 export class AttendanceService {
   static async clockIn(payload: { id: string }) {
@@ -14,16 +16,10 @@ export class AttendanceService {
     AttendanceChecker.verifyWorkStatus(employee, [WorkStatus.OFF_DUTY, null]);
 
     const attendanceDate = getAttendanceDateWIB();
-    const existingAttendance = await AttendanceRepository.findTodayAttendance(
-      employee.id,
-      attendanceDate,
-    );
+    const existingAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
 
     if (existingAttendance) {
-      throw new ResponseError(
-        "ATTENDANCE_ALREADY_CLOCKED_IN",
-        "Anda sudah melakukan clock-in hari ini",
-      );
+      throw new ResponseError("ATTENDANCE_ALREADY_CLOCKED_IN", "Anda sudah melakukan clock-in hari ini");
     }
 
     const attendance = await prisma.$transaction(async (tx) => {
@@ -51,10 +47,7 @@ export class AttendanceService {
     AttendanceChecker.verifyWorkStatus(employee, [WorkStatus.AVAILABLE]);
 
     const attendanceDate = getAttendanceDateWIB();
-    const existingAttendance = await AttendanceRepository.findTodayAttendance(
-      employee.id,
-      attendanceDate,
-    );
+    const existingAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
     if (!existingAttendance) {
       throw new ResponseError("ATTENDANCE_NOT_CLOCKED_IN", "Anda belum melakukan clock-in");
     }
@@ -62,20 +55,13 @@ export class AttendanceService {
       throw new ResponseError("INVALID_STATE_TRANSITION", "Anda sudah melakukan clock-out!");
     }
 
-    const existingAssignment = await AttendanceRepository.findActiveAssigment(
-      employee.id,
-      employee.role,
-    );
+    const existingAssignment = await AttendanceRepository.findActiveAssigment(employee.id, employee.role);
     if (existingAssignment) {
       throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS", "Anda masih memiliki tugas aktif!");
     }
 
     const attendance = await prisma.$transaction(async (tx) => {
-      const updateAttendance = await AttendanceRepository.updateClockOut(
-        existingAttendance.id,
-        new Date(),
-        tx,
-      );
+      const updateAttendance = await AttendanceRepository.updateClockOut(existingAttendance.id, new Date(), tx);
 
       await AttendanceRepository.updateEmployeeWorkStatus(employee.id, WorkStatus.OFF_DUTY, tx);
 
@@ -83,5 +69,32 @@ export class AttendanceService {
     });
 
     return attendance;
+  }
+  static async getHistory({ payload, query }: { payload: { id: string } } & AttendanceHistoryInput) {
+    const skip = countSkip({ page: query.page, limit: query.limit });
+    const take = query.limit;
+
+    const where: Prisma.AttendanceWhereInput = { employeeId: payload.id };
+
+    // checker untuk filtering
+    if (query.period === "THIS_WEEK") {
+      where.attendanceDate = getMingguIni();
+    }
+    if (query.period === "THIS_MONTH") {
+      where.attendanceDate = getBulanIni();
+    }
+
+    const totalItems = await prisma.attendance.count({ where });
+
+    const attendanceHistory = await prisma.attendance.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { createdAt: query.sortOrder },
+    });
+
+    const meta = makePaginationMeta({ page: query.page, limit: query.limit, totalItems });
+
+    return { data: attendanceHistory, meta };
   }
 }
