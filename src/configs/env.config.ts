@@ -7,3 +7,5 @@ export const WHITE_LIST = (process.env.WHITE_LIST ?? "http://localhost:3000")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+export const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY
+export const OPENCAGE_BASE_URL = process.env.OPENCAGE_BASE_URL

@@ -7,7 +7,7 @@ export class EmployeeValidation {
             page: z.coerce.number().positive().optional(),
             pageSize: z.coerce.number().positive().optional(),
             search: z.string().trim().optional(),
-            role: z.enum(Role).optional(),
+            role: z.enum([Role.OUTLET_ADMIN, Role.WORKER, Role.DRIVER]).optional(),
             accountStatus: z.enum(AccountStatus).optional(),
             workStatus: z.enum(WorkStatus).optional(),
             outletId: z.uuid().optional(),
@@ -26,16 +26,16 @@ export class EmployeeValidation {
         inviteEmployee: z.object({
             name: z.string().trim().min(3).max(100),
             email: z.email(),
-            role: z.enum(["OUTLET_ADMIN", "WORKER", "DRIVER"]),
+            role: z.enum([Role.OUTLET_ADMIN, Role.WORKER, Role.DRIVER]),
             outletId: z.string()
         }),
         updateEmployee: z.object({
             name: z.string().trim().min(3).max(100).optional(),
-            role: z.enum(["OUTLET_ADMIN", "WORKER", "DRIVER"]).optional()
-        }),
+            role: z.enum([Role.OUTLET_ADMIN, Role.WORKER, Role.DRIVER]).optional()
+        }).refine(data => data.name !== undefined || data.role !== undefined, {error: "At least one field must be provided."}),
         assignEmployee: z.object({
             employeeId: z.uuid(),
-            outletId: z.string()
+            outletId: z.uuid()
         })
     }
 }
