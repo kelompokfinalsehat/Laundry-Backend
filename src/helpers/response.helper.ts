@@ -1,27 +1,36 @@
 import { Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { PaginationMeta } from "../types/pagination";
 
 export class ResponseHelper {
-    static success(
+    static success<T>(
         res: Response,
         message: string,
-        data: unknown
+        data: T
     ){
-        return res.json(StatusCodes.OK).json({
+        return res.status(StatusCodes.OK).json({
             success: true,
             message,
             data
         })
     }
-    static created(
+    static created<T>(
         res: Response,
         message: string,
-        data: unknown
+        data: T
     ){
-        return res.json(StatusCodes.CREATED).json({
+        return res.status(StatusCodes.CREATED).json({
             success: true,
             message,
             data
+        })
+    }
+    static paginated<T>(res: Response, message: string, data: T, meta: PaginationMeta){
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message,
+            data,
+            meta
         })
     }
 
