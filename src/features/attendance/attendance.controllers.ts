@@ -3,9 +3,7 @@ import { validate } from "../../validations/validation";
 import { AttendanceValidation } from "./attendance.validation";
 import { AttendanceService } from "./attendance.service";
 import { StatusCodes } from "http-status-codes";
-import type { ResponseError } from "../../utils/response-error.utils";
 import { success } from "zod";
-import { meta } from "zod/v4/core";
 
 export class AttendanceController {
   static async clockIn(req: Request, res: Response) {
@@ -30,7 +28,7 @@ export class AttendanceController {
     const clockOut = await AttendanceService.clockOut(payload);
   }
 
-  static async history(req: Request, res: Response) {
+  static async getHistory(req: Request, res: Response) {
     const { query } = validate(AttendanceValidation.HISTORY, { query: req.query });
 
     const payload = res.locals.payload;
@@ -42,6 +40,18 @@ export class AttendanceController {
       message: "History Absensi berhasil didapat!",
       data: result.data,
       meta: result.meta,
+    });
+  }
+
+  static async getMeStatus(_req: Request, res: Response) {
+    const payload = res.locals.payload;
+
+    const result = await AttendanceService.getMeStatus({ payload });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Status Absensi berhasil diterima!",
+      data: result,
     });
   }
 }

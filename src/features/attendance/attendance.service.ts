@@ -55,8 +55,8 @@ export class AttendanceService {
       throw new ResponseError("INVALID_STATE_TRANSITION", "Anda sudah melakukan clock-out!");
     }
 
-    const existingAssignment = await AttendanceRepository.findActiveAssigment(employee.id, employee.role);
-    if (existingAssignment) {
+    const hasActiveAssignment = await AttendanceRepository.findActiveAssigment(employee.id, employee.role);
+    if (hasActiveAssignment) {
       throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS", "Anda masih memiliki tugas aktif!");
     }
 
@@ -96,5 +96,33 @@ export class AttendanceService {
     const meta = makePaginationMeta({ page: query.page, limit: query.limit, totalItems });
 
     return { data: attendanceHistory, meta };
+  }
+
+  static async getMeStatus({ payload }: { payload: { id: string } }) {
+    const employee = await EmployeeRepository.findActiveById(payload.id);
+    AttendanceChecker.verifyEmployee(employee);
+
+    const attendanceDate = getAttendanceDateWIB();
+    const existingAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
+
+    const hasActiveAssignment = await AttendanceRepository.findActiveAssigment(employee.id, employee.role);
+
+    //logic canClockin & canClockOut
+    let canClockIn = false;
+    if ((employee.workStatus === WorkStatus.OFF_DUTY || employee.workStatus === null) && !existingAttendance) {
+      canClockIn = true;
+    }
+
+    let canClockOut = false;
+    if (
+      employee.workStatus === WorkStatus.AVAILABLE &&
+      existingAttendance &&
+      existingAttendance.clockOutAt === null &&
+      !hasActiveAssignment
+    ) {
+      canClockOut = true;
+    }
+
+    return { workStatus: employee.workStatus, canClockIn, canClockOut };
   }
 }
