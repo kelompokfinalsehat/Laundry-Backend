@@ -106,22 +106,13 @@ export class AttendanceService {
     const existingAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
 
     const hasActiveAssignment = await AttendanceRepository.findActiveAssigment(employee.id, employee.role);
-
-    //logic canClockin & canClockOut
-    let canClockIn = false;
-    if ((employee.workStatus === WorkStatus.OFF_DUTY || employee.workStatus === null) && !existingAttendance) {
-      canClockIn = true;
-    }
-
-    let canClockOut = false;
-    if (
-      employee.workStatus === WorkStatus.AVAILABLE &&
-      existingAttendance &&
-      existingAttendance.clockOutAt === null &&
-      !hasActiveAssignment
-    ) {
-      canClockOut = true;
-    }
+    // const hasActiveAssignment = Boolean(ActiveAssignment);
+    //logic canClockin & canClockOut di checker
+    const { canClockIn, canClockOut } = AttendanceChecker.verifyMeStatus({
+      workStatus: employee.workStatus,
+      existingAttendance,
+      hasActiveAssignment:Boolean(hasActiveAssignment),
+    });
 
     return { workStatus: employee.workStatus, canClockIn, canClockOut };
   }

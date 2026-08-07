@@ -1,15 +1,8 @@
-import {
-  AccountStatus,
-  Role,
-  WorkStatus,
-  type Employee,
-} from "../../../generated/prisma";
+import { AccountStatus, Role, WorkStatus, type Attendance, type Employee } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/response-error.utils";
 
 export class AttendanceChecker {
-  static verifyEmployee(
-    employee: Employee | null,
-  ): asserts employee is Employee {
+  static verifyEmployee(employee: Employee | null): asserts employee is Employee {
     if (!employee) {
       throw new ResponseError("RESOURCE_NOT_FOUND", "Akun tidak ditemukan");
     }
@@ -29,12 +22,26 @@ export class AttendanceChecker {
 
   static verifyWorkStatus(employee: Employee, expected: (WorkStatus | null)[]) {
     if (!expected.includes(employee.workStatus)) {
-      throw new ResponseError(
-        "INVALID_STATE_TRANSITION",
-        "Status kerja tidak sesuai",
-      );
+      throw new ResponseError("INVALID_STATE_TRANSITION", "Status kerja tidak sesuai");
     }
   }
-  
-  
+
+  static verifyMeStatus({
+    workStatus,
+    existingAttendance,
+    hasActiveAssignment,
+  }: {
+    workStatus: WorkStatus | null;
+    existingAttendance: Attendance | null;
+    hasActiveAssignment: boolean;
+  }) {
+    const isOffDuty = workStatus === WorkStatus.OFF_DUTY || workStatus === null;
+    const canClockIn = isOffDuty && !existingAttendance;
+
+    const isAvailable = workStatus === WorkStatus.AVAILABLE;
+    const isNotClockOut = existingAttendance?.clockOutAt === null && Boolean(existingAttendance);
+    const canClockOut = isAvailable && isNotClockOut && !hasActiveAssignment;
+
+    return { canClockIn, canClockOut };
+  }
 }
