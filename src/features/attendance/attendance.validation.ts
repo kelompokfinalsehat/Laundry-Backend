@@ -10,10 +10,10 @@ export class AttendanceValidation {
   });
   static readonly HISTORY = zod.object({
     query: paginationSchema.extend({
-      period: zod.enum(["THIS_WEEK", "THIS_MONTH"]).optional,
+      period: zod.enum(["THIS_WEEK", "THIS_MONTH"]).optional(),
       sortOrder: zod.enum(["asc", "desc"]).default("desc"),
     }),
   });
 }
 
-export type AttendanceHistoryInput = zod.infer <typeof AttendanceValidation.HISTORY>
+export type AttendanceHistoryInput = zod.infer<typeof AttendanceValidation.HISTORY>;
