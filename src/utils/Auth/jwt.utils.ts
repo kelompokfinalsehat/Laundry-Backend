@@ -1,6 +1,5 @@
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
-import { JWT_EXPIRES_IN, JWT_SECRET_KEY } from "../../configs/env.config";
-import type { StringValue } from "ms";
+import { JWT_SECRET_KEY } from "../../configs/env.config";
 import { ResponseError } from "../errors/response-error.utils";
 import { Role } from "../../../generated/prisma";
 
@@ -10,6 +9,7 @@ export interface JWTPayload {
   role: Role;
 }
 export class JWTUtil {
+  private static readonly ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000;
   static signAccessToken(payload: JWTPayload) {
     if (!JWT_SECRET_KEY) {
       throw new ResponseError(
@@ -19,7 +19,7 @@ export class JWTUtil {
     }
 
     return jwt.sign(payload, JWT_SECRET_KEY, {
-      expiresIn: JWT_EXPIRES_IN! as StringValue,
+      expiresIn: JWTUtil.ACCESS_TOKEN_MAX_AGE,
     });
   }
 

@@ -32,6 +32,18 @@ export class AuthTokenIssuer {
     await MailerService.sendPasswordReset({ to: email, token: rawToken });
   }
 
+  static async issueEmployePasswordResetToken(
+    employeeId: string,
+    email: string,
+  ): Promise<void> {
+    const rawToken = await this.issue(
+      employeeId,
+      "PASSWORD_RESET",
+      PASSWORD_RESET_EXPIRY_HOURS,
+    );
+    await MailerService.sendPasswordReset({ to: email, token: rawToken });
+  }
+
   private static async issue(
     customerId: string,
     type: AuthTokenType,
