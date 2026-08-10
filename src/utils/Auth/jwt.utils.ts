@@ -1,5 +1,5 @@
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
-import { JWT_SECRET_KEY } from "../../configs/env.config";
+import { ACCESS_TOKEN_EXPIRES_IN, JWT_SECRET_KEY } from "../../configs/env.config";
 import { ResponseError } from "../errors/response-error.utils";
 import { Role } from "../../../generated/prisma";
 
@@ -8,8 +8,10 @@ export interface JWTPayload {
   accountType: "customer" | "employee";
   role: Role;
 }
+
 export class JWTUtil {
-  private static readonly ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000;
+  
+
   static signAccessToken(payload: JWTPayload) {
     if (!JWT_SECRET_KEY) {
       throw new ResponseError(
@@ -19,7 +21,7 @@ export class JWTUtil {
     }
 
     return jwt.sign(payload, JWT_SECRET_KEY, {
-      expiresIn: JWTUtil.ACCESS_TOKEN_MAX_AGE,
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     });
   }
 

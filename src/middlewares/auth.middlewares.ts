@@ -1,20 +1,34 @@
-import { NextFunction, Request, Response } from 'express';
-import { JWTUtil } from '../utils/Auth/jwt.utils';
-import { ResponseError } from '../utils/errors/response-error.utils';
-
+import { NextFunction, Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import { JWTUtil } from "../utils/Auth/jwt.utils";
+import { ResponseError } from "../utils/errors/response-error.utils";
 
 export class AuthMiddleware {
   static authenticated(secretKey: string) {
     return (req: Request, res: Response, next: NextFunction) => {
-      const cookies = req?.cookies;
-      if (!cookies?.token)
-        throw new ResponseError("INVALID_TOKEN")
+      const token = req.cookies?.accessToken; // nama cookie disamain: accessToken, bukan token.token
 
-      const payload = JWTUtil.verifyAccessToken(cookies?.token?.token, secretKey);
+      if (!token) {
+        return next(
+          new ResponseError(
+            "AUTHENTICATION_REQUIRED",
+            "Anda belum login belum login.",
+          ),
+        );
+      }
 
-      res.locals.payload = payload;
-
-      next();
+      try {
+        const payload = JWTUtil.verifyAccessToken(token, secretKey);
+        res.locals.payload = payload;
+        next();
+      } catch (err) {
+        if (err instanceof jwt.TokenExpiredError) {
+          // Kode ini WAJIB persis "ACCESS_TOKEN_EXPIRED" — axios interceptor
+          // di frontend baca kode ini buat mutusin auto-refresh.
+          return next(new ResponseError("TOKEN_EXPIRED", "Sesi kedaluwarsa."));
+        }
+        return next(new ResponseError("INVALID_TOKEN", "Token tidak valid."));
+      }
     };
   }
 
@@ -22,10 +36,9 @@ export class AuthMiddleware {
     return (req: Request, res: Response, next: NextFunction) => {
       const { payload } = res?.locals;
 
-      if (!allowedRoles.includes(payload.role))
-        throw new ResponseError(
-          "FORBIDDEN",
-        );
+      if (!payload || !allowedRoles.includes(payload.role)) {
+        return next(new ResponseError("FORBIDDEN", "Tidak punya akses."));
+      }
 
       next();
     };
