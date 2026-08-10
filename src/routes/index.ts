@@ -7,6 +7,6 @@ const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/internal/attendance", AttendanceRoute);
-router.use("/internal/driver", DriverRoute);
+router.use("/internal/driver/tasks", DriverRoute);
 
 export default router;

@@ -5,9 +5,11 @@ import { DriverController } from "./driver.controllers";
 export const DriverRoute = Router();
 
 DriverRoute.get(
-  "/task/available",
+  "/available",
   fakeAuth,
   //Authmiddleware.authenticated
   //Authmiddleware.authorized[Role.DRIVER]
   DriverController.getAvailableTasks,
 );
+
+DriverRoute.post("/:assignmentId/claim", fakeAuth,DriverController.claimAssignment)

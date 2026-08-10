@@ -18,4 +18,18 @@ export class DriverController {
       data: result,
     });
   }
+
+  static async claimAssignment(req: Request, res: Response) {
+    const { params, body } = validate(DriverValidation.CLAIM_ASSIGNMENT, { params: req.params, body: req.body });
+
+    const payload = res.locals.payload;
+
+    const result = await DriverService.claimAssignment({ payload, params, body });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Assignment berhasil diambil!",
+      data: result,
+    });
+  }
 }
