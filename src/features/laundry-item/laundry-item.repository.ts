@@ -31,7 +31,7 @@ export class LaundryItemRepository {
         }
     }
     static async findById(id: string){
-        return await prisma.laundryItem.findUnique({where: {id}})
+        return await prisma.laundryItem.findUnique({where: {id, deletedAt: null}})
     }
     static async create(data: Prisma.LaundryItemCreateInput){
         return await prisma.laundryItem.create({data})

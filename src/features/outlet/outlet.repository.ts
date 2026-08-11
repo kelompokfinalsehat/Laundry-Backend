@@ -19,7 +19,7 @@ export class OutletRepository {
   static async findAll(query: OutletQuery) {
     const { page, take, pageSize, skip } = PaginationHelper.paginate(query);
     const sortField = query.sortBy ?? "createdAt";
-    const where: Prisma.OutletWhereInput = {};
+    const where: Prisma.OutletWhereInput = {deletedAt: null};
     if (query.search) {
       where.name = {
         contains: query.search,
@@ -48,7 +48,7 @@ export class OutletRepository {
   }
   static async findById(id: string) {
     return await prisma.outlet.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: this.outletInclude,
     });
   }

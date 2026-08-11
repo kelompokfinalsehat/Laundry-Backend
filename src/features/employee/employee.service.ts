@@ -5,7 +5,7 @@ import { EmployeeRepository } from "./employee.repository";
 import { AssignEmployeeBody, EmployeeQuery, InviteEmployeeBody, UpdateEmployeeBody } from "./employee.type";
 
 export class EmployeeService {
-    private static async findEmployeeOrThrow(id: string){
+    private static async findEmployeeByIdOrThrow(id: string){
         const employee = await EmployeeRepository.findById(id)
         if (!employee) throw new ResponseError("RESOURCE_NOT_FOUND", 'Employee not found.');
         return employee
@@ -14,7 +14,7 @@ export class EmployeeService {
     return await EmployeeRepository.findAll(query);
   }
   static async getEmployeeById(id: string) {
-    const employee = await this.findEmployeeOrThrow(id)
+    const employee = await this.findEmployeeByIdOrThrow(id)
     return employee;
   }
   static async inviteEmployee(body: InviteEmployeeBody) {
@@ -45,14 +45,14 @@ export class EmployeeService {
   }
   static async updateEmployee(id: string, body: UpdateEmployeeBody){
     const {name, role} = body
-    await this.findEmployeeOrThrow(id)
+    await this.findEmployeeByIdOrThrow(id)
     const updateData: Prisma.EmployeeUpdateInput = {}
     if(name) updateData.name = name
     if(role) updateData.role = role
     return await EmployeeRepository.update(id, updateData)
   }
   static async resendInvitation(id: string){
-    const employee = await this.findEmployeeOrThrow(id)
+    const employee = await this.findEmployeeByIdOrThrow(id)
     if(employee.accountStatus !== AccountStatus.INVITED) throw new ResponseError('CONFLICT')
     /**
     * TODO Feature 1
@@ -64,13 +64,13 @@ export class EmployeeService {
     return null
   }
   static async activateEmployee(id: string){
-    const employee = await this.findEmployeeOrThrow(id)
+    const employee = await this.findEmployeeByIdOrThrow(id)
     if(employee.accountStatus !== AccountStatus.INACTIVE) throw new ResponseError('CONFLICT', "Account already active.")
     const updateData: Prisma.EmployeeUpdateInput = {accountStatus: AccountStatus.ACTIVE}
     return EmployeeRepository.update(id, updateData)
   }
   static async deactivateEmployee(id: string){
-    const employee = await this.findEmployeeOrThrow(id)
+    const employee = await this.findEmployeeByIdOrThrow(id)
     if(employee.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError('CONFLICT', "Account already inactive.")
     if(employee.workStatus === WorkStatus.BUSY) throw new ResponseError('CONFLICT', 'Employee is currently busy.')
    const updateData: Prisma.EmployeeUpdateInput = {accountStatus: AccountStatus.INACTIVE}
@@ -78,7 +78,7 @@ export class EmployeeService {
   }
   static async assignEmployee(body: AssignEmployeeBody){
     const {employeeId, outletId} = body
-    const employee = await this.findEmployeeOrThrow(employeeId)
+    const employee = await this.findEmployeeByIdOrThrow(employeeId)
     if(employee.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError('CONFLICT', "Account must be active.")
     if(employee.workStatus === WorkStatus.BUSY) throw new ResponseError('CONFLICT', 'Employee is currently busy.')
     const outlet = await OutletRepository.findById(outletId)

@@ -8,7 +8,7 @@ export class EmployeeRepository {
     static async findAll(query: EmployeeQuery){
         const {page, pageSize, skip, take} = PaginationHelper.paginate(query)
         const sortField = query.sortBy ?? "createdAt"
-        const where: Prisma.EmployeeWhereInput = {}
+        const where: Prisma.EmployeeWhereInput = {deletedAt: null}
         if(query.search){
             where.OR = [
                 {name: {
@@ -44,7 +44,7 @@ export class EmployeeRepository {
     }
     static async findById(id: string){
         return await prisma.employee.findUnique({
-            where:{id},
+            where:{id, deletedAt: null},
             include: this.employeeInclude
         })
     }

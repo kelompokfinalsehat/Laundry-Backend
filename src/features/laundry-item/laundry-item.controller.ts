@@ -29,7 +29,7 @@ export class LaundryItemController {
     }
     static async deactivateLaundryItem(req: Request, res: Response){
         const {id} = validate(LaundryItemValidation.PARAMS.laundryItemId, req.params)
-        const laundryItem = await LaundryItemService.deactivateLaundryItem(id)
-        return ResponseHelper.success(res, Message.DELETED, laundryItem)
+        await LaundryItemService.deactivateLaundryItem(id)
+        return ResponseHelper.success(res, Message.DELETED, null)
     }
 }

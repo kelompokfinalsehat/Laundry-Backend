@@ -3,6 +3,7 @@ import { OutletController } from "./outlet.controller";
 
 const router = Router()
 
+// Super admin scope
 router.get("/", OutletController.getOutlets)
 router.get("/:id", OutletController.getOutletById)
 router.post("/", OutletController.createOutlet)

@@ -5,12 +5,16 @@ import { OutletRepository } from "./outlet.repository";
 import { CreateOutletBody, OutletQuery, UpdateOutletBody } from "./outlet.type";
 
 export class OutletService {
+    private static async findOutletByIdOrThrow(id: string){
+        const outlet = await OutletRepository.findById(id)
+        if(!outlet) throw new ResponseError('RESOURCE_NOT_FOUND', 'Outlet not found.')
+        return outlet
+    }
     static async getOutlets(query: OutletQuery){
         return await OutletRepository.findAll(query)
     }
     static async getOutletById(id: string){
-        const outlet = await OutletRepository.findById(id)
-        if(!outlet) throw new ResponseError('RESOURCE_NOT_FOUND', 'Outlet not found.')
+        const outlet = await this.findOutletByIdOrThrow(id)
         return outlet
     }
     static async createOutlet(body: CreateOutletBody){
@@ -26,8 +30,7 @@ export class OutletService {
     }
     static async updateOutlet(id: string, body: UpdateOutletBody){
         const {name, address} = body
-        const outlet = await OutletRepository.findById(id)
-        if(!outlet) throw new ResponseError('RESOURCE_NOT_FOUND', 'Outlet not found.')
+        const outlet = await this.findOutletByIdOrThrow(id)
         const updateData: Prisma.OutletUpdateInput = {}
         if(name) updateData.name = name
         if(address && address !== outlet.address){
@@ -39,8 +42,7 @@ export class OutletService {
         return await OutletRepository.update(id, updateData)
     }
     static async deactivateOutlet(id: string){
-        const outlet = await OutletRepository.findById(id)
-        if(!outlet) throw new ResponseError('RESOURCE_NOT_FOUND', 'Outlet not found.')
+        const outlet = await this.findOutletByIdOrThrow(id)
         if(!outlet.isActive) throw new ResponseError('CONFLICT', 'Outlet is already inactive.')
         const employeeCount = await OutletRepository.hasActiveEmployee(id)
         if(employeeCount > 0) throw new ResponseError('CONFLICT', 'Outlet has active employee.')

@@ -3,6 +3,7 @@ import { LaundryItemController } from "./laundry-item.controller";
 
 const router = Router()
 
+// Super admin scope
 router.get('/', LaundryItemController.getLaundryItems)
 router.get('/:id', LaundryItemController.getLaundryItem)
 router.post('/', LaundryItemController.createLaundryItem)
