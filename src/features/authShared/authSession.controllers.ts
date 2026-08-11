@@ -25,6 +25,8 @@ export class AuthSessionController {
           email: customer.email,
           role: customer.role,
           accountType: "customer",
+          phone: customer.phone,
+          profilePic: customer.profilePhotoUrl,
           isEmailVerified: customer.isEmailVerified,
         },
       });

@@ -31,7 +31,10 @@ export class AuthCustomerService {
       },
     });
 
-    await AuthTokenIssuer.issueEmailVerificationToken(customer.id, customer.email);
+    await AuthTokenIssuer.issueEmailVerificationToken(
+      customer.id,
+      customer.email,
+    );
 
     return {
       email: customer.email,
@@ -78,7 +81,10 @@ export class AuthCustomerService {
 
     AuthCustomerHelper.assertNotYetVerified(customer);
 
-    await AuthTokenIssuer.issueEmailVerificationToken(customer.id, customer.email);
+    await AuthTokenIssuer.issueEmailVerificationToken(
+      customer.id,
+      customer.email,
+    );
 
     return { message: "link verifikasi baru telah dikirim." };
   }
@@ -91,7 +97,10 @@ export class AuthCustomerService {
     AuthCustomerHelper.assertCustomerCanLogin(customer);
     // setelah baris di atas, TypeScript tahu customer.passwordHash pasti string
 
-    const isPasswordValid = await BcryptUtil.compare(body.password, customer.passwordHash);
+    const isPasswordValid = await BcryptUtil.compare(
+      body.password,
+      customer.passwordHash,
+    );
     AuthCustomerHelper.assertPasswordMatches(isPasswordValid);
 
     return {
@@ -136,22 +145,22 @@ export class AuthCustomerService {
   }
 
   static async forgotPassword({ body }: ForgotPasswordInput) {
-  const genericResponse = {
-    message: "Jika email terdaftar, link reset password telah dikirim.",
-  };
+    const genericResponse = {
+      message: "Jika email terdaftar, link reset password telah dikirim.",
+    };
 
-  const customer = await prisma.customer.findUnique({
-    where: { email: body.email },
-  });
+    const customer = await prisma.customer.findUnique({
+      where: { email: body.email },
+    });
 
-  if (!AuthCustomerHelper.assertPasswordResetEligible(customer)) {
+    if (!AuthCustomerHelper.assertPasswordResetEligible(customer)) {
+      return genericResponse;
+    }
+
+    await AuthTokenIssuer.issuePasswordResetToken(customer.id, customer.email);
+
     return genericResponse;
   }
-
-  await AuthTokenIssuer.issuePasswordResetToken(customer.id, customer.email);
-
-  return genericResponse;
-}
 
   static async resetPassword({ body }: ResetPasswordInput) {
     const tokenHash = AuthTokenUtil.hashToken(body.token);
@@ -173,8 +182,17 @@ export class AuthCustomerService {
         where: { id: record.id },
         data: { usedAt: new Date() },
       }),
+      prisma.refreshToken.updateMany({
+        where: { customerId: record.customerId },
+        data: {
+          revokedAt: new Date(),
+        },
+      }),
     ]);
 
-    return { message: "Password berhasil diperbarui. Silakan login dengan password baru." };
+    return {
+      message:
+        "Password berhasil diperbarui. Silakan login dengan password baru.",
+    };
   }
 }
