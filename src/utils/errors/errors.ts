@@ -15,7 +15,7 @@ export const AppErrors = {
     status: StatusCodes.UNAUTHORIZED,
     message: "Anda belum login atau sesi telah berakhir.",
   },
-  
+
   INVALID_CREDENTIALS: {
     code: "INVALID_CREDENTIALS",
     status: StatusCodes.UNAUTHORIZED,
@@ -31,10 +31,15 @@ export const AppErrors = {
     status: StatusCodes.FORBIDDEN,
     message: "Email Anda belum diverifikasi.",
   },
-  GOOGLE_ACCOUNT_NO_PASSWORD:{
+  GOOGLE_ACCOUNT_NO_PASSWORD: {
     code: "GOOGLE_ACCOUNT_NO_PASSWORD",
-    status:StatusCodes.FORBIDDEN,
+    status: StatusCodes.FORBIDDEN,
     message: "Akun ini terdaftar via Google. Silakan login dengan Google.",
+  },
+  ACCESS_TOKEN_EXPIRED: {
+    code: "ACCESS_TOKEN_EXPIRED",
+    status: StatusCodes.UNAUTHORIZED,
+    message: "Sesi kedaluwarsa. Silakan perbarui sesi Anda.",
   },
   INVALID_TOKEN: {
     code: "INVALID_TOKEN",
@@ -189,7 +194,6 @@ export const AppErrors = {
     status: StatusCodes.INTERNAL_SERVER_ERROR,
     message: "Terjadi kesalahan pada server. Silakan coba lagi nanti.",
   },
-
 } as const;
 
 export type AppErrorKey = keyof typeof AppErrors;

@@ -1,14 +1,22 @@
 import { Response } from "express";
-import { ACCESS_TOKEN_MAX_AGE_MS, REFRESH_TOKEN_MAX_AGE_MS } from "../../configs/env.config";
+import {
+  ACCESS_TOKEN_MAX_AGE_MS,
+  REFRESH_TOKEN_MAX_AGE_MS,
+} from "../../configs/env.config";
 
 export class AuthCookieUtil {
   private static readonly isProd = process.env.NODE_ENV === "production";
 
-  static setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+  static setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: this.isProd,
       sameSite: "strict",
+      path: "/",
       maxAge: ACCESS_TOKEN_MAX_AGE_MS,
     });
 
@@ -16,8 +24,8 @@ export class AuthCookieUtil {
       httpOnly: true,
       secure: this.isProd,
       sameSite: "strict",
+      path: "/",
       maxAge: REFRESH_TOKEN_MAX_AGE_MS,
-      path: "/api/v1/auth",
     });
   }
 
@@ -25,6 +33,7 @@ export class AuthCookieUtil {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: this.isProd,
+      path: "/",
       sameSite: "strict",
     });
 
@@ -32,7 +41,7 @@ export class AuthCookieUtil {
       httpOnly: true,
       secure: this.isProd,
       sameSite: "strict",
-      path: "/api/v1/auth",
+      path: "/",
     });
   }
 }

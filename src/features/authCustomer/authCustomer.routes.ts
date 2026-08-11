@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { AuthCustomerController } from "./authCustomer.controllers";
 import { AuthSessionController } from "../authShared/authSession.controllers";
+import { AuthMiddleware } from "../../middlewares/auth.middlewares";
 
 const router = Router();
 
@@ -13,4 +14,5 @@ router.post("/forgot-password", AuthCustomerController.forgotPassword);
 router.post("/reset-password", AuthCustomerController.resetPassword);
 router.post("/logout", AuthSessionController.logout);
 router.post("/refresh", AuthSessionController.refresh);
+router.get("/me",AuthMiddleware.authenticated(),AuthSessionController.getMe)
 export default router;

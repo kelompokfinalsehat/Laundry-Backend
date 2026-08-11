@@ -69,7 +69,7 @@ export class AuthCustomerController {
 
     return res.status(StatusCodes.OK).json({
       success: true,
-      data: { user: customer, homeUrl: "/beranda" },
+      data: { user: customer, homeUrl: "/" },
       massage: "login berhasil",
     });
   }
@@ -95,7 +95,7 @@ export class AuthCustomerController {
 
     return res.status(StatusCodes.OK).json({
       success: true,
-      data: { user: customer, homeUrl: "/beranda" },
+      data: { user: customer, homeUrl: "/" },
     });
   }
 
