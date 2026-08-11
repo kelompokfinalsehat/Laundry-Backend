@@ -170,6 +170,12 @@ export class AuthEmployeeService {
         where: { id: record.id },
         data: { usedAt: new Date() },
       }),
+      prisma.refreshToken.updateMany({
+        where: { customerId: record.customerId },
+        data: {
+          revokedAt: new Date(),
+        },
+      }),
     ]);
 
     return {
