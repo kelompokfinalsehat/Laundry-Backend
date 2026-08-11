@@ -1,5 +1,5 @@
 import { Prisma } from "../../../generated/prisma";
-import { ResponseError } from "../../utils/response-error.utils";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 import { LaundryItemRepository } from "./laundry-item.repository";
 import { CreateLaundryItemBody, LaundryItemQuery, UpdateLaundryItemBody } from "./laundry-item.type";
 

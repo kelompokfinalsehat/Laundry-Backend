@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { validate } from "../../validations/validation";
+import { validate } from "../../validations/validate";
 import { LaundryItemValidation } from "./laundry-item.validation";
 import { LaundryItemService } from "./laundry-item.service";
 import { ResponseHelper } from "../../helpers/response.helper";

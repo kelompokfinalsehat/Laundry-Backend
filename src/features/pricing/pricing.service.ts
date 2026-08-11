@@ -1,4 +1,4 @@
-import { ResponseError } from "../../utils/response-error.utils";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 import { PricingRepository } from "./pricing.repository";
 import { CreateShippingRateBody, LaundryPricingBody, ShippingRateQuery, UpdateShippingRateBody } from "./pricing.type";
 

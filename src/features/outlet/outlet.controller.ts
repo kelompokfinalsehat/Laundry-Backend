@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { validate } from "../../validations/validation";
+import { validate } from "../../validations/validate";
 import { OutletValidation } from "./outlet.validation";
 import { OutletService } from "./outlet.service";
 import { ResponseHelper } from "../../helpers/response.helper";

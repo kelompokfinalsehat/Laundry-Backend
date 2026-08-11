@@ -1,6 +1,6 @@
 import { Prisma } from "../../../generated/prisma";
 import { GeocodingService } from "../../services/geocoding.service";
-import { ResponseError } from "../../utils/response-error.utils";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 import { OutletRepository } from "./outlet.repository";
 import { CreateOutletBody, OutletQuery, UpdateOutletBody } from "./outlet.type";
 

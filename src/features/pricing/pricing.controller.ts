@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { PricingService } from "./pricing.service";
 import { ResponseHelper } from "../../helpers/response.helper";
 import { Message } from "../../constants/message.constant";
-import { validate } from "../../validations/validation";
+import { validate } from "../../validations/validate";
 import { PricingValidation } from "./pricing.validation";
 
 export class PricingController {

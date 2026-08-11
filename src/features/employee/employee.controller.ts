@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { validate } from "../../validations/validation";
+import { validate } from "../../validations/validate";
 import { EmployeeValidation } from "./employee.validation";
 import { EmployeeService } from "./employee.service";
 import { Message } from "../../constants/message.constant";

@@ -1,6 +1,6 @@
 import { opencageClient } from "../configs/axios.config";
 import { OPENCAGE_API_KEY } from "../configs/env.config";
-import { ResponseError } from "../utils/response-error.utils";
+import { ResponseError } from "../utils/errors/response-error.utils";
 
 export class GeocodingService {
     static async getCoordinate(address: string){

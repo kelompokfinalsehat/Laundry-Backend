@@ -1,5 +1,5 @@
 import { AccountStatus, Prisma, WorkStatus } from "../../../generated/prisma";
-import { ResponseError } from "../../utils/response-error.utils";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 import { OutletRepository } from "../outlet/outlet.repository";
 import { EmployeeRepository } from "./employee.repository";
 import { AssignEmployeeBody, EmployeeQuery, InviteEmployeeBody, UpdateEmployeeBody } from "./employee.type";

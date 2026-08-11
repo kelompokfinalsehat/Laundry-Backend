@@ -1,4 +1,4 @@
-import { ResponseError } from "../../utils/response-error.utils";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 import { OrderRepository } from "./order.repository";
 import { OrderQuery } from "./order.type";
 
