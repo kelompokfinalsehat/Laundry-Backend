@@ -68,7 +68,7 @@ export class OrderService {
         "Order has not been received by outlet.",
       );
     if (order.bill) return order;
-    if (order.customerStatus !== CustomerStatus.ON_THE_WAY_TO_OUTLET)
+    if (order.customerStatus !== CustomerStatus.ARRIVED_AT_OUTLET)
       throw new ResponseError(
         "INVALID_STATE_TRANSITION",
         "Order is not ready to be created.",

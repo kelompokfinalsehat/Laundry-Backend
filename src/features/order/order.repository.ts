@@ -153,7 +153,7 @@ export class OrderRepository {
         const assignment = await tx.driverAssignment.updateMany({where: {id: assignmentId, orderId, driverId, status: DriverAssignmentStatus.IN_PROGRESS}, data: {status: DriverAssignmentStatus.COMPLETED, completedAt: now}})
         if(assignment.count === 0) return null
         await tx.employee.update({where: {id: driverId, role: Role.DRIVER}, data: {workStatus: WorkStatus.AVAILABLE, availableSinceAt: now}})
-        return tx.order.update({where: {id: orderId}, data: {receivedAt: now, receivedBy}})
+        return tx.order.update({where: {id: orderId}, data: {receivedAt: now, receivedBy, customerStatus: CustomerStatus.ARRIVED_AT_OUTLET}})
     })
   }
   static async createOrder(data: CreateOrderTransactionData){
@@ -184,7 +184,7 @@ export class OrderRepository {
             title: "Job Washing Baru",
             message: "Ada job washing baru menunggu di daftar tugas."
         }})
-        return tx.order.update({where: {id: data.orderId}, data:{customerStatus: CustomerStatus.ARRIVED_AT_OUTLET}})
+        return tx.order.findUnique({where: {id: data.orderId}})
     })
   }
 }
