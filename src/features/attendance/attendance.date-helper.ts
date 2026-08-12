@@ -7,7 +7,7 @@ export const getAttendanceDateWIB = (date: Date = new Date()): Date => {
 
 export function getMingguIni() {
   const hariIni = getAttendanceDateWIB();
-  const urutanHari = hariIni.getUTCDate(); // begitu udah dapet hariini, dia dikembaliin ke urutannya dalam minggu
+  const urutanHari = hariIni.getUTCDay(); // begitu udah dapet hariini, dia dikembaliin ke urutannya dalam minggu
 
   let selisihKeHariSenin: number;
   if (urutanHari === 0) {

@@ -10,20 +10,22 @@ import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 
 export class AttendanceService {
   static async clockIn(payload: { id: string }) {
-    const employee = await EmployeeRepository.findActiveById(payload.id);
+    const employee = await EmployeeRepository.findById(payload.id);
 
     AttendanceChecker.verifyEmployee(employee);
+    const openAttendance = await AttendanceRepository.findOpenAttendance(employee.id);
+    AttendanceChecker.verifyNoOpenAttendance(openAttendance);
     AttendanceChecker.verifyWorkStatus(employee, [WorkStatus.OFF_DUTY, null]);
 
     const attendanceDate = getAttendanceDateWIB();
-    const existingAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
+    const todayAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
 
-    if (existingAttendance) {
+    if (todayAttendance) {
       throw new ResponseError("ATTENDANCE_ALREADY_CLOCKED_IN", "Anda sudah melakukan clock-in hari ini");
     }
 
-    const attendance = await prisma.$transaction(async (tx) => {
-      const newAttendance = await AttendanceRepository.create(
+    const createAttendance = await prisma.$transaction(async (tx) => {
+      const newAttendance = await AttendanceRepository.createAttendance(
         {
           employeeId: employee.id,
           outletId: employee.currentOutletId!,
@@ -33,42 +35,34 @@ export class AttendanceService {
         tx,
       );
 
-      await AttendanceRepository.updateEmployeeWorkStatus(employee.id, WorkStatus.AVAILABLE, tx);
+      await EmployeeRepository.updateWorkStatus(employee.id, WorkStatus.AVAILABLE, tx);
 
       return newAttendance;
     });
-    return attendance;
+    return createAttendance;
   }
 
   static async clockOut(payload: { id: string }) {
-    const employee = await EmployeeRepository.findActiveById(payload.id);
+    const employee = await EmployeeRepository.findById(payload.id);
 
     AttendanceChecker.verifyEmployee(employee);
+    const openAttendance = await AttendanceRepository.findOpenAttendance(employee.id);
+    if (!openAttendance) {
+      throw new ResponseError("ATTENDANCE_NOT_CLOCKED_IN", "Anda belum melakukan clockin!");
+    }
+    const activeAssignment = await AttendanceRepository.findEmployeeActiveAssigment(employee.id, employee.role);
+    if (activeAssignment) {
+      throw new ResponseError("CLOCK_OUT_BLOCKED", "Selesaikan Tugas terlebih dahulu!");
+    }
     AttendanceChecker.verifyWorkStatus(employee, [WorkStatus.AVAILABLE]);
 
-    const attendanceDate = getAttendanceDateWIB();
-    const existingAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
-    if (!existingAttendance) {
-      throw new ResponseError("ATTENDANCE_NOT_CLOCKED_IN", "Anda belum melakukan clock-in");
-    }
-    if (existingAttendance.clockOutAt !== null) {
-      throw new ResponseError("INVALID_STATE_TRANSITION", "Anda sudah melakukan clock-out!");
-    }
-
-    const hasActiveAssignment = await AttendanceRepository.findActiveAssigment(employee.id, employee.role);
-    if (hasActiveAssignment) {
-      throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS", "Anda masih memiliki tugas aktif!");
-    }
-
-    const attendance = await prisma.$transaction(async (tx) => {
-      const updateAttendance = await AttendanceRepository.updateClockOut(existingAttendance.id, new Date(), tx);
-
-      await AttendanceRepository.updateEmployeeWorkStatus(employee.id, WorkStatus.OFF_DUTY, tx);
-
-      return updateAttendance;
+    const closedAttendance = await prisma.$transaction(async (tx) => {
+      const updatedAttendance = await AttendanceRepository.closeAttendance(openAttendance.id, new Date(), tx);
+      await EmployeeRepository.updateWorkStatus(employee.id, WorkStatus.OFF_DUTY, tx);
+      return updatedAttendance;
     });
 
-    return attendance;
+    return closedAttendance;
   }
   static async getHistory({ payload, query }: { payload: { id: string } } & AttendanceHistoryInput) {
     const skip = countSkip({ page: query.page, limit: query.limit });
@@ -98,22 +92,21 @@ export class AttendanceService {
     return { data: attendanceHistory, meta };
   }
 
-  static async getMeStatus({ payload }: { payload: { id: string } }) {
-    const employee = await EmployeeRepository.findActiveById(payload.id);
+  static async getMyAttendanceStatus({ payload }: { payload: { id: string } }) {
+    const employee = await EmployeeRepository.findById(payload.id);
     AttendanceChecker.verifyEmployee(employee);
-
     const attendanceDate = getAttendanceDateWIB();
-    const existingAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
+    const todayAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
+    const openAttendance = await AttendanceRepository.findOpenAttendance(employee.id);
+    const activeAssignment = await AttendanceRepository.findEmployeeActiveAssigment(employee.id, employee.role);
 
-    const hasActiveAssignment = await AttendanceRepository.findActiveAssigment(employee.id, employee.role);
-    // const hasActiveAssignment = Boolean(ActiveAssignment);
-    //logic canClockin & canClockOut di checker
-    const { canClockIn, canClockOut } = AttendanceChecker.verifyMeStatus({
+    const { canClockIn, canClockOut } = AttendanceChecker.buildAttendanceActions({
       workStatus: employee.workStatus,
-      existingAttendance,
-      hasActiveAssignment:Boolean(hasActiveAssignment),
+      todayAttendance,
+      openAttendance,
+      hasActiveAssignment: Boolean(activeAssignment),
     });
 
-    return { workStatus: employee.workStatus, canClockIn, canClockOut };
+    return { workStatus: employee.workStatus, attendanceDate, canClockIn, canClockOut };
   }
 }
