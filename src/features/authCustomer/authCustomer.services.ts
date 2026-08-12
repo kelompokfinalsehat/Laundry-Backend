@@ -10,7 +10,7 @@ import {
   VerifyEmailInput,
 } from "./AuthCustomer.validation";
 import { GoogleAuthService } from "../../utils/Auth/google.utils";
-import { AuthTokenIssuer } from "../mailers/emailVerification.helpers";
+import { AuthTokenIssuer } from "../mailers/mailer.helpers";
 import { AuthCustomerHelper } from "./authCustomer.helpers";
 
 export class AuthCustomerService {
