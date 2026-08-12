@@ -1,10 +1,9 @@
 import { Router } from "express";
-import authRoutes from "../features/auth/auth.routes";
-import { AttendanceRoute } from "../features/attendance/attendance.routes";
+import authCustomerRoutes from "../features/authCustomer/authCustomer.routes";
+import authEmployeRoutes from "../features/authEmployee/authEmployee.routes";
 
 const router = Router();
 
-router.use("/auth", authRoutes);
-router.use("/internal/attendance", AttendanceRoute);
-
+router.use("/auth", authCustomerRoutes);
+router.use("/auth/employe", authEmployeRoutes);
 export default router;

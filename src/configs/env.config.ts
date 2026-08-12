@@ -7,3 +7,17 @@ export const WHITE_LIST = (process.env.WHITE_LIST ?? "http://localhost:3000")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+export const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+export const NODEMAILER_GOOGLE_APP_PASSWORD =
+  process.env.NODEMAILER_GOOGLE_APP_PASSWORD;
+export const NODEMAILER_GOOGLE_APP_USER_EMAIL =
+  process.env.NODEMAILER_GOOGLE_APP_USER_EMAIL;
+
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+export const ACCESS_TOKEN_EXPIRES_IN = "15m";        // format jwt.sign()
+export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000; // format res.cookie() maxAge
+export const REFRESH_TOKEN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 hari
+export const EMAIL_VERIFICATION_EXPIRY_HOURS = 1;
+export const PASSWORD_RESET_EXPIRY_HOURS = 1;
