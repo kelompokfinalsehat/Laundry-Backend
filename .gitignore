@@ -5,3 +5,4 @@ node_modules
 generated/prisma
 /src/generated/prisma
 generated/prisma/
+.DS_Store
