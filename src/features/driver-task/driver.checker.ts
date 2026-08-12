@@ -1,14 +1,24 @@
 import {
   AccountStatus,
   DriverAssignmentStatus,
+  PickupDeliveryType,
   Role,
+  type Attendance,
   type DriverAssignment,
   type Employee,
   type WorkStatus,
 } from "../../../generated/prisma";
-import { ResponseError } from "../../utils/response-error.utils";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 
 export class DriverChecker {
+  // driver checker umum sesuai rules:
+  /*
+  Rules : 
+  1. Employee memang ada.
+  2. Acc masih ACTIVE.
+  3. Rolenya memang DRIVER.
+  4. Driver telah ditempatkan di Outlet  
+  */
   static verifyDriver(driver: Employee | null): asserts driver is Employee {
     if (!driver) {
       throw new ResponseError("RESOURCE_NOT_FOUND", "Akun tidak ditemukan");
@@ -33,6 +43,13 @@ export class DriverChecker {
     }
   }
 
+  // Checker untuk CLAIM ASSIGNMENT
+  /*Rulesnya : 
+  1. Assignment valid bila id ditemukan
+  2. Outletnya sama dengan Driver.
+  3. Statusnya masih QUEUED dan belum mempunyai driverId
+   */
+
   static verifyAssignmentToClaim(
     assignment: DriverAssignment | null,
     driverOutletId: string,
@@ -46,5 +63,35 @@ export class DriverChecker {
     if (assignment.status !== DriverAssignmentStatus.QUEUED || assignment.driverId !== null) {
       throw new ResponseError("ASSIGNMENT_ALREADY_CLAIMED");
     }
+  }
+
+  static activeTaskState(assignment: {
+    taskType: PickupDeliveryType;
+    status: DriverAssignmentStatus;
+    pickedUpAt: Date | null;
+  }) {
+    if (assignment.taskType === PickupDeliveryType.PICKUP) {
+      if (assignment.status === DriverAssignmentStatus.ASSIGNED) {
+        return "PICKUP_ASSIGNED";
+      }
+      if (assignment.pickedUpAt === null) {
+        // Active task type hanya ada ASSIGNED & IN PROGRESS, Maka sudah pasti IN PROGRESS
+        return "PICKUP_TO_CUSTOMER";
+      }
+      return "PICKUP_TO_OUTLET";
+    }
+
+    if (assignment.status === DriverAssignmentStatus.ASSIGNED) {
+      return "DELIVERY_ASSIGNED";
+    }
+    return "DELIVERY_TO_CUSTOMER";
+  }
+  static activeTaskAction(state: string) {
+    if (state === "PICKUP_ASSIGNED") return "START_PICKUP";
+    if (state === "PICKUP_TO_CUSTOMER") return "CONFIRM_PICKUP";
+    if (state === "PICKUP_TO_OUTLET") return null; // menunggu outlet admin input, driver tidak punya aksi lagi
+    if (state === "DELIVERY_ASSIGNED") return "START_DELIVERY";
+    if (state === "DELIVERY_TO_CUSTOMER") return "COMPLETE_DELIVERY";
+    return null;
   }
 }

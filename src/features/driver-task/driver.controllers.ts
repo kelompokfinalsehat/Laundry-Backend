@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { validate } from "../../validations/validation";
+import { validate } from "../../validations/validate";
 import { DriverValidation } from "./driver.validation";
 import { DriverService } from "./driver.service";
 import { StatusCodes } from "http-status-codes";
@@ -15,7 +15,8 @@ export class DriverController {
     res.status(StatusCodes.OK).json({
       success: true,
       message: "List Tugas Tersedia berhasil didapat!",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   }
 
@@ -28,7 +29,18 @@ export class DriverController {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: "Assignment berhasil diambil!",
+      message: "Tugas berhasil diambil!",
+      data: result,
+    });
+  }
+
+  static async getActiveTask(_req: Request, res: Response) {
+    const payload = res.locals.payload;
+
+    const result = await DriverService.getActiveTask(payload);
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: result ? "Tugas Aktif berhasil diterima!" : "Tidak ada Tugas Aktif!",
       data: result,
     });
   }
