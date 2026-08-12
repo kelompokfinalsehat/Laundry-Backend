@@ -16,7 +16,13 @@ export const NODEMAILER_GOOGLE_APP_USER_EMAIL =
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-export const ACCESS_TOKEN_EXPIRES_IN = "15m";        // format jwt.sign()
+export const CLOUDINARY_CLOUD_NAME = process.env
+  .CLOUDINARY_CLOUD_NAME as string;
+export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY as string;
+export const CLOUDINARY_API_SECRET = process.env
+  .CLOUDINARY_API_SECRET as string;
+
+export const ACCESS_TOKEN_EXPIRES_IN = "15m"; // format jwt.sign()
 export const ACCESS_TOKEN_MAX_AGE_MS = 20 * 60 * 1000; // format res.cookie() maxAge
 export const REFRESH_TOKEN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 hari
 export const EMAIL_VERIFICATION_EXPIRY_HOURS = 1;
