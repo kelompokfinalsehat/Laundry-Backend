@@ -20,7 +20,7 @@ import type { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { ZodError } from "zod";
 import { Prisma } from "../../generated/prisma"; // sesuaikan path output prisma client di project kalian
-import { ResponseError } from "../utils/response-error.utils";
+import { ResponseError } from "../utils/errors/response-error.utils";
 
 // Belum pakai logger library (mis. winston/pino). Sementara pakai console.
 // Kalau nanti tim pasang logger, tinggal ganti 2 baris console.* di bawah ini
@@ -37,7 +37,10 @@ export function errorHandler(
   // ResponseError adalah error yang sengaja dilempar (expected), jadi cukup warn.
   // Selain itu dianggap bug tak terduga, jadi di-log sebagai error.
   if (err instanceof ResponseError) {
-    console.warn(`[WARN] ${message}`, { path: req.originalUrl, code: err.code });
+    console.warn(`[WARN] ${message}`, {
+      path: req.originalUrl,
+      code: err.code,
+    });
   } else {
     console.error(`[ERROR] ${message}`, { path: req.originalUrl, stack });
   }

@@ -6,7 +6,7 @@
  *   (lihat contoh pemakaian di response-error.util.ts).
  */
 
-import { StatusCodes } from "http-status-codes";
+import { INTERNAL_SERVER_ERROR, StatusCodes } from "http-status-codes";
 
 export const AppErrors = {
   // ===== Authentication & Token =====
@@ -15,6 +15,7 @@ export const AppErrors = {
     status: StatusCodes.UNAUTHORIZED,
     message: "Anda belum login atau sesi telah berakhir.",
   },
+
   INVALID_CREDENTIALS: {
     code: "INVALID_CREDENTIALS",
     status: StatusCodes.UNAUTHORIZED,
@@ -29,6 +30,16 @@ export const AppErrors = {
     code: "EMAIL_NOT_VERIFIED",
     status: StatusCodes.FORBIDDEN,
     message: "Email Anda belum diverifikasi.",
+  },
+  GOOGLE_ACCOUNT_NO_PASSWORD: {
+    code: "GOOGLE_ACCOUNT_NO_PASSWORD",
+    status: StatusCodes.FORBIDDEN,
+    message: "Akun ini terdaftar via Google. Silakan login dengan Google.",
+  },
+  ACCESS_TOKEN_EXPIRED: {
+    code: "ACCESS_TOKEN_EXPIRED",
+    status: StatusCodes.UNAUTHORIZED,
+    message: "Sesi kedaluwarsa. Silakan perbarui sesi Anda.",
   },
   INVALID_TOKEN: {
     code: "INVALID_TOKEN",
@@ -186,6 +197,13 @@ export const AppErrors = {
     code: "COMPLAINT_NOT_ALLOWED",
     status: StatusCodes.CONFLICT,
     message: "Komplain tidak dapat diajukan untuk order ini.",
+  },
+
+  // ===== Internal Server Error =====
+  INTERNAL_SERVER_ERROR: {
+    code: "INTERNAL_SERVER_ERROR",
+    status: StatusCodes.INTERNAL_SERVER_ERROR,
+    message: "Terjadi kesalahan pada server. Silakan coba lagi nanti.",
   },
 } as const;
 
