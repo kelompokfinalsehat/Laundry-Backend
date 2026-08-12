@@ -5,19 +5,20 @@ import { AuthEmployeeService } from "./authEmployee.services";
 import { JWTUtil } from "../../utils/Auth/jwt.utils";
 import { RefreshTokenService } from "../../utils/Auth/refreshToken.utils";
 import { AuthCookieUtil } from "../../utils/Auth/cookie.utils";
+import { ResponseHelper } from "../../helpers/response.helper";
+import { Message } from "../../constants/message.constant";
 
 export class AuthEmployeeController {
   static async login(req: Request, res: Response) {
     const { body } = validate(AuthEmployeeValidation.LOGIN_EMPLOYEE, {
       body: req.body,
     });
-
-   const employee = await AuthEmployeeService.login({ body });
-
+    const employee = await AuthEmployeeService.login({ body });
     const accessToken = JWTUtil.signAccessToken({
       sub: employee.id,
       accountType: "employee",
       role: employee.role,
+      outletId: employee.currentOutletId ?? undefined
     });
 
     const refreshToken = await RefreshTokenService.issue({
@@ -25,6 +26,7 @@ export class AuthEmployeeController {
     })
 
     AuthCookieUtil.setAuthCookies(res, accessToken,refreshToken)
+    return ResponseHelper.success(res, "Login Berhasil", employee)
   }
 
   static async acceptInvitation(req: Request, res: Response) {

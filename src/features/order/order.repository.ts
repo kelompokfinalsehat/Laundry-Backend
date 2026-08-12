@@ -1,4 +1,4 @@
-import { Prisma } from "../../../generated/prisma";
+import { DriverAssignmentStatus, PickupDeliveryType, Prisma, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
 import { OrderQuery } from "./order.type";
@@ -142,6 +142,17 @@ export class OrderRepository {
     }
   }
   static async findById(id: string, outletId?: string){
-    return await prisma.order.findFirst({where: {id, outletId}, include: this.orderDetailInclude})
+    return await prisma.order.findFirst({where: {id, ...(outletId && {outletId})}, include: this.orderDetailInclude})
+  }
+  static async findPickupAssignment(orderId: string){
+    return await prisma.driverAssignment.findFirst({where: {orderId, taskType: PickupDeliveryType.PICKUP}, include: {driver: true}})
+  }
+  static async receiveOrder(orderId: string, assignmentId: string, driverId: string, receivedBy: string){
+    const now = new Date()
+    return await prisma.$transaction(async (tx) => {
+        await tx.driverAssignment.update({where: {id: assignmentId}, data: {status: DriverAssignmentStatus.COMPLETED, completedAt: now}})
+        await tx.employee.update({where: {id: driverId}, data: {workStatus: WorkStatus.AVAILABLE, availableSinceAt: now}})
+        return tx.order.update({where: {id: orderId}, data: {receivedAt: now, receivedBy}})
+    })
   }
 }

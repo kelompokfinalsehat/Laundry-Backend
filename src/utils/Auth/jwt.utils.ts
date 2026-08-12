@@ -7,6 +7,7 @@ export interface JWTPayload {
   sub: string;
   accountType: "customer" | "employee";
   role: Role;
+  outletId?: string
 }
 
 export class JWTUtil {

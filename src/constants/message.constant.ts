@@ -3,5 +3,6 @@ export const Message = {
     UPDATED: "Data updated successfully.",
     DELETED: "Data deleted successfully.",
     FETCHED: "Data fetched successfully.",
-    INVITED: "Employee invited successfully."
+    INVITED: "Employee invited successfully.",
+    RECEIVED: "Order received successfully."
 }
