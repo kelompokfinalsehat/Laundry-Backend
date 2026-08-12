@@ -20,14 +20,14 @@ export class AuthSessionController {
       return res.json({
         success: true,
         data: {
-          id: customer.id,
           name: customer.name,
           email: customer.email,
           role: customer.role,
           accountType: "customer",
           phone: customer.phone,
-          profilePic: customer.profilePhotoUrl,
+          profilePhotoUrl: customer.profilePhotoUrl,
           isEmailVerified: customer.isEmailVerified,
+          authProvider: customer.authProvider,
         },
       });
     }

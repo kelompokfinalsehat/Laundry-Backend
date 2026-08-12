@@ -1,7 +1,8 @@
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
-import { ACCESS_TOKEN_EXPIRES_IN, JWT_SECRET_KEY } from "../../configs/env.config";
+import { JWT_SECRET_KEY } from "../../configs/env.config";
 import { ResponseError } from "../errors/response-error.utils";
 import { Role } from "../../../generated/prisma";
+import { ACCESS_TOKEN_EXPIRES_IN } from "../../configs/env.config";
 
 export interface JWTPayload {
   sub: string;
@@ -11,8 +12,6 @@ export interface JWTPayload {
 }
 
 export class JWTUtil {
-  
-
   static signAccessToken(payload: JWTPayload) {
     if (!JWT_SECRET_KEY) {
       throw new ResponseError(
@@ -40,17 +39,10 @@ export class JWTUtil {
       return jwt.verify(token, secretKey) as JWTPayload;
     } catch (error) {
       if (error instanceof TokenExpiredError) {
-        throw new ResponseError(
-          "AUTHENTICATION_REQUIRED",
-          "Sesi telah berakhir. Silahkan login kembali",
-        );
+        throw new ResponseError("ACCESS_TOKEN_EXPIRED", "Sesi kedaluwarsa."); // ✅
       }
-
       if (error instanceof JsonWebTokenError) {
-        throw new ResponseError(
-          "AUTHENTICATION_REQUIRED",
-          "Sesi tidak valid. Silahkan login kembali!",
-        );
+        throw new ResponseError("INVALID_TOKEN", "Token tidak valid."); // ✅
       }
       throw error;
     }

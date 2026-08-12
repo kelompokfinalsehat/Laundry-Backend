@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import { JWTUtil } from "../utils/Auth/jwt.utils";
 import { ResponseError } from "../utils/errors/response-error.utils";
 
@@ -9,9 +8,7 @@ export class AuthMiddleware {
       const token = req.cookies?.accessToken;
 
       if (!token) {
-        return next(
-          new ResponseError("AUTHENTICATION_REQUIRED", "Anda belum login."),
-        );
+        return next(new ResponseError("AUTHENTICATION_REQUIRED", "Anda belum login."));
       }
 
       try {
@@ -19,12 +16,7 @@ export class AuthMiddleware {
         res.locals.payload = payload;
         next();
       } catch (err) {
-        if (err instanceof jwt.TokenExpiredError) {
-          // WAJIB persis "ACCESS_TOKEN_EXPIRED" — axios interceptor di
-          // frontend baca kode ini buat mutusin auto-refresh.
-          return next(new ResponseError("ACCESS_TOKEN_EXPIRED", "Sesi kedaluwarsa."));
-        }
-        return next(new ResponseError("INVALID_TOKEN", "Token tidak valid."));
+        next(err); // JWTUtil sudah translate ke ResponseError yang benar, tinggal diteruskan
       }
     };
   }
