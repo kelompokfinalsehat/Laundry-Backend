@@ -161,6 +161,7 @@ model Customer {
   passwordHash    String?      @map("password_hash")
   authProvider    AuthProvider @default(EMAIL) @map("auth_provider")
   isEmailVerified Boolean      @default(false) @map("is_email_verified")
+  pendingEmail    String?      @map("pending_email")
   profilePhotoUrl String?      @map("profile_photo_url")
   phone           String?
   createdAt       DateTime     @default(now()) @map("created_at")
