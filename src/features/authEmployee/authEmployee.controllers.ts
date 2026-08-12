@@ -5,6 +5,7 @@ import { AuthEmployeeService } from "./authEmployee.services";
 import { JWTUtil } from "../../utils/Auth/jwt.utils";
 import { RefreshTokenService } from "../../utils/Auth/refreshToken.utils";
 import { AuthCookieUtil } from "../../utils/Auth/cookie.utils";
+import { StatusCodes } from "http-status-codes";
 
 export class AuthEmployeeController {
   static async login(req: Request, res: Response) {
@@ -12,7 +13,7 @@ export class AuthEmployeeController {
       body: req.body,
     });
 
-   const employee = await AuthEmployeeService.login({ body });
+    const employee = await AuthEmployeeService.login({ body });
 
     const accessToken = JWTUtil.signAccessToken({
       sub: employee.id,
@@ -21,10 +22,16 @@ export class AuthEmployeeController {
     });
 
     const refreshToken = await RefreshTokenService.issue({
-      employeeId: employee.id
-    })
+      employeeId: employee.id,
+    });
 
-    AuthCookieUtil.setAuthCookies(res, accessToken,refreshToken)
+    AuthCookieUtil.setAuthCookies(res, accessToken, refreshToken);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: employee,
+      massage: "login berhasil",
+    });
   }
 
   static async acceptInvitation(req: Request, res: Response) {
@@ -32,7 +39,12 @@ export class AuthEmployeeController {
       body: req.body,
     });
 
-    await AuthEmployeeService.acceptInvitation({ body });
+    const result = await AuthEmployeeService.acceptInvitation({ body });
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
   }
 
   static async forgotPassword(req: Request, res: Response) {
@@ -40,7 +52,12 @@ export class AuthEmployeeController {
       body: req.body,
     });
 
-    await AuthEmployeeService.forgotPassword({ body });
+    const result = await AuthEmployeeService.forgotPassword({ body });
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
   }
 
   static async resetPasword(req: Request, res: Response) {
@@ -48,6 +65,10 @@ export class AuthEmployeeController {
       body: req.body,
     });
 
-    await AuthEmployeeService.resetPasword({ body });
+    const result = await AuthEmployeeService.resetPasword({ body });
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
   }
 }
