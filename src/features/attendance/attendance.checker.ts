@@ -1,7 +1,8 @@
 import { AccountStatus, Role, WorkStatus, type Attendance, type Employee } from "../../../generated/prisma";
-import { ResponseError } from "../../utils/response-error.utils";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 
 export class AttendanceChecker {
+  //checker umum dipake semua
   static verifyEmployee(employee: Employee | null): asserts employee is Employee {
     if (!employee) {
       throw new ResponseError("RESOURCE_NOT_FOUND", "Akun tidak ditemukan");
@@ -25,23 +26,42 @@ export class AttendanceChecker {
       throw new ResponseError("INVALID_STATE_TRANSITION", "Status kerja tidak sesuai");
     }
   }
+  // checker untuk clockin
+  static verifyNoOpenAttendance(openAttendance: Attendance | null) {
+    if (openAttendance) {
+      throw new ResponseError("INVALID_STATE_TRANSITION", "Masih ada absensi yang belum clock-out!");
+    }
+  }
 
-  static verifyMeStatus({
+  // checker untuk claim job
+  static verifyActiveAttendanceToday(attendance: Attendance | null) {
+    if (!attendance || attendance.clockInAt === null || attendance.clockOutAt !== null) {
+      throw new ResponseError(
+        "ATTENDANCE_NOT_CLOCKED_IN",
+        "Anda harus melakukan clockin hari ini sebelum mengambil tugas!",
+      );
+    }
+  }
+
+  // checker untuk attendance me Status
+  //attendanceActions diperlukan untuk kirim respons agar frontend tahu mengatur button
+  static buildAttendanceActions({
     workStatus,
-    existingAttendance,
+    todayAttendance,
+    openAttendance,
     hasActiveAssignment,
   }: {
     workStatus: WorkStatus | null;
-    existingAttendance: Attendance | null;
+    todayAttendance: Attendance | null;
+    openAttendance: Attendance | null;
     hasActiveAssignment: boolean;
   }) {
     const isOffDuty = workStatus === WorkStatus.OFF_DUTY || workStatus === null;
-    const canClockIn = isOffDuty && !existingAttendance;
+    const canClockIn = isOffDuty && !todayAttendance && !openAttendance;
 
     const isAvailable = workStatus === WorkStatus.AVAILABLE;
-    const isNotClockOut = existingAttendance?.clockOutAt === null && Boolean(existingAttendance);
-    const canClockOut = isAvailable && isNotClockOut && !hasActiveAssignment;
-
+    const hasOpenAttendance = Boolean(openAttendance?.clockInAt) && openAttendance?.clockOutAt === null;
+    const canClockOut = isAvailable && hasOpenAttendance && !hasActiveAssignment;
     return { canClockIn, canClockOut };
   }
 }

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { validate } from "../../validations/validation";
+import { validate } from "../../validations/validate";
 import { AttendanceValidation } from "./attendance.validation";
 import { AttendanceService } from "./attendance.service";
 import { StatusCodes } from "http-status-codes";
@@ -13,11 +13,11 @@ export class AttendanceController {
 
     const payload = res.locals.payload;
 
-    const clockIn = await AttendanceService.clockIn(payload);
+    const result = await AttendanceService.clockIn(payload);
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: "Clock in berhasil!",
-      data: clockIn,
+      data: result,
     });
   }
 
@@ -25,7 +25,12 @@ export class AttendanceController {
     validate(AttendanceValidation.CLOCK_OUT, { body: req.body });
 
     const payload = res.locals.payload;
-    const clockOut = await AttendanceService.clockOut(payload);
+    const result = await AttendanceService.clockOut(payload);
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Clock Out berhasil!",
+      data: result,
+    });
   }
 
   static async getHistory(req: Request, res: Response) {
@@ -43,10 +48,10 @@ export class AttendanceController {
     });
   }
 
-  static async getMeStatus(_req: Request, res: Response) {
+  static async getMyAttendanceStatus(_req: Request, res: Response) {
     const payload = res.locals.payload;
 
-    const result = await AttendanceService.getMeStatus({ payload });
+    const result = await AttendanceService.getMyAttendanceStatus({ payload });
 
     res.status(StatusCodes.OK).json({
       success: true,
