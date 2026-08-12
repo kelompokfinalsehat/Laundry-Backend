@@ -1,7 +1,7 @@
-import { DriverAssignmentStatus, PickupDeliveryType, Prisma, WorkStatus } from "../../../generated/prisma";
+import { BillPaymentStatus, CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, Prisma, Role, StationType, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
-import { OrderQuery } from "./order.type";
+import { CreateOrderTransactionData, OrderQuery } from "./order.type";
 
 export class OrderRepository {
   private static readonly orderListInclude =
@@ -145,14 +145,46 @@ export class OrderRepository {
     return await prisma.order.findFirst({where: {id, ...(outletId && {outletId})}, include: this.orderDetailInclude})
   }
   static async findPickupAssignment(orderId: string){
-    return await prisma.driverAssignment.findFirst({where: {orderId, taskType: PickupDeliveryType.PICKUP}, include: {driver: true}})
+    return await prisma.driverAssignment.findFirst({where: {orderId, taskType: PickupDeliveryType.PICKUP, status: {in: [DriverAssignmentStatus.ASSIGNED, DriverAssignmentStatus.IN_PROGRESS]}}, include: {driver: true}})
   }
   static async receiveOrder(orderId: string, assignmentId: string, driverId: string, receivedBy: string){
     const now = new Date()
     return await prisma.$transaction(async (tx) => {
-        await tx.driverAssignment.update({where: {id: assignmentId}, data: {status: DriverAssignmentStatus.COMPLETED, completedAt: now}})
-        await tx.employee.update({where: {id: driverId}, data: {workStatus: WorkStatus.AVAILABLE, availableSinceAt: now}})
+        const assignment = await tx.driverAssignment.updateMany({where: {id: assignmentId, orderId, driverId, status: DriverAssignmentStatus.IN_PROGRESS}, data: {status: DriverAssignmentStatus.COMPLETED, completedAt: now}})
+        if(assignment.count === 0) return null
+        await tx.employee.update({where: {id: driverId, role: Role.DRIVER}, data: {workStatus: WorkStatus.AVAILABLE, availableSinceAt: now}})
         return tx.order.update({where: {id: orderId}, data: {receivedAt: now, receivedBy}})
+    })
+  }
+  static async createOrder(data: CreateOrderTransactionData){
+    return await prisma.$transaction(async (tx) => {
+        await tx.bill.create({data: {
+            orderId: data.orderId,
+            laundryPricingId: data.laundryPricingId,
+            pricePerKgSnapshot: data.pricePerKgSnapshot,
+            shippingRateId: data.shippingRateId,
+            shippingFeeSnapshot: data.shippingFeeSnapshot,
+            weightKg: data.weightKg,
+            totalAmount: data.totalAmount
+        }})
+        await tx.orderItem.createMany({data: data.items.map((item) => ({
+            orderId: data.orderId,
+            laundryItemId: item.laundryItemId,
+            quantity: item.quantity
+        }))})
+        await tx.workerAssignment.create({data: {
+            orderId: data.orderId,
+            outletId: data.outletId,
+            stationType: StationType.WASHING,
+            status: WorkerAssignmentStatus.QUEUED
+        }})
+        await tx.notification.create({data: {
+            targetRole: Role.WORKER,
+            outletId: data.outletId,
+            title: "Job Washing Baru",
+            message: "Ada job washing baru menunggu di daftar tugas."
+        }})
+        return tx.order.update({where: {id: data.orderId}, data:{customerStatus: CustomerStatus.ARRIVED_AT_OUTLET}})
     })
   }
 }

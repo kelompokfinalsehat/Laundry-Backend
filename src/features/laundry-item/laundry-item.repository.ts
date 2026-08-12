@@ -39,4 +39,7 @@ export class LaundryItemRepository {
     static async update(id: string, data: Prisma.LaundryItemUpdateInput){
         return await prisma.laundryItem.update({where: {id}, data})
     }
+    static async findByIds(ids: string[]){
+        return await prisma.laundryItem.findMany({where: {id: {in: ids}, deletedAt: null}})
+    }
 }

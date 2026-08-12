@@ -8,5 +8,6 @@ const router = Router()
 router.get("/", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.OUTLET_ADMIN, Role.SUPER_ADMIN]), OrderController.getOrders)
 router.get("/:id", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.OUTLET_ADMIN, Role.SUPER_ADMIN]), OrderController.getOrderById)
 router.post('/:id/receive', AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.OUTLET_ADMIN]), OrderController.receiveOrder)
+router.post('/:id/create-order', AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.OUTLET_ADMIN]), OrderController.createOrder)
 
 export default router

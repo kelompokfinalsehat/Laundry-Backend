@@ -24,4 +24,11 @@ export class OrderController {
         const order = await OrderService.receiveOrder(id, outletId, sub)
         return ResponseHelper.success(res, Message.RECEIVED, order)
     }
+    static async createOrder(req: Request, res: Response){
+        const {id} = validate(OrderValidation.PARAMS.orderId, req.params)
+        const body = validate(OrderValidation.BODY.createOrder, req.body)
+        const {outletId} = res.locals.payload
+        const order = await OrderService.createOrder(id, outletId, body)
+        return ResponseHelper.success(res, Message.CREATED, order)
+    }
 }
