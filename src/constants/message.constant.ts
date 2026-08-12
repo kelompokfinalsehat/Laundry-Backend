@@ -4,5 +4,7 @@ export const Message = {
     DELETED: "Data deleted successfully.",
     FETCHED: "Data fetched successfully.",
     INVITED: "Employee invited successfully.",
-    RECEIVED: "Order received successfully."
+    RECEIVED: "Order received successfully.",
+    APPROVED: "Bypass request approved successfully.",
+    REJECTED: "Bypass request rejected successfully."
 }

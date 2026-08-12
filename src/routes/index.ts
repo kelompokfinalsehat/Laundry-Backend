@@ -6,6 +6,7 @@ import outletRoutes from "../features/outlet/outlet.route";
 import laundryItemRoutes from "../features/laundry-item/laundry-item.route";
 import pricingRoutes from "../features/pricing/pricing.route";
 import orderRoutes from "../features/order/order.route"
+import bypassRoutes from "../features/bypass/bypass.route"
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use("/internal/outlets", outletRoutes);
 router.use("/internal/laundry-items", laundryItemRoutes);
 router.use("/internal/pricing", pricingRoutes);
 router.use("/internal/orders", orderRoutes)
+router.use("/internal/bypass-requests", bypassRoutes)
 
 export default router;
