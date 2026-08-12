@@ -12,9 +12,21 @@ export class AuthTokenIssuer {
     customerId: string,
     email: string,
   ): Promise<void> {
-    const rawToken = await this.issue(
+    const rawToken = await this.issueCustomerToken(
       customerId,
       "EMAIL_VERIFICATION",
+      EMAIL_VERIFICATION_EXPIRY_HOURS,
+    );
+    await MailerService.sendEmailVerification({ to: email, token: rawToken });
+  }
+
+  static async issueEmployeInvitationToken(
+    customerId: string,
+    email: string,
+  ): Promise<void> {
+    const rawToken = await this.issueEmployeToken(
+      customerId,
+      "ACCOUNT_INVITATION",
       EMAIL_VERIFICATION_EXPIRY_HOURS,
     );
     await MailerService.sendEmailVerification({ to: email, token: rawToken });
@@ -24,7 +36,7 @@ export class AuthTokenIssuer {
     customerId: string,
     email: string,
   ): Promise<void> {
-    const rawToken = await this.issue(
+    const rawToken = await this.issueCustomerToken(
       customerId,
       "PASSWORD_RESET",
       PASSWORD_RESET_EXPIRY_HOURS,
@@ -36,7 +48,7 @@ export class AuthTokenIssuer {
     employeeId: string,
     email: string,
   ): Promise<void> {
-    const rawToken = await this.issue(
+    const rawToken = await this.issueEmployeToken(
       employeeId,
       "PASSWORD_RESET",
       PASSWORD_RESET_EXPIRY_HOURS,
@@ -44,8 +56,9 @@ export class AuthTokenIssuer {
     await MailerService.sendPasswordReset({ to: email, token: rawToken });
   }
 
-  private static async issue(
+  private static async issueCustomerToken(
     customerId: string,
+    
     type: AuthTokenType,
     expiryHours: number,
   ): Promise<string> {
@@ -58,6 +71,26 @@ export class AuthTokenIssuer {
       }),
       prisma.authToken.create({
         data: { customerId, type, tokenHash, expiresAt },
+      }),
+    ]);
+
+    return rawToken;
+  }
+
+  private static async issueEmployeToken(
+    employeeId: string,
+    type: AuthTokenType,
+    expiryHours: number,
+  ): Promise<string> {
+    const { rawToken, tokenHash } = AuthTokenUtil.generateTokenPair();
+    const expiresAt = AuthTokenUtil.addHours(new Date(), expiryHours);
+
+    await prisma.$transaction([
+      prisma.authToken.deleteMany({
+        where: {  employeeId,type, usedAt: null },
+      }),
+      prisma.authToken.create({
+        data: { employeeId, type, tokenHash, expiresAt },
       }),
     ]);
 
