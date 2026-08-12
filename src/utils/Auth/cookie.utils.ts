@@ -24,7 +24,7 @@ export class AuthCookieUtil {
       httpOnly: true,
       secure: this.isProd,
       sameSite: "strict",
-      path: "/api/v1/auth .",
+      path: "/api/v1/auth",
       maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     });
   }
