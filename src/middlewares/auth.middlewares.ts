@@ -8,7 +8,7 @@ export class AuthMiddleware {
       const token = req.cookies?.accessToken;
 
       if (!token) {
-        return next(new ResponseError("AUTHENTICATION_REQUIRED", "Anda belum login."));
+        return next(new ResponseError("ACCESS_TOKEN_REQUIRED"));
       }
 
       try {
