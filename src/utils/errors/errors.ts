@@ -42,6 +42,12 @@ export const AppErrors = {
     status: StatusCodes.FORBIDDEN,
     message: "Akun ini terdaftar via Google. Silakan login dengan Google.",
   },
+
+  GOOGLE_ACCOUNT_EMAIL_LOCKED: {
+    code: "GOOGLE_ACCOUNT_EMAIL_LOCKED",
+    status: StatusCodes.FORBIDDEN,
+    message: "Email akun Google tidak dapat diganti dari sini.",
+  },
   ACCESS_TOKEN_EXPIRED: {
     code: "ACCESS_TOKEN_EXPIRED",
     status: StatusCodes.UNAUTHORIZED,

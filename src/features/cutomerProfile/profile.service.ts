@@ -1,20 +1,25 @@
 import { prisma } from "../../configs/prisma-client.config";
 import { BcryptUtil } from "../../utils/Auth/bcrypt.utils";
+import { AuthTokenUtil } from "../../utils/Auth/token.utils";
 import { CloudinaryUtil } from "../../utils/cloudinary.utils";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { userPayload } from "../../validations/validate";
-import { UpdateProfileInput } from "./profile.validation";
+import { AuthTokenIssuer } from "../mailers/mailer.helpers";
+import {
+  ConfirmEmailChangeInput,
+  UpdateEmailInput,
+  UpdateProfileInput,
+} from "./profile.validation";
 
 export class CustomerProfileService {
   static async updateCustomerProfile(
     payload: userPayload,
     { body }: UpdateProfileInput,
-  ) { 
-    
+  ) {
     const customer = await prisma.customer.findUniqueOrThrow({
       where: { id: payload.sub },
     });
-   
+
     let passwordHash: string | undefined;
 
     if (body.newPassword) {
@@ -81,6 +86,73 @@ export class CustomerProfileService {
     }
     return { profilePhotoUrl: updated.profilePhotoUrl };
   }
-  static async requestEmailChange() {}
-  static async confirmEmailChange() {}
+  static async requestEmailChange(
+    payload: userPayload,
+    { body }: UpdateEmailInput,
+  ) {
+    const existing = await prisma.customer.findUnique({
+      where: { email: body.newEmail },
+    });
+
+    if (existing) throw new ResponseError("EMAIL_ALREADY_REGISTERED");
+
+    const customer = await prisma.customer.findUniqueOrThrow({
+      where: { id: payload.sub },
+    });
+
+    if (customer.authProvider !== "EMAIL") {
+      throw new ResponseError("GOOGLE_ACCOUNT_EMAIL_LOCKED");
+    }
+
+    await AuthTokenIssuer.issueEmailChangeVerificationToken(
+      customer.id,
+      body.newEmail,
+    );
+
+    return { message: "Link konfirmasi telah dikirim ke email baru kamu." };
+  }
+  static async confirmEmailChange(
+    payload: userPayload,
+    { body }: ConfirmEmailChangeInput,
+  ) {
+    const tokenHash = AuthTokenUtil.hashToken(body.token);
+
+    const record = await prisma.authToken.findFirst({
+      where: { tokenHash, type: "EMAIL_VERIFICATION", customerId: payload.sub },
+    });
+
+    if (!record) {
+      throw new ResponseError("INVALID_TOKEN", "Link konfirmasi tidak valid.");
+    }
+    if (record.usedAt) {
+      throw new ResponseError(
+        "TOKEN_ALREADY_USED",
+        "Link konfirmasi ini sudah pernah dipakai.",
+      );
+    }
+    if (record.expiresAt <= new Date()) {
+      throw new ResponseError(
+        "TOKEN_EXPIRED",
+        "Link konfirmasi sudah kedaluwarsa.",
+      );
+    }
+
+    const customer = await prisma.customer.findUniqueOrThrow({ where: { id: payload.sub } });
+  if (!customer.pendingEmail) {
+    throw new ResponseError( "EMAIL_NOT_VERIFIED", "Tidak ada permintaan ganti email yang menunggu.");
+  }
+
+  await prisma.$transaction([
+    prisma.customer.update({
+      where: { id: payload.sub },
+      data: { email: customer.pendingEmail, pendingEmail: null, isEmailVerified: true },
+    }),
+    prisma.authToken.update({
+      where: { id: record.id },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+ 
+  return { message: "Email berhasil diperbarui." };
+  }
 }

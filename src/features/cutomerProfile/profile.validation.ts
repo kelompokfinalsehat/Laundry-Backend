@@ -24,7 +24,7 @@ export class ProfileCustomerValidation {
 
   static readonly UPDATE_EMAIL = z.object({
     body: z.object({
-      email: z.string().email("Format email tidak valid"),
+      newEmail: z.string().email("Format email tidak valid"),
     }),
   });
 
