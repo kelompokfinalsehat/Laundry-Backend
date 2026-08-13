@@ -3,6 +3,7 @@ import routes from "./routes";
 import cors from "cors";
 import { API_PREFIX, NODE_ENV, PORT, WHITE_LIST } from './configs/env.config';
 import { errorHandler } from './middlewares/error-handler.middleware';
+import cookieParser from 'cookie-parser';
 
 
 
@@ -25,6 +26,8 @@ app.use(
 );
 
 app.use(express.json());
+
+app.use(cookieParser());
 
 app.use(`${API_PREFIX}/v1`, routes);
 
