@@ -15,3 +15,5 @@ DriverRoute.get(
 DriverRoute.post("/:assignmentId/claim", fakeAuth, DriverController.claimAssignment);
 
 DriverRoute.get("/active", fakeAuth, DriverController.getActiveTask);
+
+DriverRoute.post("/:assignmentId/start", fakeAuth, DriverController.startTask);

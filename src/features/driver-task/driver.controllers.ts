@@ -3,7 +3,6 @@ import { validate } from "../../validations/validate";
 import { DriverValidation } from "./driver.validation";
 import { DriverService } from "./driver.service";
 import { StatusCodes } from "http-status-codes";
-import { success } from "zod";
 
 export class DriverController {
   static async getAvailableTasks(req: Request, res: Response) {
@@ -43,5 +42,13 @@ export class DriverController {
       message: result ? "Tugas Aktif berhasil diterima!" : "Tidak ada Tugas Aktif!",
       data: result,
     });
+  }
+
+  static async startTask(req: Request, res: Response) {
+    const { params } = validate(DriverValidation.START_TASK, { params: req.params });
+
+    const payload = res.locals.payload;
+    
+    const result = await DriverService.startTask({})
   }
 }

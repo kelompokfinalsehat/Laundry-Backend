@@ -93,5 +93,5 @@ export class DriverChecker {
     if (state === "DELIVERY_ASSIGNED") return "START_DELIVERY";
     if (state === "DELIVERY_TO_CUSTOMER") return "COMPLETE_DELIVERY";
     return null;
-  }
+ }
 }

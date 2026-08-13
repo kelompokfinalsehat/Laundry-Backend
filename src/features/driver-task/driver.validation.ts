@@ -16,10 +16,18 @@ export class DriverValidation {
       assignmentId: zod.uuid("ID tidak valid"),
     }),
     body: zod.object({}).strict(),
-    // body kudu kosong, karna frontend hanya kirim body kosong untuk claim.
+    // body kosong, karna frontend hanya kirim body kosong untuk claim.
     // semua ditentukan oleh backend
+  });
+
+  static readonly START_TASK = zod.object({
+    params: zod.object({
+      assignmentId: zod.uuid("ID tidak valid"),
+    }),
+    body: zod.object({}).strict(),
   });
 }
 
 export type DriverAvailableTaskInput = zod.infer<typeof DriverValidation.AVAILABLE_TASKS>;
 export type DriverClaimInput = zod.infer<typeof DriverValidation.CLAIM_ASSIGNMENT>;
+export type DriverStartTaskInput = zod.infer<typeof DriverValidation.START_TASK>;
