@@ -50,7 +50,7 @@ export const AppErrors = {
    ACCESS_TOKEN_REQUIRED: {
     code: "ACCESS_TOKEN_REQUIRED",
     status: StatusCodes.UNAUTHORIZED,
-    message: "token tidak ditemukan. Silakan perbarui sesi Anda.",
+    message: "Token tidak ditemukan. Silakan perbarui sesi Anda.",
   },
   INVALID_TOKEN: {
     code: "INVALID_TOKEN",
