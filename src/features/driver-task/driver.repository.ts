@@ -1,10 +1,10 @@
 import { DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import { ACTIVE_TASK_SELECT } from "./driver.select";
+import { ACTIVE_TASK_SELECT } from "./driver.helper";
 
 export class DriverRepository {
-  static async findAvailableTasks(
+  static async findAvailableAssignment(
     where: Prisma.DriverAssignmentWhereInput,
     skip: number,
     take: number,
@@ -26,14 +26,14 @@ export class DriverRepository {
     return availableTask;
   }
 
-  // Mencari tugas aktif driver yg sedang login
-  // Tujuan mencegah claim 2 tugas, RULES satu driver satu tugas yg boleh di-claim
-  static async findDriverActiveAssignment(driverId: string) {
+  // Mencari tugas aktif driver yg sedang login -> Mencegah claim 2 tugas, RULES satu driver satu tugas yg boleh di-claim
+  static async findActiveByDriverId(driverId: string) {
     const activeAssignment = await prisma.driverAssignment.findFirst({
       where: { driverId, status: { in: [DriverAssignmentStatus.ASSIGNED, DriverAssignmentStatus.IN_PROGRESS] } },
     });
     return activeAssignment;
   }
+
   //Mencari 1 assignment by id untuk proses CLAIM
   static async findAssignmentById(assignmentId: string) {
     return await prisma.driverAssignment.findUnique({
@@ -59,10 +59,15 @@ export class DriverRepository {
     return claimResult;
   }
 
-  static async updateDriverWorkStatus(driverId: string, tx: Prisma.TransactionClient) {
+  static async updateDriverWorkStatus(
+    driverId: string,
+    currentWorkStatus: WorkStatus,
+    updatedWorkStatus: WorkStatus,
+    tx: Prisma.TransactionClient,
+  ) {
     const driverResult = await tx.employee.updateMany({
-      where: { id: driverId, workStatus: WorkStatus.AVAILABLE },
-      data: { workStatus: WorkStatus.BUSY },
+      where: { id: driverId, workStatus: currentWorkStatus },
+      data: { workStatus: updatedWorkStatus },
     });
     if (driverResult.count !== 1) {
       throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
@@ -78,7 +83,7 @@ export class DriverRepository {
     });
   }
 
-  static async findActiveTaskDetail(driverId: string) {
+  static async findActiveAssignmentDetail(driverId: string) {
     const activeAssignment = await prisma.driverAssignment.findFirst({
       where: {
         driverId: driverId,

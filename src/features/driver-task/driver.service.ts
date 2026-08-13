@@ -2,20 +2,18 @@ import { DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../genera
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
-
-import { AttendanceChecker } from "../attendance/attendance.checker";
-import { getAttendanceDateWIB } from "../attendance/attendance.date-helper";
+import { AttendanceHelper } from "../attendance/attendance.helper";
 import { AttendanceRepository } from "../attendance/attendance.repository";
-import { EmployeeRepository } from "../attendance/employee.repository";
-import { DriverChecker } from "./driver.checker";
+import { EmployeeRepository } from "../employee/employee.repository";
+
+import { DriverHelper } from "./driver.helper";
 import { DriverRepository } from "./driver.repository";
-import { DriverResponseHelper } from "./driver.response-helper";
 import type { DriverAvailableTaskInput, DriverClaimInput } from "./driver.validation";
 
 export class DriverService {
-  static async getAvailableTasks({ payload, query }: { payload: { id: string } } & DriverAvailableTaskInput) {
+  static async getAvailableAssignment({ payload, query }: { payload: { id: string } } & DriverAvailableTaskInput) {
     const driver = await EmployeeRepository.findById(payload.id);
-    DriverChecker.verifyDriver(driver);
+    DriverHelper.assertDriver(driver);
 
     const where: Prisma.DriverAssignmentWhereInput = {
       outletId: driver.currentOutletId!,
@@ -27,53 +25,48 @@ export class DriverService {
     const skip = countSkip({ page: query.page, limit: query.limit });
     const take = query.limit;
 
-    const [totalItems, availableTasks] = await Promise.all([
+    const [totalItems, availableAssignment] = await Promise.all([
       prisma.driverAssignment.count({ where }),
-      DriverRepository.findAvailableTasks(where, skip, take, query.sortOrder),
+      DriverRepository.findAvailableAssignment(where, skip, take, query.sortOrder),
     ]);
     // const totalItems = await prisma.driverAssignment.count({ where });
 
     const meta = makePaginationMeta({ page: query.page, limit: query.limit, totalItems });
-    return { data: availableTasks, meta };
+    return { data: availableAssignment, meta };
   }
   static async claimAssignment({ payload, params }: { payload: { id: string } } & DriverClaimInput) {
     const driver = await EmployeeRepository.findById(payload.id);
-    DriverChecker.verifyDriver(driver);
+    DriverHelper.assertDriver(driver);
     // Rules menjaga driver lupa CLOCK-OUT, Driver harus punya attendance hari ini agar bisa claim job!
-    const attendanceDate = getAttendanceDateWIB();
+    const attendanceDate = DriverHelper.getAttendanceDateWIB();
     const todayAttendance = await AttendanceRepository.findTodayAttendance(driver.id, attendanceDate);
-    AttendanceChecker.verifyActiveAttendanceToday(todayAttendance);
+    if (!todayAttendance)
+      throw new ResponseError("ATTENDANCE_NOT_CLOCKED_IN", "Anda belum melakukan clock in hari ini!");
+    if (driver.workStatus !== WorkStatus.AVAILABLE) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
 
-    //Rules menjaga DRIVER hanya boleh satu job
-    DriverChecker.verifyWorkStatus(driver, WorkStatus.AVAILABLE);
-
-    const activeAssignment = await DriverRepository.findDriverActiveAssignment(driver.id);
-    if (activeAssignment) {
-      throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
-    }
+    const activeAssignment = await DriverRepository.findActiveByDriverId(driver.id);
+    if (activeAssignment) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
 
     //Rules untuk verifikasi assignment
     const assignment = await DriverRepository.findAssignmentById(params.assignmentId);
-    DriverChecker.verifyAssignmentToClaim(assignment, driver.currentOutletId!);
+    DriverHelper.assertClaimableAssignment(assignment, driver.currentOutletId!);
 
     const claimedAssignment = await prisma.$transaction(async (tx) => {
       const assignedAt = new Date();
       await DriverRepository.claimAssignment(assignment.id, driver.currentOutletId!, driver.id, assignedAt, tx);
-      await DriverRepository.updateDriverWorkStatus(driver.id, tx);
+      await DriverRepository.updateDriverWorkStatus(driver.id, driver.workStatus!, WorkStatus.BUSY, tx);
       const updatedAssignment = await DriverRepository.findUpdatedAssignment(assignment.id, tx);
       return updatedAssignment;
     });
     return claimedAssignment;
   }
-  static async getActiveTask(payload: { id: string }) {
+  static async getActiveAssignment(payload: { id: string }) {
     const driver = await EmployeeRepository.findById(payload.id);
-    DriverChecker.verifyDriver(driver);
+    DriverHelper.assertDriver(driver);
 
-    const activeAssignment = await DriverRepository.findActiveTaskDetail(driver.id);
-    if (!activeAssignment) {
-      return null; //NULL menandakan belum ada tugas
-    }
+    const activeAssignment = await DriverRepository.findActiveAssignmentDetail(driver.id);
+    if (!activeAssignment) return null; //NULL menandakan belum ada tugas
 
-    return DriverResponseHelper.buildActiveTaskResponse(activeAssignment);
+    return DriverHelper.buildActiveResponse(activeAssignment);
   }
 }

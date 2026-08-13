@@ -9,7 +9,7 @@ export class DriverController {
     const { query } = validate(DriverValidation.AVAILABLE_TASKS, { query: req.query });
 
     const payload = res.locals.payload;
-    const result = await DriverService.getAvailableTasks({ payload, query });
+    const result = await DriverService.getAvailableAssignment({ payload, query });
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -36,7 +36,7 @@ export class DriverController {
   static async getActiveTask(_req: Request, res: Response) {
     const payload = res.locals.payload;
 
-    const result = await DriverService.getActiveTask(payload);
+    const result = await DriverService.getActiveAssignment(payload);
     res.status(StatusCodes.OK).json({
       success: true,
       message: result ? "Tugas Aktif berhasil diterima!" : "Tidak ada Tugas Aktif!",
@@ -44,11 +44,11 @@ export class DriverController {
     });
   }
 
-  static async startTask(req: Request, res: Response) {
-    const { params } = validate(DriverValidation.START_TASK, { params: req.params });
+  // static async startTask(req: Request, res: Response) {
+  //   const { params } = validate(DriverValidation.START_TASK, { params: req.params });
 
-    const payload = res.locals.payload;
-    
-    const result = await DriverService.startTask({})
-  }
+  //   const payload = res.locals.payload;
+
+  //   const result = await DriverService.startTask({});
+  // }
 }

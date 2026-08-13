@@ -1,5 +1,5 @@
 import { prisma } from "../../configs/prisma-client.config";
-import { EmployeeRepository } from "./employee.repository";
+import { EmployeeRepository } from "../employee/employee.repository";
 import { AttendanceRepository } from "./attendance.repository";
 import { WorkStatus, type Prisma } from "../../../generated/prisma";
 import type { AttendanceHistoryInput } from "./attendance.validation";
