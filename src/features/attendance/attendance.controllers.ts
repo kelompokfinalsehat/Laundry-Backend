@@ -3,7 +3,6 @@ import { validate } from "../../validations/validate";
 import { AttendanceValidation } from "./attendance.validation";
 import { AttendanceService } from "./attendance.service";
 import { StatusCodes } from "http-status-codes";
-import { success } from "zod";
 
 export class AttendanceController {
   static async clockIn(req: Request, res: Response) {
@@ -48,10 +47,10 @@ export class AttendanceController {
     });
   }
 
-  static async getMyAttendanceStatus(_req: Request, res: Response) {
+  static async getAttendanceStatus(_req: Request, res: Response) {
     const payload = res.locals.payload;
 
-    const result = await AttendanceService.getMyAttendanceStatus({ payload });
+    const result = await AttendanceService.getAttendanceStatus({ payload });
 
     res.status(StatusCodes.OK).json({
       success: true,

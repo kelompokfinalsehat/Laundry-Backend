@@ -31,7 +31,7 @@ export class AttendanceRepository {
     return newAttendance;
   }
 
-  static async findEmployeeActiveAssigment(employeeId: string, role: Role) {
+  static async findEmployeeActiveAssignment(employeeId: string, role: Role) {
     if (role === Role.DRIVER) {
       return await prisma.driverAssignment.findFirst({
         where: {
@@ -55,6 +55,13 @@ export class AttendanceRepository {
     return await tx.attendance.update({
       where: { id: attendanceId },
       data: { clockOutAt: clockOutAt },
+    });
+  }
+  
+   static async updateWorkStatus(employeeId: string, workStatus: WorkStatus, tx: Prisma.TransactionClient) {
+    return await tx.employee.update({
+      where: { id: employeeId },
+      data: { workStatus },
     });
   }
 }

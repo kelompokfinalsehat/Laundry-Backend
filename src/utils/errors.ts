@@ -15,6 +15,7 @@ export const AppErrors = {
     status: StatusCodes.UNAUTHORIZED,
     message: "Anda belum login atau sesi telah berakhir.",
   },
+
   INVALID_CREDENTIALS: {
     code: "INVALID_CREDENTIALS",
     status: StatusCodes.UNAUTHORIZED,
