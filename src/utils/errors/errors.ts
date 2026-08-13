@@ -31,6 +31,12 @@ export const AppErrors = {
     status: StatusCodes.FORBIDDEN,
     message: "Email Anda belum diverifikasi.",
   },
+  CURRENT_PASSWORD_INVALID: {
+    code: "CURRENT_PASSWORD_INVALID",
+    status: StatusCodes.FORBIDDEN,
+    message: "Password saat ini salah.",
+  },
+
   GOOGLE_ACCOUNT_NO_PASSWORD: {
     code: "GOOGLE_ACCOUNT_NO_PASSWORD",
     status: StatusCodes.FORBIDDEN,
@@ -40,6 +46,11 @@ export const AppErrors = {
     code: "ACCESS_TOKEN_EXPIRED",
     status: StatusCodes.UNAUTHORIZED,
     message: "Sesi kedaluwarsa. Silakan perbarui sesi Anda.",
+  },
+   ACCESS_TOKEN_REQUIRED: {
+    code: "ACCESS_TOKEN_REQUIRED",
+    status: StatusCodes.UNAUTHORIZED,
+    message: "token tidak ditemukan. Silakan perbarui sesi Anda.",
   },
   INVALID_TOKEN: {
     code: "INVALID_TOKEN",
@@ -117,7 +128,6 @@ export const AppErrors = {
     status: StatusCodes.UNPROCESSABLE_ENTITY,
     message: "Ukuran file melebihi batas maksimum.",
   },
-
   // ===== Lokasi & Outlet (BR-LOC) =====
   OUTLET_NOT_AVAILABLE: {
     code: "OUTLET_NOT_AVAILABLE",
