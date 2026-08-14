@@ -52,6 +52,12 @@ export class DriverValidation {
       sortOrder: zod.enum(["asc", "desc"], { message: "Urutan hanya boleh ASC atau DESC!" }).default("desc"),
     }),
   });
+
+  static readonly HISTORY_DETAIL = zod.object({
+    params: zod.object({
+      assignmentId: zod.uuid("ID tidak valid!"),
+    }),
+  });
 }
 
 export type DriverAvailableAssignmentInput = zod.infer<typeof DriverValidation.AVAILABLE_ASSIGNMENT>;
@@ -60,3 +66,4 @@ export type DriverStartTaskInput = zod.infer<typeof DriverValidation.START_ASSIG
 export type DriverPickupCollectedInput = zod.infer<typeof DriverValidation.PICKUP_COLLECTED>;
 export type DriverCompleteDeliveryInput = zod.infer<typeof DriverValidation.COMPLETE_DELIVERY>;
 export type DriverHistoryListInput = zod.infer<typeof DriverValidation.HISTORY_LIST>;
+export type DriverHistoryDetailInput = zod.infer<typeof DriverValidation.HISTORY_DETAIL>;

@@ -18,6 +18,7 @@ import type {
   DriverAvailableAssignmentInput,
   DriverClaimInput,
   DriverCompleteDeliveryInput,
+  DriverHistoryDetailInput,
   DriverHistoryListInput,
   DriverPickupCollectedInput,
   DriverStartTaskInput,
@@ -173,5 +174,15 @@ export class DriverService {
       completedAt: item.completedAt,
     }));
     return { data, meta };
+  }
+
+  static async getHistoryDetail({ payload, params }: { payload: { id: string } } & DriverHistoryDetailInput) {
+    const driver = await EmployeeRepository.findById(payload.id);
+    DriverHelper.assertDriver(driver);
+    const assignment = await DriverRepository.findAssignmentById(params.assignmentId);
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    if (assignment.driverId !== driver.id) throw new ResponseError("RESOURCE_NOT_FOUND");
+    if (assignment.status !== DriverAssignmentStatus.COMPLETED) throw new ResponseError("RESOURCE_NOT_FOUND");
+    return assignment;
   }
 }

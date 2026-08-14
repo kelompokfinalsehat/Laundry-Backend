@@ -94,4 +94,14 @@ export class DriverController {
       meta: result.meta,
     });
   }
+  static async getHistoryDetail(req: Request, res: Response) {
+    const { params } = validate(DriverValidation.HISTORY_DETAIL, { params: req.params });
+    const payload = res.locals.payload;
+    const result = await DriverService.getHistoryDetail({ payload, params });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Detail riwayat tugas selesai berhasil didapat!",
+      data: result,
+    });
+  }
 }

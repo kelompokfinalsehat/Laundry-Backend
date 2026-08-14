@@ -19,3 +19,4 @@ DriverRoute.post("/:assignmentId/start", fakeAuth, DriverController.startAssignm
 DriverRoute.post("/:assignmentId/pickup-collected", fakeAuth, DriverController.pickupCollected);
 DriverRoute.post("/:assignmentId/complete-delivery", fakeAuth, DriverController.completeDelivery);
 DriverRoute.get("/history", fakeAuth, DriverController.getHistoryList);
+DriverRoute.get("/history/:assignmentId", fakeAuth, DriverController.getHistoryDetail);
