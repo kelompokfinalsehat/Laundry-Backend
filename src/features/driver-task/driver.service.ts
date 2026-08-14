@@ -17,6 +17,7 @@ import { DriverRepository } from "./driver.repository";
 import type {
   DriverAvailableAssignmentInput,
   DriverClaimInput,
+  DriverCompleteDeliveryInput,
   DriverPickupCollectedInput,
   DriverStartTaskInput,
 } from "./driver.validation";
@@ -125,5 +126,29 @@ export class DriverService {
       };
     });
     return pickupCollected;
+  }
+
+  static async completeDelivery({ payload, params }: { payload: { id: string } } & DriverCompleteDeliveryInput) {
+    const driver = await EmployeeRepository.findById(payload.id);
+    DriverHelper.assertDriver(driver);
+    const assignment = await DriverRepository.findAssignmentById(params.assignmentId);
+    DriverHelper.assertCompleteableDelivery(assignment, driver.id);
+    if (assignment.order.customerStatus !== CustomerStatus.ON_THE_WAY_TO_CUSTOMER)
+      throw new ResponseError("INVALID_STATE_TRANSITION");
+    const completeDelivery = await prisma.$transaction(async (tx) => {
+      const completedAt = new Date();
+      await DriverRepository.completeDeliveryAssignment(assignment.id, driver.id, completedAt, tx);
+      await DriverRepository.updateCompleteDeliveryOrder(assignment.orderId, tx);
+      const updatedAssignment = await DriverRepository.findUpdatedAssignment(assignment.id, tx);
+      if (!updatedAssignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+      return {
+        id: updatedAssignment.id,
+        taskType: updatedAssignment.taskType,
+        status: updatedAssignment.status,
+        deliveredAt: completedAt,
+        completedAt: completedAt, // deliveredAt dan completedAt diisi bersamaan, berbeda dengan PICKUP
+      };
+    });
+    return completeDelivery;
   }
 }

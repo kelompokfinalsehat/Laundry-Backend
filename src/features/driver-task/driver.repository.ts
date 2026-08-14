@@ -140,7 +140,41 @@ export class DriverRepository {
       where: { id: orderId, customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
       data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_OUTLET },
     });
-    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status tidak berubah!");
+    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status Order tidak berubah!");
+    return result;
+  }
+
+  static async completeDeliveryAssignment(
+    assignmentId: string,
+    currentDriverId: string,
+    completedAt: Date,
+    tx: Prisma.TransactionClient,
+  ) {
+    const result = await tx.driverAssignment.updateMany({
+      where: {
+        id: assignmentId,
+        driverId: currentDriverId,
+        status: DriverAssignmentStatus.IN_PROGRESS,
+        completedAt: null,
+      },
+      data: {
+        status: DriverAssignmentStatus.COMPLETED,
+        deliveredAt: completedAt,
+        completedAt: completedAt,
+      },
+    });
+    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Delivery tidak dapat diselesaikan!");
+    return result;
+  }
+
+  static async updateCompleteDeliveryOrder(orderId: string, tx: Prisma.TransactionClient) {
+    const result = await tx.order.updateMany({
+      where: { id: orderId, customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
+      data: {
+        customerStatus: CustomerStatus.WAITING_CUSTOMER_CONFIRMATION,
+      },
+    });
+    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status order tidak berubah!");
     return result;
   }
 }

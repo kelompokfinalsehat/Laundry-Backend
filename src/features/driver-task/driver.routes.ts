@@ -16,3 +16,4 @@ DriverRoute.post("/:assignmentId/claim", fakeAuth, DriverController.claimAssignm
 DriverRoute.get("/active", fakeAuth, DriverController.getActiveAssignment);
 DriverRoute.post("/:assignmentId/start", fakeAuth, DriverController.startAssignment);
 DriverRoute.post("/assignmentId/pickup-collected", fakeAuth, DriverController.pickupCollected);
+DriverRoute.post("/:assignmentId/complete-delivery", fakeAuth, DriverController.completeDelivery);

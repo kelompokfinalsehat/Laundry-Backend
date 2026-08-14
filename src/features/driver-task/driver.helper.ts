@@ -1,3 +1,4 @@
+import { pick } from "zod/mini";
 import { Prisma, AccountStatus, DriverAssignmentStatus, Role } from "../../../generated/prisma";
 import { DriverAssignment, Employee, PickupDeliveryType } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
@@ -143,7 +144,20 @@ export class DriverHelper {
   ): asserts assignment is DriverAssignment {
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan!");
     if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
+    if (assignment.taskType !== PickupDeliveryType.PICKUP) throw new ResponseError("INVALID_STATE_TRANSITION");
     if (assignment.status !== DriverAssignmentStatus.IN_PROGRESS) throw new ResponseError("INVALID_STATE_TRANSITION");
     if (assignment.pickedUpAt !== null) throw new ResponseError("CONFLICT");
+  }
+
+  static assertCompleteableDelivery(
+    assignment: DriverAssignment | null,
+    currentDriverId: string,
+  ): asserts assignment is DriverAssignment {
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan!");
+    if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
+    if (assignment.taskType !== PickupDeliveryType.DELIVERY) throw new ResponseError("INVALID_STATE_TRANSITION");
+    if (assignment.status !== DriverAssignmentStatus.IN_PROGRESS) throw new ResponseError("INVALID_STATE_TRANSITION");
+    if (assignment.deliveredAt !== null || assignment.completedAt !== null)
+      throw new ResponseError("INVALID_STATE_TRANSITION", "Delivery sudah diselesaikan!");
   }
 }

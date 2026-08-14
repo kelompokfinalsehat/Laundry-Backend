@@ -4,6 +4,7 @@ import { DriverValidation } from "./driver.validation";
 import { DriverService } from "./driver.service";
 import { StatusCodes } from "http-status-codes";
 import { success } from "zod";
+import { DriverRepository } from "./driver.repository";
 
 export class DriverController {
   static async getAvailableAssignment(req: Request, res: Response) {
@@ -66,6 +67,17 @@ export class DriverController {
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Pickup berhasil dikonfirmasi!",
+      data: result,
+    });
+  }
+
+  static async completeDelivery(req: Request, res: Response) {
+    const { body, params } = validate(DriverValidation.COMPLETE_DELIVERY, { body: req.body, params: req.params });
+    const payload = res.locals.payload;
+    const result = await DriverService.completeDelivery({ payload, params, body });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Delivery berhasil diselesaikan!",
       data: result,
     });
   }
