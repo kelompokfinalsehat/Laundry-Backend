@@ -29,7 +29,7 @@ export class MailerService {
   }
 
   static async sendChangeEmailVerification({ to, token }: SendEmailVerificationParams) {
-    const verificationUrl = `${APP_BASE_URL}/profile/verify-email?token=${encodeURIComponent(token)}`;
+    const verificationUrl = `${APP_BASE_URL}/profil/confirm-email?token=${encodeURIComponent(token)}`;
  
     const html = TemplateUtil.compile("change-email-verification", {
       verificationUrl,
