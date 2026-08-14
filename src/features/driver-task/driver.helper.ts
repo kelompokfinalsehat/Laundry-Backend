@@ -25,7 +25,7 @@ export const ACTIVE_TASK_SELECT = {
 
 export type ActiveAssignmentData = Prisma.DriverAssignmentGetPayload<{ select: typeof ACTIVE_TASK_SELECT }>;
 export interface BaseTaskResponse {
-  id: string; // Ganti jadi number jika ID kamu di Prisma pakai Int
+  id: string;
   taskType: PickupDeliveryType;
   status: DriverAssignmentStatus;
   orderCode: string;
@@ -125,5 +125,15 @@ export class DriverHelper {
       return { ...base, destination: customerDest, pickupScheduledAt: assignment.order.pickupScheduledAt };
     }
     return { ...base, destination: customerDest };
+  }
+
+  // CHECKER untuk /start-task
+  static assertStartableAssignment(
+    assignment: DriverAssignment | null,
+    currentDriverId: string,
+  ): asserts assignment is DriverAssignment {
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan");
+    if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
+    if (assignment.status !== DriverAssignmentStatus.ASSIGNED) throw new ResponseError("INVALID_STATE_TRANSITION");
   }
 }

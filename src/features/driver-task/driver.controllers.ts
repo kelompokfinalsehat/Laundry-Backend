@@ -3,10 +3,11 @@ import { validate } from "../../validations/validate";
 import { DriverValidation } from "./driver.validation";
 import { DriverService } from "./driver.service";
 import { StatusCodes } from "http-status-codes";
+import { success } from "zod";
 
 export class DriverController {
-  static async getAvailableTasks(req: Request, res: Response) {
-    const { query } = validate(DriverValidation.AVAILABLE_TASKS, { query: req.query });
+  static async getAvailableAssignment(req: Request, res: Response) {
+    const { query } = validate(DriverValidation.AVAILABLE_ASSIGNMENT, { query: req.query });
 
     const payload = res.locals.payload;
     const result = await DriverService.getAvailableAssignment({ payload, query });
@@ -33,7 +34,7 @@ export class DriverController {
     });
   }
 
-  static async getActiveTask(_req: Request, res: Response) {
+  static async getActiveAssignment(_req: Request, res: Response) {
     const payload = res.locals.payload;
 
     const result = await DriverService.getActiveAssignment(payload);
@@ -44,11 +45,15 @@ export class DriverController {
     });
   }
 
-  // static async startTask(req: Request, res: Response) {
-  //   const { params } = validate(DriverValidation.START_TASK, { params: req.params });
+  static async startAssignment(req: Request, res: Response) {
+    const { body, params } = validate(DriverValidation.START_ASSIGNMENT, { body: req.body, params: req.params });
+    const payload = res.locals.payload;
+    const result = await DriverService.startAssignment({ payload, body, params });
 
-  //   const payload = res.locals.payload;
-
-  //   const result = await DriverService.startTask({});
-  // }
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Tugas berhasil dimulai!",
+      data: result,
+    });
+  }
 }

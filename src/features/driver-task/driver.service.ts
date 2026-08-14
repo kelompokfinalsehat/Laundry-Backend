@@ -1,17 +1,26 @@
-import { DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
+import { pick } from "zod/mini";
+import {
+  CustomerStatus,
+  DriverAssignmentStatus,
+  PickupDeliveryType,
+  WorkStatus,
+  type Prisma,
+} from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
-import { AttendanceHelper } from "../attendance/attendance.helper";
 import { AttendanceRepository } from "../attendance/attendance.repository";
 import { EmployeeRepository } from "../employee/employee.repository";
 
 import { DriverHelper } from "./driver.helper";
 import { DriverRepository } from "./driver.repository";
-import type { DriverAvailableTaskInput, DriverClaimInput } from "./driver.validation";
+import type { DriverAvailableAssignmentInput, DriverClaimInput, DriverStartTaskInput } from "./driver.validation";
 
 export class DriverService {
-  static async getAvailableAssignment({ payload, query }: { payload: { id: string } } & DriverAvailableTaskInput) {
+  static async getAvailableAssignment({
+    payload,
+    query,
+  }: { payload: { id: string } } & DriverAvailableAssignmentInput) {
     const driver = await EmployeeRepository.findById(payload.id);
     DriverHelper.assertDriver(driver);
 
@@ -68,5 +77,25 @@ export class DriverService {
     if (!activeAssignment) return null; //NULL menandakan belum ada tugas
 
     return DriverHelper.buildActiveResponse(activeAssignment);
+  }
+
+  static async startAssignment({ payload, params }: { payload: { id: string } } & DriverStartTaskInput) {
+    const driver = await EmployeeRepository.findById(payload.id);
+    DriverHelper.assertDriver(driver);
+    const assignment = await DriverRepository.findAssignmentById(params.assignmentId);
+    DriverHelper.assertStartableAssignment(assignment, driver.id);
+    const expectedOrderStatus =
+      assignment.taskType === PickupDeliveryType.PICKUP
+        ? CustomerStatus.WAITING_DRIVER_PICKUP
+        : CustomerStatus.READY_FOR_DELIVERY;
+    if (assignment.order.customerStatus !== expectedOrderStatus) throw new ResponseError("INVALID_STATE_TRANSITION");
+    const startedAssignment = await prisma.$transaction(async (tx) => {
+      await DriverRepository.startAssignmentUpdate(assignment.id, driver.id, tx);
+      await DriverRepository.startCustomerStatusUpdate(assignment.orderId, expectedOrderStatus, tx);
+      const updatedAssignment = await DriverRepository.findUpdatedAssignment(assignment.id, tx);
+      if (!updatedAssignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+      return { id: updatedAssignment.id, taskType: updatedAssignment.taskType, status: updatedAssignment.status };
+    });
+    return startedAssignment;
   }
 }

@@ -2,7 +2,7 @@ import * as zod from "zod";
 import { paginationSchema } from "../../validations/pagination.validation";
 
 export class DriverValidation {
-  static readonly AVAILABLE_TASKS = zod.object({
+  static readonly AVAILABLE_ASSIGNMENT = zod.object({
     query: paginationSchema.extend({
       taskType: zod
         .enum(["PICKUP", "DELIVERY"], { message: "Tipe tugas hanya boleh PICKUP atau DELIVERY!" })
@@ -20,7 +20,7 @@ export class DriverValidation {
     // semua ditentukan oleh backend
   });
 
-  static readonly START_TASK = zod.object({
+  static readonly START_ASSIGNMENT = zod.object({
     params: zod.object({
       assignmentId: zod.uuid("ID tidak valid"),
     }),
@@ -28,6 +28,6 @@ export class DriverValidation {
   });
 }
 
-export type DriverAvailableTaskInput = zod.infer<typeof DriverValidation.AVAILABLE_TASKS>;
+export type DriverAvailableAssignmentInput = zod.infer<typeof DriverValidation.AVAILABLE_ASSIGNMENT>;
 export type DriverClaimInput = zod.infer<typeof DriverValidation.CLAIM_ASSIGNMENT>;
-export type DriverStartTaskInput = zod.infer<typeof DriverValidation.START_TASK>;
+export type DriverStartTaskInput = zod.infer<typeof DriverValidation.START_ASSIGNMENT>;

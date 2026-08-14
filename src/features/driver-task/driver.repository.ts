@@ -1,4 +1,4 @@
-import { DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
+import { CustomerStatus, DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { ACTIVE_TASK_SELECT } from "./driver.helper";
@@ -34,10 +34,11 @@ export class DriverRepository {
     return activeAssignment;
   }
 
-  //Mencari 1 assignment by id untuk proses CLAIM
+  //Mencari 1 assignment by id
   static async findAssignmentById(assignmentId: string) {
     return await prisma.driverAssignment.findUnique({
       where: { id: assignmentId },
+      include: { order: { select: { customerStatus: true } } },
     });
   }
 
@@ -92,5 +93,26 @@ export class DriverRepository {
       select: ACTIVE_TASK_SELECT,
     });
     return activeAssignment;
+  }
+
+  static async startAssignmentUpdate(assignmentId: string, currentDriverId: string, tx: Prisma.TransactionClient) {
+    const result = await tx.driverAssignment.updateMany({
+      where: { id: assignmentId, driverId: currentDriverId, status: DriverAssignmentStatus.ASSIGNED },
+      data: { status: DriverAssignmentStatus.IN_PROGRESS },
+    });
+    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status tidak berubah!");
+    return result;
+  }
+  static async startCustomerStatusUpdate(
+    orderId: string,
+    expectedOrderStatus: CustomerStatus,
+    tx: Prisma.TransactionClient,
+  ) {
+    const result = await tx.order.updateMany({
+      where: { id: orderId, customerStatus: expectedOrderStatus },
+      data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
+    });
+    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status tidak berubah!");
+    return result;
   }
 }

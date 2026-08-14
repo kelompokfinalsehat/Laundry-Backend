@@ -9,11 +9,11 @@ DriverRoute.get(
   fakeAuth,
   //Authmiddleware.authenticated
   //Authmiddleware.authorized[Role.DRIVER]
-  DriverController.getAvailableTasks,
+  DriverController.getAvailableAssignment,
 );
 
 DriverRoute.post("/:assignmentId/claim", fakeAuth, DriverController.claimAssignment);
 
-DriverRoute.get("/active", fakeAuth, DriverController.getActiveTask);
+DriverRoute.get("/active", fakeAuth, DriverController.getActiveAssignment);
 
-DriverRoute.post("/:assignmentId/start", fakeAuth, DriverController.startTask);
+DriverRoute.post("/:assignmentId/start", fakeAuth, DriverController.startAssignment);
