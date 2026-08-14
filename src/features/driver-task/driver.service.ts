@@ -18,9 +18,11 @@ import type {
   DriverAvailableAssignmentInput,
   DriverClaimInput,
   DriverCompleteDeliveryInput,
+  DriverHistoryListInput,
   DriverPickupCollectedInput,
   DriverStartTaskInput,
 } from "./driver.validation";
+import { id } from "zod/locales";
 
 export class DriverService {
   static async getAvailableAssignment({
@@ -150,5 +152,26 @@ export class DriverService {
       };
     });
     return completeDelivery;
+  }
+
+  static async getHistoryList({ payload, query }: { payload: { id: string } } & DriverHistoryListInput) {
+    const driver = await EmployeeRepository.findById(payload.id);
+    DriverHelper.assertDriver(driver);
+    const where: Prisma.DriverAssignmentWhereInput = { driverId: driver.id, status: DriverAssignmentStatus.COMPLETED };
+    if (query.taskType) where.taskType = query.taskType;
+    const skip = countSkip({ page: query.page, limit: query.limit });
+    const take = query.limit;
+    const [totalItems, history] = await Promise.all([
+      prisma.driverAssignment.count({ where }),
+      DriverRepository.findHistoryList(where, skip, take, query.sortOrder),
+    ]);
+    const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
+    const data = history.map((item) => ({
+      id: item.id,
+      orderCode: item.order.orderCode,
+      taskType: item.taskType,
+      completedAt: item.completedAt,
+    }));
+    return { data, meta };
   }
 }

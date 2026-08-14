@@ -81,4 +81,17 @@ export class DriverController {
       data: result,
     });
   }
+
+  static async getHistoryList(req: Request, res: Response) {
+    const { query } = validate(DriverValidation.HISTORY_LIST, { query: req.query });
+    const payload = res.locals.payload;
+
+    const result = await DriverService.getHistoryList({ payload, query });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Daftar Riwayat berhasil didapatkan!",
+      data: result.data,
+      meta: result.meta,
+    });
+  }
 }

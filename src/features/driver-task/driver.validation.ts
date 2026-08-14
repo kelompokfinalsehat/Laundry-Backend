@@ -1,5 +1,6 @@
 import * as zod from "zod";
 import { paginationSchema } from "../../validations/pagination.validation";
+import { PickupDeliveryType } from "../../../generated/prisma";
 
 export class DriverValidation {
   static readonly AVAILABLE_ASSIGNMENT = zod.object({
@@ -40,6 +41,17 @@ export class DriverValidation {
     }),
     body: zod.object({}).strict(),
   });
+
+  static readonly HISTORY_LIST = zod.object({
+    query: paginationSchema.extend({
+      taskType: zod
+        .enum([PickupDeliveryType.PICKUP, PickupDeliveryType.DELIVERY], {
+          message: "Tipe tugas hanya PICKUP atau DELIVERY!",
+        })
+        .optional(),
+      sortOrder: zod.enum(["asc", "desc"], { message: "Urutan hanya boleh ASC atau DESC!" }).default("desc"),
+    }),
+  });
 }
 
 export type DriverAvailableAssignmentInput = zod.infer<typeof DriverValidation.AVAILABLE_ASSIGNMENT>;
@@ -47,3 +59,4 @@ export type DriverClaimInput = zod.infer<typeof DriverValidation.CLAIM_ASSIGNMEN
 export type DriverStartTaskInput = zod.infer<typeof DriverValidation.START_ASSIGNMENT>;
 export type DriverPickupCollectedInput = zod.infer<typeof DriverValidation.PICKUP_COLLECTED>;
 export type DriverCompleteDeliveryInput = zod.infer<typeof DriverValidation.COMPLETE_DELIVERY>;
+export type DriverHistoryListInput = zod.infer<typeof DriverValidation.HISTORY_LIST>;

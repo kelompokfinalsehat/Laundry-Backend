@@ -1,3 +1,4 @@
+import { tr } from "zod/locales";
 import { CustomerStatus, DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
@@ -176,5 +177,20 @@ export class DriverRepository {
     });
     if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status order tidak berubah!");
     return result;
+  }
+
+  static async findHistoryList(
+    where: Prisma.DriverAssignmentWhereInput,
+    skip: number,
+    take: number,
+    sortOrder: "asc" | "desc",
+  ) {
+    return await prisma.driverAssignment.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { completedAt: sortOrder },
+      select: { id: true, taskType: true, completedAt: true, order: { select: { orderCode: true } } },
+    });
   }
 }
