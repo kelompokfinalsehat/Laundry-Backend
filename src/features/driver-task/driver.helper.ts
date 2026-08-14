@@ -136,4 +136,14 @@ export class DriverHelper {
     if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
     if (assignment.status !== DriverAssignmentStatus.ASSIGNED) throw new ResponseError("INVALID_STATE_TRANSITION");
   }
+
+  static assertPickupableAssignment(
+    assignment: DriverAssignment | null,
+    currentDriverId: string,
+  ): asserts assignment is DriverAssignment {
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan!");
+    if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
+    if (assignment.status !== DriverAssignmentStatus.IN_PROGRESS) throw new ResponseError("INVALID_STATE_TRANSITION");
+    if (assignment.pickedUpAt !== null) throw new ResponseError("CONFLICT");
+  }
 }

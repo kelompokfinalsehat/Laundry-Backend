@@ -14,7 +14,12 @@ import { EmployeeRepository } from "../employee/employee.repository";
 
 import { DriverHelper } from "./driver.helper";
 import { DriverRepository } from "./driver.repository";
-import type { DriverAvailableAssignmentInput, DriverClaimInput, DriverStartTaskInput } from "./driver.validation";
+import type {
+  DriverAvailableAssignmentInput,
+  DriverClaimInput,
+  DriverPickupCollectedInput,
+  DriverStartTaskInput,
+} from "./driver.validation";
 
 export class DriverService {
   static async getAvailableAssignment({
@@ -97,5 +102,28 @@ export class DriverService {
       return { id: updatedAssignment.id, taskType: updatedAssignment.taskType, status: updatedAssignment.status };
     });
     return startedAssignment;
+  }
+
+  static async pickupCollected({ payload, params }: { payload: { id: string } } & DriverPickupCollectedInput) {
+    const driver = await EmployeeRepository.findById(payload.id);
+    DriverHelper.assertDriver(driver);
+    const assignment = await DriverRepository.findAssignmentById(params.assignmentId);
+    DriverHelper.assertPickupableAssignment(assignment, driver.id);
+    if (assignment.order.customerStatus !== CustomerStatus.ON_THE_WAY_TO_CUSTOMER)
+      throw new ResponseError("INVALID_STATE_TRANSITION");
+    const pickupCollected = await prisma.$transaction(async (tx) => {
+      const pickedUpAt = new Date();
+      await DriverRepository.markPickupCollected(assignment.id, driver.id, pickedUpAt, tx);
+      await DriverRepository.updatePickupOrderToOutlet(assignment.orderId, tx);
+      const updatedAssignment = await DriverRepository.findUpdatedAssignment(assignment.id, tx);
+      if (!updatedAssignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+      return {
+        id: updatedAssignment.id,
+        taskType: updatedAssignment.taskType,
+        status: updatedAssignment.status,
+        pickedUpAt: updatedAssignment.pickedUpAt,
+      };
+    });
+    return pickupCollected;
   }
 }

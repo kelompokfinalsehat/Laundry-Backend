@@ -56,4 +56,17 @@ export class DriverController {
       data: result,
     });
   }
+
+  static async pickupCollected(req: Request, res: Response) {
+    const { body, params } = validate(DriverValidation.PICKUP_COLLECTED, { body: req.body, params: req.params });
+    const payload = res.locals.payload;
+
+    const result = await DriverService.pickupCollected({ payload, body, params });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Pickup berhasil dikonfirmasi!",
+      data: result,
+    });
+  }
 }

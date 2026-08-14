@@ -26,8 +26,16 @@ export class DriverValidation {
     }),
     body: zod.object({}).strict(),
   });
+
+  static readonly PICKUP_COLLECTED = zod.object({
+    params: zod.object({
+      assignmentId: zod.uuid("ID tidak valid"),
+    }),
+    body: zod.object({}).strict(),
+  });
 }
 
 export type DriverAvailableAssignmentInput = zod.infer<typeof DriverValidation.AVAILABLE_ASSIGNMENT>;
 export type DriverClaimInput = zod.infer<typeof DriverValidation.CLAIM_ASSIGNMENT>;
 export type DriverStartTaskInput = zod.infer<typeof DriverValidation.START_ASSIGNMENT>;
+export type DriverPickupCollectedInput = zod.infer<typeof DriverValidation.PICKUP_COLLECTED>;

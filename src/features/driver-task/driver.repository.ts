@@ -80,7 +80,7 @@ export class DriverRepository {
   static async findUpdatedAssignment(assignmentId: string, tx: Prisma.TransactionClient) {
     return await tx.driverAssignment.findUnique({
       where: { id: assignmentId },
-      select: { id: true, taskType: true, status: true, assignedAt: true },
+      select: { id: true, taskType: true, status: true, assignedAt: true, pickedUpAt: true },
     });
   }
 
@@ -111,6 +111,34 @@ export class DriverRepository {
     const result = await tx.order.updateMany({
       where: { id: orderId, customerStatus: expectedOrderStatus },
       data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
+    });
+    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status tidak berubah!");
+    return result;
+  }
+
+  static async markPickupCollected(
+    assignmentId: string,
+    currentDriverId: string,
+    pickedUpAt: Date,
+    tx: Prisma.TransactionClient,
+  ) {
+    const result = await tx.driverAssignment.updateMany({
+      where: {
+        id: assignmentId,
+        driverId: currentDriverId,
+        status: DriverAssignmentStatus.IN_PROGRESS,
+        pickedUpAt: null,
+      },
+      data: { pickedUpAt },
+    });
+    if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Pickup tidak dapat dikonfirmasi");
+    return result;
+  }
+
+  static async updatePickupOrderToOutlet(orderId: string, tx: Prisma.TransactionClient) {
+    const result = await tx.order.updateMany({
+      where: { id: orderId, customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
+      data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_OUTLET },
     });
     if (result.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Status tidak berubah!");
     return result;
