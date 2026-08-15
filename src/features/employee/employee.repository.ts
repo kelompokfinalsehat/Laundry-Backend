@@ -7,4 +7,11 @@ export class EmployeeRepository {
       where: { id, deletedAt: null },
     });
   }
+
+  static async updateWorkStatus(employeeId: string, workStatus: WorkStatus, tx: Prisma.TransactionClient) {
+    return await tx.employee.update({
+      where: { id: employeeId },
+      data: { workStatus },
+    });
+  }
 }

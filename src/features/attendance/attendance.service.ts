@@ -1,5 +1,5 @@
 import { prisma } from "../../configs/prisma-client.config";
-import { EmployeeRepository } from "./employee.repository";
+import { EmployeeRepository } from "../employee/employee.repository";
 import { AttendanceRepository } from "./attendance.repository";
 import { WorkStatus, type Prisma } from "../../../generated/prisma";
 import type { AttendanceHistoryInput } from "./attendance.validation";
@@ -17,7 +17,7 @@ export class AttendanceService {
     AttendanceHelper.assertWorkStatus(employee, [WorkStatus.OFF_DUTY, null]);
 
     const attendanceDate = AttendanceHelper.getAttendanceDateWIB();
-    const todayAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate);
+    const todayAttendance = await AttendanceRepository.findTodayAttendance(employee.id, attendanceDate); 
     if (todayAttendance) {
       throw new ResponseError("ATTENDANCE_ALREADY_CLOCKED_IN", "Anda sudah melakukan clock-in hari ini");
     }
@@ -80,7 +80,7 @@ export class AttendanceService {
       where,
       skip,
       take,
-      orderBy: { createdAt: query.sortOrder },
+      orderBy: { attendanceDate: query.sortOrder },
     });
 
     const meta = makePaginationMeta({ page: query.page, limit: query.limit, totalItems });

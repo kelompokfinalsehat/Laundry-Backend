@@ -163,6 +163,17 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "Request bypass ini sudah diputuskan sebelumnya.",
   },
+  WORK_STATUS_NOT_AVAILABLE: {
+    code: "WORK_STATUS_NOT_AVAILABLE",
+    status: StatusCodes.CONFLICT,
+    message: "Status kerja saat ini tidak mengizinkan Anda mengambil tugas.",
+  },
+
+  ASSIGNMENT_ALREADY_CLAIMED: {
+    code: "ASSIGNMENT_ALREADY_CLAIMED",
+    status: StatusCodes.CONFLICT,
+    message: "Tugas ini sudah diambil atau tidak lagi tersedia.",
+  },
 
   // ===== Attendance (BR-ATT) =====
   ATTENDANCE_ALREADY_CLOCKED_IN: {
