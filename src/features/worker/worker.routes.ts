@@ -5,7 +5,13 @@ export const WorkerRoute = Router();
 
 WorkerRoute.get(
   "/available", //fakeAuth,
-  AuthMiddleware.authenticated,
-  AuthMiddleware.authorized(["worker"]),
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
   WorkerController.getAvailableAssignments,
+);
+WorkerRoute.get(
+  "/:assignmentId",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.getAssignmentDetail,
 );

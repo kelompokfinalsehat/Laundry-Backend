@@ -1,4 +1,4 @@
-import type { Prisma } from "../../../generated/prisma";
+import { WorkerAssignmentStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 
 export class WorkerRepository {
@@ -17,6 +17,19 @@ export class WorkerRepository {
       take,
       orderBy: { createdAt: sortOrder },
       select: { id: true, stationType: true, createdAt: true, order: { select: { id: true, orderCode: true } } },
+    });
+  }
+
+  static async findAssignmentById(assignmentId: string, workerOutletId: string) {
+    return prisma.workerAssignment.findFirst({
+      where: { id: assignmentId, outletId: workerOutletId, status: WorkerAssignmentStatus.QUEUED, workerId: null },
+      select: {
+        id: true,
+        stationType: true,
+        status: true,
+        createdAt: true,
+        order: { select: { id: true, orderCode: true } },
+      },
     });
   }
 }

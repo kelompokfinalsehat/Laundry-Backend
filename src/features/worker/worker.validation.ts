@@ -11,6 +11,12 @@ export class WorkerValidation {
       sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan tidak tersedia!" }).default("desc"),
     }),
   });
+  static readonly ASSIGNMENT_DETAIL = zod.object({
+    params: zod.object({
+      assignmentId: zod.uuid("ID tidak valid!"),
+    }),
+  });
 }
 
 export type WorkerAvailableAssignmentInput = zod.infer<typeof WorkerValidation.AVAILABLE_ASSIGNMENT>;
+export type WorkerAssignmentDetailInput = zod.infer<typeof WorkerValidation.ASSIGNMENT_DETAIL>;
