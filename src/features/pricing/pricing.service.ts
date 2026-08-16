@@ -1,20 +1,11 @@
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import { PricingHelper } from "./pricing.helper";
 import { PricingRepository } from "./pricing.repository";
 import { CreateShippingRateBody, LaundryPricingBody, ShippingRateQuery, UpdateShippingRateBody } from "./pricing.type";
 
 export class PricingService {
-    private static async findLaundryPricingOrThrow(){
-        const laundryPricing = await PricingRepository.findCurrentLaundryPricing()
-        if(!laundryPricing) throw new ResponseError('RESOURCE_NOT_FOUND', 'Laundry pricing is currently none.')
-        return laundryPricing
-    }
-    private static async findShippingRateByIdOrThrow(id: string){
-        const shippingRate = await PricingRepository.findShippingRateById(id)
-        if(!shippingRate) throw new ResponseError('RESOURCE_NOT_FOUND', 'Shipping rate not found.')
-        return shippingRate
-    }
     static async getLaundryPricing(){
-        const laundryPricing = await this.findLaundryPricingOrThrow()
+        const laundryPricing = await PricingHelper.findLaundryPricingOrThrow()
         return laundryPricing
     }
     static async createLaundryPricing(body: LaundryPricingBody){
@@ -31,18 +22,18 @@ export class PricingService {
         return await PricingRepository.getShippingRates(query)
     }
     static async getShippingRateById(id: string){
-        const shippingRate = await this.findShippingRateByIdOrThrow(id)
+        const shippingRate = await PricingHelper.findShippingRateByIdOrThrow(id)
         return shippingRate
     }
     static async createShippingRate(body: CreateShippingRateBody){
         return await PricingRepository.createShippingRate(body)
     }
     static async updateShippingRate(id: string, body: UpdateShippingRateBody){
-        await this.findShippingRateByIdOrThrow(id)
+        await PricingHelper.findShippingRateByIdOrThrow(id)
         return await PricingRepository.updateShippingRate(id, body)
     }
     static async deactivateShippingRate(id: string){
-        const shippingRate = await this.findShippingRateByIdOrThrow(id)
+        const shippingRate = await PricingHelper.findShippingRateByIdOrThrow(id)
         if(shippingRate.deletedAt) throw new ResponseError('CONFLICT', 'Shipping rate already deactivated.')
         return await PricingRepository.updateShippingRate(id, {deletedAt: new Date()})
     }

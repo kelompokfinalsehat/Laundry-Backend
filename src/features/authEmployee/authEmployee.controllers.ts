@@ -18,7 +18,6 @@ export class AuthEmployeeController {
       sub: employee.id,
       accountType: "employee",
       role: employee.role,
-      outletId: employee.currentOutletId ?? undefined
     });
 
     const refreshToken = await RefreshTokenService.issue({
@@ -35,6 +34,7 @@ export class AuthEmployeeController {
     });
 
     await AuthEmployeeService.acceptInvitation({ body });
+    return ResponseHelper.success(res, "Berhasil set password.", null)
   }
 
   static async forgotPassword(req: Request, res: Response) {
@@ -43,6 +43,7 @@ export class AuthEmployeeController {
     });
 
     await AuthEmployeeService.forgotPassword({ body });
+    return ResponseHelper.success(res, "Link reset password telah dikirim ke email.", null)
   }
 
   static async resetPasword(req: Request, res: Response) {
@@ -51,5 +52,6 @@ export class AuthEmployeeController {
     });
 
     await AuthEmployeeService.resetPasword({ body });
+    return ResponseHelper.success(res, "Reset password berhasil.", null)
   }
 }

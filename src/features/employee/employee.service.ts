@@ -1,5 +1,6 @@
 import { AccountStatus, Prisma, WorkStatus } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import { AuthTokenIssuer } from "../mailers/mailer.helpers";
 import { OutletRepository } from "../outlet/outlet.repository";
 import { EmployeeRepository } from "./employee.repository";
 import { AssignEmployeeBody, EmployeeQuery, InviteEmployeeBody, UpdateEmployeeBody } from "./employee.type";
@@ -32,15 +33,7 @@ export class EmployeeService {
       currentOutletId: body.outletId,
     };
     const employee = await EmployeeRepository.create(employeeData);
-    /**
-     * TODO
-     *
-     * Generate invitation token
-     * Send invitation email
-     *
-     * Akan diintegrasikan setelah
-     * Feature 1 selesai.
-     */
+    await AuthTokenIssuer.issueEmployeInvitationToken(employee.id, employee.email, employee.name)
     return employee
   }
   static async updateEmployee(id: string, body: UpdateEmployeeBody){
@@ -53,15 +46,9 @@ export class EmployeeService {
   }
   static async resendInvitation(id: string){
     const employee = await this.findEmployeeByIdOrThrow(id)
-    if(employee.accountStatus !== AccountStatus.INVITED) throw new ResponseError('CONFLICT')
-    /**
-    * TODO Feature 1
-    *
-    * Revoke previous invitation
-    * Generate new invitation token
-    * Send invitation email
-    */
-    return null
+    if(employee.accountStatus !== AccountStatus.INVITED) throw new ResponseError('CONFLICT', 'Employee account is not waiting for invitation.')
+    await AuthTokenIssuer.issueEmployeInvitationToken(employee.id, employee.email, employee.name)
+    return employee
   }
   static async activateEmployee(id: string){
     const employee = await this.findEmployeeByIdOrThrow(id)

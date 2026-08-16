@@ -21,15 +21,16 @@ export class AuthTokenIssuer {
   }
 
   static async issueEmployeInvitationToken(
-    customerId: string,
+    employeeId: string,
     email: string,
+    name: string
   ): Promise<void> {
     const rawToken = await this.issueEmployeToken(
-      customerId,
+      employeeId,
       "ACCOUNT_INVITATION",
       EMAIL_VERIFICATION_EXPIRY_HOURS,
     );
-    await MailerService.sendEmailVerification({ to: email, token: rawToken });
+    await MailerService.sendEmployeeInvitation({ to: email, token: rawToken, name });
   }
 
   static async issuePasswordResetToken(
@@ -53,7 +54,7 @@ export class AuthTokenIssuer {
       "PASSWORD_RESET",
       PASSWORD_RESET_EXPIRY_HOURS,
     );
-    await MailerService.sendPasswordReset({ to: email, token: rawToken });
+    await MailerService.sendEmployeePasswordReset({ to: email, token: rawToken });
   }
 
   private static async issueCustomerToken(

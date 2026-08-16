@@ -5,8 +5,9 @@ import { Role } from "../../../generated/prisma";
 
 const router = Router()
 
+router.use(AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.SUPER_ADMIN]))
 // Super Admin Scope
-router.get("/", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.SUPER_ADMIN]) ,EmployeeController.getEmployees)
+router.get("/", EmployeeController.getEmployees)
 router.get("/:id", EmployeeController.getEmployeeById)
 router.post("/invite", EmployeeController.inviteEmployee)
 router.patch("/:id", EmployeeController.updateEmployee)

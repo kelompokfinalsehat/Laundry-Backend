@@ -4,31 +4,29 @@ import {
   Prisma,
 } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import { EmployeeHelper } from "../employee/employee.helper";
 import { LaundryItemRepository } from "../laundry-item/laundry-item.repository";
 import { PricingRepository } from "../pricing/pricing.repository";
+import { OrderHelper } from "./order.helper";
 import { OrderRepository } from "./order.repository";
 import { CreateOrderBody, OrderQuery } from "./order.type";
 
 export class OrderService {
-  private static async findOrderByIdOrThrow(id: string, outletId?: string) {
-    const order = await OrderRepository.findById(id, outletId);
-    if (!order)
-      throw new ResponseError("RESOURCE_NOT_FOUND", "Order not found.");
-    return order;
+  static async getOrders(query: OrderQuery, sub: string) {
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(sub)
+    return OrderRepository.findAll(query, employee.currentOutletId ?? undefined);
   }
-  static async getOrders(query: OrderQuery, outletId?: string) {
-    return OrderRepository.findAll(query, outletId);
-  }
-  static async getOrderById(id: string, outletId?: string) {
-    const order = await this.findOrderByIdOrThrow(id, outletId);
+  static async getOrderById(id: string, sub: string) {
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(sub)
+    const order = await OrderHelper.findOrderByIdOrThrow(id, employee.currentOutletId ?? undefined)
     return order;
   }
   static async receiveOrder(
     orderId: string,
-    outletId: string,
     outletAdminId: string,
   ) {
-    const order = await this.findOrderByIdOrThrow(orderId, outletId);
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(outletAdminId)
+    const order = await OrderHelper.findOrderByIdOrThrow(orderId, employee.currentOutletId ?? undefined)
     if (order.receivedAt) return order;
     if (order.customerStatus !== CustomerStatus.ON_THE_WAY_TO_OUTLET)
       throw new ResponseError(
@@ -58,10 +56,12 @@ export class OrderService {
   }
   static async createOrder(
     orderId: string,
-    outletId: string,
+    outletAdminId: string,
     body: CreateOrderBody,
   ) {
-    const order = await this.findOrderByIdOrThrow(orderId, outletId);
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(outletAdminId)
+    if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
+    const order = await OrderHelper.findOrderByIdOrThrow(orderId, employee.currentOutletId)
     if (!order.receivedAt)
       throw new ResponseError(
         "INVALID_STATE_TRANSITION",
@@ -101,7 +101,7 @@ export class OrderService {
     const totalAmount = laundryCost.add(shippingRate.price);
     return OrderRepository.createOrder({
       orderId,
-      outletId,
+      outletId: employee.currentOutletId,
       weightKg,
       laundryPricingId: laundryPricing.id,
       pricePerKgSnapshot: laundryPricing.pricePerKg,

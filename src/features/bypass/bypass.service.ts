@@ -1,16 +1,19 @@
 import { BcryptUtil } from "../../utils/Auth/bcrypt.utils";
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import { EmployeeHelper } from "../employee/employee.helper";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { BypassHelper } from "./bypass.helper";
 import { BypassRepository } from "./bypass.repository";
 import { BypassQuery } from "./bypass.type";
 
 export class BypassService {
-    static async getBypastRequests(query: BypassQuery, outletId?: string){
-        return BypassRepository.findAll(query, outletId)
+    static async getBypastRequests(query: BypassQuery, sub: string){
+        const employee = await EmployeeHelper.findEmployeeByIdOrThrow(sub)
+        return BypassRepository.findAll(query, employee.currentOutletId ?? undefined)
     }
-    static async getBypastRequestById(id: string, outletId?: string){
-        const bypass = await BypassRepository.findById(id, outletId)
+    static async getBypastRequestById(id: string, sub: string){
+        const employee = await EmployeeHelper.findEmployeeByIdOrThrow(sub)
+        const bypass = await BypassRepository.findById(id, employee.currentOutletId ?? undefined)
         if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Bypass request not found.')
         const differences = BypassHelper.parseQuantityDifferences(bypass.quantityDiffJson)
         const orderItems = bypass.order.orderItems
@@ -34,24 +37,27 @@ export class BypassService {
             createdAt: bypass.createdAt
         }
     }
-    static async approve(id: string, outletId: string, decidedBy: string, password: string, problemNote: string){
-        const bypass = await BypassRepository.findForDecision(id, outletId)
+    static async approve(id: string, decidedBy: string, password: string, problemNote: string){
+        const employee = await EmployeeHelper.findEmployeeByIdOrThrow(decidedBy)
+        if(!employee.passwordHash) throw new ResponseError('INVALID_CREDENTIALS', 'Password tidak valid.')
+        if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
+        const bypass = await BypassRepository.findForDecision(id, employee.currentOutletId)
         if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Bypass request not found.')
-        const employee = await EmployeeRepository.findById(decidedBy)
-        if(!employee || !employee.passwordHash) throw new ResponseError('INVALID_CREDENTIALS', 'Password tidak valid.')
         const validPassword = await BcryptUtil.compare(password, employee.passwordHash)
         if(!validPassword) throw new ResponseError('INVALID_CREDENTIALS', 'Password tidak valid.')
         const differences = BypassHelper.parseQuantityDifferences(bypass.quantityDiffJson)
         BypassHelper.validateDifferences(differences, bypass.order.orderItems)
         const result = await BypassRepository.approve(id, decidedBy, problemNote, differences)
-        if(!result) return BypassRepository.findById(id, outletId)
+        if(!result) return BypassRepository.findById(id, employee.currentOutletId)
         return result
     }
-    static async reject(id: string, outletId: string, decidedBy: string){
-        const bypass = await BypassRepository.findForDecision(id, outletId)
+    static async reject(id: string, decidedBy: string){
+        const employee = await EmployeeHelper.findEmployeeByIdOrThrow(decidedBy)
+        if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
+        const bypass = await BypassRepository.findForDecision(id, employee.currentOutletId)
         if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Bypass request not found.')
         const result = await BypassRepository.reject(id, decidedBy)
-        if(!result) return BypassRepository.findById(id, outletId)
+        if(!result) return BypassRepository.findById(id, employee.currentOutletId)
         return result
     }
 }

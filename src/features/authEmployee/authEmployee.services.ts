@@ -53,8 +53,7 @@ export class AuthEmployeeService {
       id: employee.id,
       name: employee.name,
       email: employee.email,
-      role: employee.role,
-      currentOutletId: employee.currentOutletId,
+      role: employee.role
     };
   }
   static async acceptInvitation({ body }: AcceptInvitationInput) {
@@ -171,7 +170,7 @@ export class AuthEmployeeService {
         data: { usedAt: new Date() },
       }),
       prisma.refreshToken.updateMany({
-        where: { customerId: record.customerId },
+        where: { employeeId: record.employeeId },
         data: {
           revokedAt: new Date(),
         },
