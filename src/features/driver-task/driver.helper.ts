@@ -2,7 +2,7 @@ import { Prisma, AccountStatus, DriverAssignmentStatus, Role } from "../../../ge
 import { DriverAssignment, Employee, PickupDeliveryType } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 
-git diff tsconfig.jsonexport const ACTIVE_TASK_SELECT = {
+export const ACTIVE_TASK_SELECT = {
   id: true,
   taskType: true,
   status: true,
