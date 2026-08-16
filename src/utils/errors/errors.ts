@@ -6,7 +6,7 @@
  *   (lihat contoh pemakaian di response-error.util.ts).
  */
 
-import { INTERNAL_SERVER_ERROR, StatusCodes } from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 
 export const AppErrors = {
   // ===== Authentication & Token =====

@@ -3,8 +3,6 @@ import { validate } from "../../validations/validate";
 import { DriverValidation } from "./driver.validation";
 import { DriverService } from "./driver.service";
 import { StatusCodes } from "http-status-codes";
-import { success } from "zod";
-import { DriverRepository } from "./driver.repository";
 
 export class DriverController {
   static async getAvailableAssignment(req: Request, res: Response) {
@@ -89,7 +87,7 @@ export class DriverController {
     const result = await DriverService.getHistoryList({ payload, query });
     res.status(StatusCodes.OK).json({
       success: true,
-      message: "Daftar Riwayat berhasil didapatkan!",
+      message: "Daftar Riwayat tugas berhasil didapatkan!",
       data: result.data,
       meta: result.meta,
     });

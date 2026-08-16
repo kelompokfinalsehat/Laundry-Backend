@@ -1,4 +1,3 @@
-import { pick } from "zod/mini";
 import { Prisma, AccountStatus, DriverAssignmentStatus, Role } from "../../../generated/prisma";
 import { DriverAssignment, Employee, PickupDeliveryType } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
@@ -43,11 +42,11 @@ export interface CustomerDestination {
 export class DriverHelper {
   // CHECKER UMUM untuk beberapa function
   static assertDriver(driver: Employee | null): asserts driver is Employee {
-    if (!driver) throw new ResponseError("RESOURCE_NOT_FOUND", "Akun tidak ditemukan");
+    if (!driver) throw new ResponseError("RESOURCE_NOT_FOUND", "Data tidak ditemukan!");
     if (driver.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError("ACCOUNT_NOT_ACTIVE");
     if (driver.role !== Role.DRIVER) throw new ResponseError("FORBIDDEN");
     if (driver.currentOutletId === null)
-      throw new ResponseError("INVALID_STATE_TRANSITION", "Akun belum terdaftar di outlet");
+      throw new ResponseError("INVALID_STATE_TRANSITION", "Driver belum memiliki outlet aktif!");
   }
 
   //  CHECKER untuk Claim Assignment

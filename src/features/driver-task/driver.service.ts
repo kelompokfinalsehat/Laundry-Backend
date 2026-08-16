@@ -1,4 +1,3 @@
-import { pick } from "zod/mini";
 import {
   CustomerStatus,
   DriverAssignmentStatus,
@@ -23,7 +22,6 @@ import type {
   DriverPickupCollectedInput,
   DriverStartTaskInput,
 } from "./driver.validation";
-import { id } from "zod/locales";
 
 export class DriverService {
   static async getAvailableAssignment({
