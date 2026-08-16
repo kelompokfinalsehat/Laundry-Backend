@@ -1,11 +1,10 @@
-import { tr } from "zod/locales";
 import { CustomerStatus, DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { ACTIVE_TASK_SELECT } from "./driver.helper";
 
 export class DriverRepository {
-  static async findAvailableAssignment(
+  static async findAvailableAssignment( 
     where: Prisma.DriverAssignmentWhereInput,
     skip: number,
     take: number,
