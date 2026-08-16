@@ -32,4 +32,22 @@ export class WorkerRepository {
       },
     });
   }
+
+  static async countHistory(where: Prisma.WorkerAssignmentWhereInput) {
+    return prisma.workerAssignment.count({ where });
+  }
+  static async findHistory(
+    where: Prisma.WorkerAssignmentWhereInput,
+    skip: number,
+    take: number,
+    sortOrder: "asc" | "desc",
+  ) {
+    return prisma.workerAssignment.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { completedAt: sortOrder },
+      select: { id: true, stationType: true, completedAt: true, order: { select: { id: true, orderCode: true } } },
+    });
+  }
 }

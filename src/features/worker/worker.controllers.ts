@@ -11,7 +11,7 @@ export class WorkerController {
     const result = await WorkerService.getAvailableAssignments({ workerId: payload.sub, query });
     res.status(StatusCodes.OK).json({
       success: true,
-      message: "Daftar tugas tersedia berhasil diterima!",
+      message: "Berhasil mengambil daftar tugas yang tersedia",
       data: result.data,
       meta: result.meta,
     });
@@ -25,6 +25,18 @@ export class WorkerController {
       success: true,
       message: "Detail tugas berhasil diterima!",
       data: result,
+    });
+  }
+  static async getHistoryList(req: Request, res: Response) {
+    const { query } = validate(WorkerValidation.HISTORY_LIST, { query: req.query });
+    const payload = res.locals.payload;
+
+    const result = await WorkerService.getHistoryList({ workerId: payload.sub, query });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Berhasil mengambil riwayat tugas!",
+      data: result.data,
+      meta: result.meta,
     });
   }
 }
