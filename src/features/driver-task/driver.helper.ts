@@ -1,11 +1,8 @@
-import { pick } from "zod/mini";
 import { Prisma, AccountStatus, DriverAssignmentStatus, Role } from "../../../generated/prisma";
 import { DriverAssignment, Employee, PickupDeliveryType } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 
-const oke = 123
-
-export const ACTIVE_TASK_SELECT = {
+git diff tsconfig.jsonexport const ACTIVE_TASK_SELECT = {
   id: true,
   taskType: true,
   status: true,
