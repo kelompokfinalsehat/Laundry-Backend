@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { fakeAuth } from "../../middlewares/fake-auth.middleware";
 import { DriverController } from "./driver.controllers";
-import { fa } from "zod/locales";
 
 export const DriverRoute = Router();
 

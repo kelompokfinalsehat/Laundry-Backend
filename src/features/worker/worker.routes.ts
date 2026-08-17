@@ -31,3 +31,10 @@ WorkerRoute.post(
   AuthMiddleware.authorized(["WORKER"]),
   WorkerController.claimAssignment,
 );
+
+WorkerRoute.get(
+  "/active",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.getActive,
+);

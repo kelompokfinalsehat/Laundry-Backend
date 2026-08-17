@@ -65,4 +65,12 @@ export class WorkerService {
     const result = await WorkerRepository.claimAssignment(params.assignmentId, worker.id, worker.currentOutletId!);
     return result;
   }
+
+  static async getActive(workerId: string) {
+    const worker = await EmployeeRepository.findById(workerId);
+    WorkerHelper.assertWorkerValidity(worker);
+    const assignment = await WorkerRepository.findActiveAssignmentDetail(worker.id);
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    return WorkerHelper.buildActiveAssignmentResponse(assignment);
+  }
 }

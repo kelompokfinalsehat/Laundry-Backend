@@ -85,4 +85,36 @@ export class WorkerRepository {
       });
     });
   }
+
+  static async findActiveAssignmentDetail(workerId: string) {
+    return prisma.workerAssignment.findFirst({
+      where: {
+        workerId: workerId,
+        status: {
+          in: [
+            WorkerAssignmentStatus.ASSIGNED,
+            WorkerAssignmentStatus.IN_PROGRESS,
+            WorkerAssignmentStatus.ON_HOLD_BYPASS,
+          ],
+        },
+      },
+      select: {
+        id: true,
+        stationType: true,
+        status: true,
+        assignedAt: true,
+        startedAt: true,
+        order: {
+          select: {
+            id: true,
+            orderCode: true,
+            orderItems: { select: { id: true, laundryItem: { select: { id: true, name: true } } } },
+          },
+        },
+      },
+    });
+  }
 }
+export type WorkerActiveAssignmentDetail = NonNullable<
+  Awaited<ReturnType<typeof WorkerRepository.findActiveAssignmentDetail>>
+>;
