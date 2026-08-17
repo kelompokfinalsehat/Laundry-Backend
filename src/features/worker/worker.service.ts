@@ -1,9 +1,10 @@
-import { WorkerAssignmentStatus, type Prisma } from "../../../generated/prisma";
+import { WorkerAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { WorkerHelper } from "./worker.helper";
 import type {
   WorkerAvailableAssignmentInput,
+  WorkerClaimInput,
   WorkerHistoryInput,
   WorkerPreClaimInput,
 } from "./worker.validation";
@@ -53,5 +54,15 @@ export class WorkerService {
     ]);
     const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
     return { data: historyList, meta };
+  }
+
+  static async claimAssignment({ workerId, params }: { workerId: string; params: WorkerClaimInput["params"] }) {
+    const worker = await EmployeeRepository.findById(workerId);
+    WorkerHelper.assertWorkerValidity(worker);
+    if (worker.workStatus !== WorkStatus.AVAILABLE) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
+    const isActive = await WorkerRepository.findActiveAssignment(worker.id);
+    if (isActive) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
+    const result = await WorkerRepository.claimAssignment(params.assignmentId, worker.id, worker.currentOutletId!);
+    return result;
   }
 }

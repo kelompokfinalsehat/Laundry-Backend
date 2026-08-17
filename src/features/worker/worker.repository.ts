@@ -1,5 +1,6 @@
-import { WorkerAssignmentStatus, type Prisma } from "../../../generated/prisma";
+import { WorkerAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 
 export class WorkerRepository {
   static async countAvailable(where: Prisma.WorkerAssignmentWhereInput) {
@@ -48,6 +49,40 @@ export class WorkerRepository {
       take,
       orderBy: { completedAt: sortOrder },
       select: { id: true, stationType: true, completedAt: true, order: { select: { id: true, orderCode: true } } },
+    });
+  }
+
+  static async findActiveAssignment(workerId: string) {
+    return prisma.workerAssignment.findFirst({
+      where: {
+        workerId: workerId,
+        status: { notIn: [WorkerAssignmentStatus.QUEUED, WorkerAssignmentStatus.COMPLETED] },
+      },
+    });
+  }
+
+  static async claimAssignment(assignmentId: string, workerId: string, workerOutletId: string) {
+    return prisma.$transaction(async (tx) => {
+      const claimedAssignment = await tx.workerAssignment.updateMany({
+        where: { id: assignmentId, outletId: workerOutletId, status: WorkerAssignmentStatus.QUEUED, workerId: null },
+        data: { status: WorkerAssignmentStatus.ASSIGNED, workerId: workerId, assignedAt: new Date() },
+      });
+      if (claimedAssignment.count !== 1) return null;
+      const updateWorkStatus = await tx.employee.updateMany({
+        where: { id: workerId },
+        data: { workStatus: WorkStatus.BUSY },
+      });
+      if (updateWorkStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
+      return tx.workerAssignment.findFirst({
+        where: { id: assignmentId }, //mereturn updatedAssignment untuk shaped Response ke FRONTEND
+        select: {
+          id: true,
+          stationType: true,
+          status: true,
+          assignedAt: true,
+          order: { select: { id: true, orderCode: true } },
+        },
+      });
     });
   }
 }

@@ -27,8 +27,16 @@ export class WorkerValidation {
       sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan tidak tersedia!" }).default("desc"),
     }),
   });
+
+  static readonly CLAIM_ASSIGNMENT = zod.object({
+    params: zod.object({
+      assignmentId: zod.uuid("ID tidak valid!"),
+    }),
+    body: zod.object({}).strict(),
+  });
 }
 
 export type WorkerAvailableAssignmentInput = zod.infer<typeof WorkerValidation.AVAILABLE_ASSIGNMENT>;
 export type WorkerPreClaimInput = zod.infer<typeof WorkerValidation.PRE_CLAIM>;
 export type WorkerHistoryInput = zod.infer<typeof WorkerValidation.HISTORY_LIST>;
+export type WorkerClaimInput = zod.infer<typeof WorkerValidation.CLAIM_ASSIGNMENT>;

@@ -39,4 +39,16 @@ export class WorkerController {
       meta: result.meta,
     });
   }
+
+  static async claimAssignment(req: Request, res: Response) {
+    const { params } = validate(WorkerValidation.CLAIM_ASSIGNMENT, { params: req.params });
+    validate(WorkerValidation.CLAIM_ASSIGNMENT, { body: req.body });
+    const payload = res.locals.payload;
+    const result = await WorkerService.claimAssignment({ workerId: payload.sub, params });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Berhasil mengklaim tugas!",
+      data: result,
+    });
+  }
 }

@@ -24,3 +24,10 @@ WorkerRoute.get(
   AuthMiddleware.authorized(["WORKER"]),
   WorkerController.getPreClaimDetail,
 );
+
+WorkerRoute.post(
+  "/:assignmentId/claim",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.claimAssignment,
+);
