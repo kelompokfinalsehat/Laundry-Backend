@@ -3,9 +3,9 @@ import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { WorkerHelper } from "./worker.helper";
 import type {
-  WorkerAssignmentDetailInput,
   WorkerAvailableAssignmentInput,
   WorkerHistoryInput,
+  WorkerPreClaimInput,
 } from "./worker.validation";
 import { WorkerRepository } from "./worker.repository";
 import { ResponseError } from "../../utils/errors/response-error.utils";
@@ -30,10 +30,10 @@ export class WorkerService {
     return { data: availableAssignments, meta };
   }
 
-  static async getAssignmentDetail({ workerId, params }: { workerId: string } & WorkerAssignmentDetailInput) {
+  static async getPreClaimDetail({ workerId, params }: { workerId: string } & WorkerPreClaimInput) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findAssignmentById(params.assignmentId, worker.currentOutletId!);
+    const assignment = await WorkerRepository.findPreClaimDetail(params.assignmentId, worker.currentOutletId!);
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan atau sudah tidak tersedia!");
     return assignment;
   }

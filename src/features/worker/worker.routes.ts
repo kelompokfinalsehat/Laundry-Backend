@@ -19,8 +19,8 @@ WorkerRoute.get(
 );
 
 WorkerRoute.get(
-  "/:assignmentId",
+  "/:assignmentId/pre-claim",
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized(["WORKER"]),
-  WorkerController.getAssignmentDetail,
+  WorkerController.getPreClaimDetail,
 );
