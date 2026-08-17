@@ -41,8 +41,7 @@ export class WorkerController {
   }
 
   static async claimAssignment(req: Request, res: Response) {
-    const { params } = validate(WorkerValidation.CLAIM_ASSIGNMENT, { params: req.params });
-    validate(WorkerValidation.CLAIM_ASSIGNMENT, { body: req.body });
+    const { params } = validate(WorkerValidation.CLAIM_ASSIGNMENT, { params: req.params, body: req.body });
     const payload = res.locals.payload;
     const result = await WorkerService.claimAssignment({ workerId: payload.sub, params });
     res.status(StatusCodes.OK).json({

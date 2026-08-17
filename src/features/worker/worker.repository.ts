@@ -67,12 +67,12 @@ export class WorkerRepository {
         where: { id: assignmentId, outletId: workerOutletId, status: WorkerAssignmentStatus.QUEUED, workerId: null },
         data: { status: WorkerAssignmentStatus.ASSIGNED, workerId: workerId, assignedAt: new Date() },
       });
-      if (claimedAssignment.count !== 1) return null;
+      if (claimedAssignment.count !== 1) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak tersedia!");
       const updateWorkStatus = await tx.employee.updateMany({
-        where: { id: workerId },
+        where: { id: workerId, workStatus: WorkStatus.AVAILABLE },
         data: { workStatus: WorkStatus.BUSY },
       });
-      if (updateWorkStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
+      if (updateWorkStatus.count !== 1) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
       return tx.workerAssignment.findFirst({
         where: { id: assignmentId }, //mereturn updatedAssignment untuk shaped Response ke FRONTEND
         select: {
