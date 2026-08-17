@@ -5,15 +5,15 @@ import { Role } from "../../../generated/prisma";
 
 const router = Router()
 
-router.use(AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.SUPER_ADMIN]))
-// Super Admin Scope
-router.get("/", EmployeeController.getEmployees)
-router.get("/:id", EmployeeController.getEmployeeById)
-router.post("/invite", EmployeeController.inviteEmployee)
-router.patch("/:id", EmployeeController.updateEmployee)
-router.post("/:id/resend-invitation", EmployeeController.resendInvitation)
-router.patch("/:id/activate", EmployeeController.activateEmployee)
-router.patch("/:id/deactivate", EmployeeController.deactivateEmployee)
-router.post("/assignments", EmployeeController.assignEmployee)
+router.use(AuthMiddleware.authenticated())
+router.get("/", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.getEmployees)
+router.get("/team", AuthMiddleware.authorized([Role.OUTLET_ADMIN]), EmployeeController.getCurrentOutletEmployee)
+router.get("/:id", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.getEmployeeById)
+router.post("/invite", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.inviteEmployee)
+router.post("/assignments", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.assignEmployee)
+router.post("/:id/resend-invitation", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.resendInvitation)
+router.patch("/:id/activate", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.activateEmployee)
+router.patch("/:id/deactivate", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.deactivateEmployee)
+router.patch("/:id", AuthMiddleware.authorized([Role.SUPER_ADMIN]), EmployeeController.updateEmployee)
 
 export default router

@@ -1,18 +1,36 @@
 import z from "zod";
-import { AccountStatus, Role, WorkStatus } from "../../../generated/prisma";
+import { AccountStatus, Role, StationType, WorkStatus } from "../../../generated/prisma";
 
 export class EmployeeValidation {
     static readonly Query = {
         getEmployees: z.object({
-            page: z.coerce.number().positive().optional(),
-            pageSize: z.coerce.number().positive().optional(),
+            page: z.coerce.number().int().min(1).positive().optional(),
+            pageSize: z.coerce.number().int().min(1).max(10).positive().optional(),
             search: z.string().trim().optional(),
             role: z.enum([Role.OUTLET_ADMIN, Role.WORKER, Role.DRIVER]).optional(),
             accountStatus: z.enum(AccountStatus).optional(),
             workStatus: z.enum(WorkStatus).optional(),
             outletId: z.uuid().optional(),
-            sortBy: z.enum(["name", "email", "role", "accountStatus", "createdAt"]).optional(),
-            sortOrder: z.enum(["asc", "desc"]).optional()
+            sortBy: z.enum(["name", "email", "role", "accountStatus", "createdAt"]).default('name'),
+            sortOrder: z.enum(["asc", "desc"]).default('asc')
+        }),
+        getCurrentOutletEmployees: z.object({
+            page: z.coerce.number().positive().optional(),
+            pageSize: z.coerce.number().positive().optional(),
+            search: z.string().trim().optional(),
+            role: z.enum([Role.DRIVER, Role.WORKER]).optional(),
+            workStatus: z.enum(WorkStatus).optional(),
+            stationType: z.enum(StationType).optional(),
+            sortBy: z.enum(["name", "role", "workStatus"]).default("name"),
+            sortOrder: z.enum(["asc", "desc"]).default("asc")
+        }).superRefine((data, ctx) => {
+            if(data.role === Role.DRIVER && data.stationType){
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["stationType"],
+                    message: "Station type hanya berlaku untuk worker."
+                })
+            }
         })
     }
 
@@ -27,7 +45,7 @@ export class EmployeeValidation {
             name: z.string().trim().min(3).max(100),
             email: z.email(),
             role: z.enum([Role.OUTLET_ADMIN, Role.WORKER, Role.DRIVER]),
-            outletId: z.string()
+            outletId: z.uuid()
         }),
         updateEmployee: z.object({
             name: z.string().trim().min(3).max(100).optional(),

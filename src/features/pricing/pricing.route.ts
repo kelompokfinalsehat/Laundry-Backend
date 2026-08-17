@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { PricingController } from "./pricing.controller";
+import { AuthMiddleware } from "../../middlewares/auth.middlewares";
+import { Role } from "../../../generated/prisma";
 
 const router = Router()
 
-// Super admin scope
+router.use(AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.SUPER_ADMIN]))
 router.get('/laundry', PricingController.getLaundryPricing)
 router.post('/laundry', PricingController.createLaundryPricing)
 router.patch('/laundry/:id', PricingController.updateLaundryPricing)

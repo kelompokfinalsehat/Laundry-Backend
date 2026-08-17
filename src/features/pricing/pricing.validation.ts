@@ -21,8 +21,8 @@ export class PricingValidation {
   };
   static readonly QUERY = {
     getShippingRates: z.object({
-      page: z.coerce.number().positive().optional(),
-      pageSize: z.coerce.number().positive().optional(),
+      page: z.coerce.number().int().positive().optional(),
+      pageSize: z.coerce.number().int().positive().optional(),
       search: z.string().trim().optional(),
       sortBy: z.enum(["price", "maxDistanceMeters", "createdAt"]).optional(),
       sortOrder: z.enum(["asc", "desc"]).optional(),

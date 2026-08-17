@@ -1,22 +1,43 @@
-import { AccountStatus, Prisma, WorkStatus } from "../../../generated/prisma";
+import {
+  AccountStatus,
+  Prisma,
+  Role,
+  WorkStatus,
+} from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { AuthTokenIssuer } from "../mailers/mailer.helpers";
 import { OutletRepository } from "../outlet/outlet.repository";
+import { EmployeeHelper } from "./employee.helper";
 import { EmployeeRepository } from "./employee.repository";
-import { AssignEmployeeBody, EmployeeQuery, InviteEmployeeBody, UpdateEmployeeBody } from "./employee.type";
+import {
+  AssignEmployeeBody,
+  EmployeeQuery,
+  InviteEmployeeBody,
+  OutletTeamQuery,
+  UpdateEmployeeBody,
+} from "./employee.type";
 
 export class EmployeeService {
-    private static async findEmployeeByIdOrThrow(id: string){
-        const employee = await EmployeeRepository.findById(id)
-        if (!employee) throw new ResponseError("RESOURCE_NOT_FOUND", 'Employee not found.');
-        return employee
-    }
   static async getEmployees(query: EmployeeQuery) {
     return await EmployeeRepository.findAll(query);
   }
   static async getEmployeeById(id: string) {
-    const employee = await this.findEmployeeByIdOrThrow(id)
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
     return employee;
+  }
+  static async getCurrentOutletEmployee(
+    adminOutletId: string,
+    query: OutletTeamQuery,
+  ) {
+    const employee =
+      await EmployeeHelper.findEmployeeByIdOrThrow(adminOutletId);
+    if (employee.role !== Role.OUTLET_ADMIN)
+      throw new ResponseError(
+        "FORBIDDEN",
+        "Only outlet admin can access outlet team.",
+      );
+    if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', '')
+    return EmployeeRepository.findOutletTeam(query, employee.currentOutletId);
   }
   static async inviteEmployee(body: InviteEmployeeBody) {
     const existingEmployee = await EmployeeRepository.findByEmail(body.email);
@@ -33,45 +54,77 @@ export class EmployeeService {
       currentOutletId: body.outletId,
     };
     const employee = await EmployeeRepository.create(employeeData);
-    await AuthTokenIssuer.issueEmployeInvitationToken(employee.id, employee.email, employee.name)
-    return employee
+    await AuthTokenIssuer.issueEmployeInvitationToken(
+      employee.id,
+      employee.email,
+      employee.name,
+    );
+    return employee;
   }
-  static async updateEmployee(id: string, body: UpdateEmployeeBody){
-    const {name, role} = body
-    await this.findEmployeeByIdOrThrow(id)
-    const updateData: Prisma.EmployeeUpdateInput = {}
-    if(name) updateData.name = name
-    if(role) updateData.role = role
-    return await EmployeeRepository.update(id, updateData)
+  static async updateEmployee(id: string, body: UpdateEmployeeBody) {
+    const { name, role } = body;
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
+    const updateData: Prisma.EmployeeUpdateInput = {};
+    if (name) updateData.name = name;
+    if (role) {
+      if (employee.workStatus === WorkStatus.BUSY)
+        throw new ResponseError("CONFLICT", "Employee is currently busy.");
+      updateData.role = role;
+    }
+    return await EmployeeRepository.update(id, updateData);
   }
-  static async resendInvitation(id: string){
-    const employee = await this.findEmployeeByIdOrThrow(id)
-    if(employee.accountStatus !== AccountStatus.INVITED) throw new ResponseError('CONFLICT', 'Employee account is not waiting for invitation.')
-    await AuthTokenIssuer.issueEmployeInvitationToken(employee.id, employee.email, employee.name)
-    return employee
+  static async resendInvitation(id: string) {
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
+    if (employee.accountStatus !== AccountStatus.INVITED)
+      throw new ResponseError(
+        "CONFLICT",
+        "Employee account is not waiting for invitation.",
+      );
+    await AuthTokenIssuer.issueEmployeInvitationToken(
+      employee.id,
+      employee.email,
+      employee.name,
+    );
+    return employee;
   }
-  static async activateEmployee(id: string){
-    const employee = await this.findEmployeeByIdOrThrow(id)
-    if(employee.accountStatus !== AccountStatus.INACTIVE) throw new ResponseError('CONFLICT', "Account already active.")
-    const updateData: Prisma.EmployeeUpdateInput = {accountStatus: AccountStatus.ACTIVE}
-    return EmployeeRepository.update(id, updateData)
+  static async activateEmployee(id: string) {
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
+    if (employee.accountStatus !== AccountStatus.INACTIVE)
+      throw new ResponseError("CONFLICT", "Account already active.");
+    const updateData: Prisma.EmployeeUpdateInput = {
+      accountStatus: AccountStatus.ACTIVE,
+    };
+    return EmployeeRepository.update(id, updateData);
   }
-  static async deactivateEmployee(id: string){
-    const employee = await this.findEmployeeByIdOrThrow(id)
-    if(employee.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError('CONFLICT', "Account already inactive.")
-    if(employee.workStatus === WorkStatus.BUSY) throw new ResponseError('CONFLICT', 'Employee is currently busy.')
-   const updateData: Prisma.EmployeeUpdateInput = {accountStatus: AccountStatus.INACTIVE}
-   return EmployeeRepository.update(id, updateData)
+  static async deactivateEmployee(id: string) {
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
+    if (employee.accountStatus !== AccountStatus.ACTIVE)
+      throw new ResponseError("CONFLICT", "Account already inactive.");
+    if (employee.workStatus === WorkStatus.BUSY)
+      throw new ResponseError("CONFLICT", "Employee is currently busy.");
+    const updateData: Prisma.EmployeeUpdateInput = {
+      accountStatus: AccountStatus.INACTIVE,
+    };
+    return EmployeeRepository.update(id, updateData);
   }
-  static async assignEmployee(body: AssignEmployeeBody){
-    const {employeeId, outletId} = body
-    const employee = await this.findEmployeeByIdOrThrow(employeeId)
-    if(employee.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError('CONFLICT', "Account must be active.")
-    if(employee.workStatus === WorkStatus.BUSY) throw new ResponseError('CONFLICT', 'Employee is currently busy.')
-    const outlet = await OutletRepository.findById(outletId)
-    if(!outlet) throw new ResponseError('RESOURCE_NOT_FOUND', 'Outlet not found.')
-    if(employee.currentOutletId === outletId) throw new ResponseError('CONFLICT', 'Employee already assigned to this outlet.')
-    const updateData: Prisma.EmployeeUpdateInput = {currentOutlet: {connect: {id: outletId}}}
-    return EmployeeRepository.update(employeeId, updateData)
+  static async assignEmployee(body: AssignEmployeeBody) {
+    const { employeeId, outletId } = body;
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(employeeId);
+    if (employee.accountStatus !== AccountStatus.ACTIVE)
+      throw new ResponseError("CONFLICT", "Account must be active.");
+    if (employee.workStatus === WorkStatus.BUSY)
+      throw new ResponseError("CONFLICT", "Employee is currently busy.");
+    const outlet = await OutletRepository.findById(outletId);
+    if (!outlet)
+      throw new ResponseError("RESOURCE_NOT_FOUND", "Outlet not found.");
+    if (employee.currentOutletId === outletId)
+      throw new ResponseError(
+        "CONFLICT",
+        "Employee already assigned to this outlet.",
+      );
+    const updateData: Prisma.EmployeeUpdateInput = {
+      currentOutlet: { connect: { id: outletId } },
+    };
+    return EmployeeRepository.update(employeeId, updateData);
   }
 }

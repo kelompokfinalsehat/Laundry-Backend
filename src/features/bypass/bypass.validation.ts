@@ -4,8 +4,8 @@ import { BypassStatus, StationType } from "../../../generated/prisma";
 export class BypassValidation {
   static readonly QUERY = {
     getBypassRequests: z.object({
-      page: z.coerce.number().positive().optional(),
-      pageSize: z.coerce.number().positive().optional(),
+      page: z.coerce.number().int().positive().optional(),
+      pageSize: z.coerce.number().int().positive().optional(),
       search: z.string().trim().optional(),
       status: z.enum(BypassStatus).optional(),
       stationType: z.enum(StationType).optional(),

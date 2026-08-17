@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { OutletController } from "./outlet.controller";
+import { AuthMiddleware } from "../../middlewares/auth.middlewares";
+import { Role } from "../../../generated/prisma";
 
 const router = Router()
 
-// Super admin scope
+router.use(AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.SUPER_ADMIN]))
 router.get("/", OutletController.getOutlets)
 router.get("/:id", OutletController.getOutletById)
 router.post("/", OutletController.createOutlet)

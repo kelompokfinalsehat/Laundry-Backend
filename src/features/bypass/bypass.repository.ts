@@ -150,7 +150,7 @@ export class BypassRepository {
             await tx.orderItem.update({where: {id: difference.orderItemId}, data: {quantity: difference.submittedQuantity}})
         }
         await tx.bypassRequest.update({where: {id}, data:{status: BypassStatus.APPROVED, decidedBy, decidedAt: now, approvalNote}})
-        return tx.workerAssignment.update({where: {id: bypass.workerAssignmentId}, data: {status: WorkerAssignmentStatus.IN_PROGRESS}, include: {order: true, worker: true}})
+        return tx.workerAssignment.update({where: {id: bypass.workerAssignmentId}, data: {status: WorkerAssignmentStatus.IN_PROGRESS, startedAt: now}, include: {order: true, worker: true}})
     })
   }
   static async reject(id: string, decidedBy: string){

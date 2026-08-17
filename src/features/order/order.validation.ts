@@ -4,8 +4,8 @@ import { BillPaymentStatus, CustomerStatus } from "../../../generated/prisma";
 export class OrderValidation {
   static readonly QUERY = {
     getOrders: z.object({
-      page: z.coerce.number().positive().optional(),
-      pageSize: z.coerce.number().positive().optional(),
+      page: z.coerce.number().int().positive().optional(),
+      pageSize: z.coerce.number().int().positive().optional(),
       search: z.string().trim().optional(),
       outletId: z.uuid().optional(),
       customerStatus: z.enum(CustomerStatus).optional(),
@@ -28,6 +28,15 @@ export class OrderValidation {
             laundryItemId: z.uuid(),
             quantity: z.coerce.number().int().positive()
         })).min(1)
+    }).superRefine((data, ctx) => {
+        const ids = data.items.map(item => item.laundryItemId)
+        if(new Set(ids).size !== ids.length){
+            ctx.addIssue({
+                code: "custom",
+                path: ["items"],
+                message: "Laundry item tidak boleh duplikat."
+            })
+        }
     })
   }
 }
