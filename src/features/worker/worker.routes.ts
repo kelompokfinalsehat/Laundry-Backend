@@ -12,6 +12,13 @@ WorkerRoute.get(
 );
 
 WorkerRoute.get(
+  "/active",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.getActive,
+);
+
+WorkerRoute.get(
   "/history",
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized(["WORKER"]),

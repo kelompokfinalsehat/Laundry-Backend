@@ -33,9 +33,9 @@ export class WorkerHelper {
           ...baseResponse,
           order: {
             ...baseResponse.order,
-            items: assignment.order.orderItems.map((orderItems) => ({
-              orderItemId: orderItems.id,
-              laundryItem: { id: orderItems.laundryItem.id, name: orderItems.laundryItem.name },
+            items: assignment.order.orderItems.map((orderItem) => ({
+              orderItemId: orderItem.id,
+              laundryItem: { id: orderItem.laundryItem.id, name: orderItem.laundryItem.name },
             })),
           },
         };

@@ -70,7 +70,7 @@ export class WorkerService {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
     const assignment = await WorkerRepository.findActiveAssignmentDetail(worker.id);
-    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    if (!assignment) return null;
     return WorkerHelper.buildActiveAssignmentResponse(assignment);
   }
 }
