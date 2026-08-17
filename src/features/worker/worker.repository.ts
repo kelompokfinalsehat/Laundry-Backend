@@ -20,7 +20,7 @@ export class WorkerRepository {
     });
   }
 
-  static async findAssignmentById(assignmentId: string, workerOutletId: string) {
+  static async findPreClaimDetail(assignmentId: string, workerOutletId: string) {
     return prisma.workerAssignment.findFirst({
       where: { id: assignmentId, outletId: workerOutletId, status: WorkerAssignmentStatus.QUEUED, workerId: null },
       select: {

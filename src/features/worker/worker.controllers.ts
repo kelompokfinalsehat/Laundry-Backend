@@ -16,11 +16,11 @@ export class WorkerController {
       meta: result.meta,
     });
   }
-  static async getAssignmentDetail(req: Request, res: Response) {
-    const { params } = validate(WorkerValidation.ASSIGNMENT_DETAIL, { params: req.params });
+  static async getPreClaimDetail(req: Request, res: Response) {
+    const { params } = validate(WorkerValidation.PRE_CLAIM, { params: req.params });
     const payload = res.locals.payload;
 
-    const result = await WorkerService.getAssignmentDetail({ workerId: payload.sub, params });
+    const result = await WorkerService.getPreClaimDetail({ workerId: payload.sub, params });
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Detail tugas berhasil diterima!",
