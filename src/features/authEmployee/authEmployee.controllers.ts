@@ -5,6 +5,7 @@ import { AuthEmployeeService } from "./authEmployee.services";
 import { JWTUtil } from "../../utils/Auth/jwt.utils";
 import { RefreshTokenService } from "../../utils/Auth/refreshToken.utils";
 import { AuthCookieUtil } from "../../utils/Auth/cookie.utils";
+import { StatusCodes } from "http-status-codes";
 import { ResponseHelper } from "../../helpers/response.helper";
 import { Message } from "../../constants/message.constant";
 
@@ -13,7 +14,7 @@ export class AuthEmployeeController {
     const { body } = validate(AuthEmployeeValidation.LOGIN_EMPLOYEE, {
       body: req.body,
     });
-    const employee = await AuthEmployeeService.login({ body });
+     const employee = await AuthEmployeeService.login({ body });
     const accessToken = JWTUtil.signAccessToken({
       sub: employee.id,
       accountType: "employee",
@@ -21,10 +22,16 @@ export class AuthEmployeeController {
     });
 
     const refreshToken = await RefreshTokenService.issue({
-      employeeId: employee.id
-    })
+      employeeId: employee.id,
+    });
 
-    AuthCookieUtil.setAuthCookies(res, accessToken,refreshToken)
+    AuthCookieUtil.setAuthCookies(res, accessToken, refreshToken);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: employee,
+      massage: "login berhasil",
+    });
     return ResponseHelper.success(res, "Login Berhasil", employee)
   }
 
@@ -33,7 +40,12 @@ export class AuthEmployeeController {
       body: req.body,
     });
 
-    await AuthEmployeeService.acceptInvitation({ body });
+    const result = await AuthEmployeeService.acceptInvitation({ body });
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
     return ResponseHelper.success(res, "Berhasil set password.", null)
   }
 
@@ -42,7 +54,12 @@ export class AuthEmployeeController {
       body: req.body,
     });
 
-    await AuthEmployeeService.forgotPassword({ body });
+    const result = await AuthEmployeeService.forgotPassword({ body });
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
     return ResponseHelper.success(res, "Link reset password telah dikirim ke email.", null)
   }
 
@@ -51,7 +68,11 @@ export class AuthEmployeeController {
       body: req.body,
     });
 
-    await AuthEmployeeService.resetPasword({ body });
+    const result = await AuthEmployeeService.resetPasword({ body });
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
     return ResponseHelper.success(res, "Reset password berhasil.", null)
   }
 }
