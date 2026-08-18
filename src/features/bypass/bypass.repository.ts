@@ -1,4 +1,4 @@
-import { BypassStatus, Prisma, WorkerAssignmentStatus } from "../../../generated/prisma";
+import { BypassStatus, CustomerStatus, Prisma, WorkerAssignmentStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
 import { ResponseError } from "../../utils/errors/response-error.utils";
@@ -149,8 +149,9 @@ export class BypassRepository {
         for(const difference of differences){
             await tx.orderItem.update({where: {id: difference.orderItemId}, data: {quantity: difference.submittedQuantity}})
         }
-        await tx.bypassRequest.update({where: {id}, data:{status: BypassStatus.APPROVED, decidedBy, decidedAt: now, approvalNote}})
-        return tx.workerAssignment.update({where: {id: bypass.workerAssignmentId}, data: {status: WorkerAssignmentStatus.IN_PROGRESS, startedAt: now}, include: {order: true, worker: true}})
+        await tx.order.update({where: {id: bypass.workerAssignment.orderId}, data: {customerStatus: CustomerStatus[bypass.stationType]}})
+        await tx.workerAssignment.update({where: {id: bypass.workerAssignmentId}, data: {status: WorkerAssignmentStatus.IN_PROGRESS, startedAt: now}, include: {order: true, worker: true}})
+        return tx.bypassRequest.update({where: {id}, data:{status: BypassStatus.APPROVED, decidedBy, decidedAt: now, approvalNote}})
     })
   }
   static async reject(id: string, decidedBy: string){
@@ -159,8 +160,8 @@ export class BypassRepository {
         const bypass = await tx.bypassRequest.findFirst({where: {id, status: BypassStatus.PENDING}, include: {workerAssignment: true}})
         if(!bypass) return null
         if(bypass.workerAssignment.status !== WorkerAssignmentStatus.ON_HOLD_BYPASS) throw new ResponseError('CONFLICT', 'Status pengerjaan sedang tidak di-hold.')
-        await tx.bypassRequest.update({where: {id}, data: {status: BypassStatus.REJECTED, decidedBy, decidedAt: now}})
-        return tx.workerAssignment.update({where: {id: bypass.workerAssignmentId}, data: {status: WorkerAssignmentStatus.ASSIGNED}, include: {order: true, worker: true}})
+        await tx.workerAssignment.update({where: {id: bypass.workerAssignmentId}, data: {status: WorkerAssignmentStatus.ASSIGNED}, include: {order: true, worker: true}})
+        return tx.bypassRequest.update({where: {id}, data: {status: BypassStatus.REJECTED, decidedBy, decidedAt: now}})
     })
   }
 }

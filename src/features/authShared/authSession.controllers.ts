@@ -89,7 +89,6 @@ export class AuthSessionController {
     let sub: string;
     let accountType: "customer" | "employee";
     let role: Role;
-    let outletId: string | undefined
 
     if (owner.customerId) {
       const customer = await prisma.customer.findUniqueOrThrow({
@@ -105,10 +104,9 @@ export class AuthSessionController {
       sub = employee.id;
       accountType = "employee";
       role = employee.role;
-      outletId = employee.currentOutletId ?? undefined
     }
 
-    const newAccessToken = JWTUtil.signAccessToken({ sub, accountType, role, outletId });
+    const newAccessToken = JWTUtil.signAccessToken({ sub, accountType, role });
 
     AuthCookieUtil.setAuthCookies(res, newAccessToken, newRawToken);
 

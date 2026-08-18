@@ -9,6 +9,7 @@ import orderRoutes from "../features/order/order.route"
 import bypassRoutes from "../features/bypass/bypass.route"
 import customerRoutes from "../features/customer/customer.route"
 import complaintRoutes from "../features/complaint/complaint.route"
+import reportRoutes from "../features/report/report.route";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/internal/orders", orderRoutes)
 router.use("/internal/bypass-requests", bypassRoutes)
 router.use("/internal/customers", customerRoutes)
 router.use("/internal/complaints", complaintRoutes)
+router.use("/internal/reports", reportRoutes)
 
 export default router;
