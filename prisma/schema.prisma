@@ -180,8 +180,8 @@ model Customer {
 
 /// v2.1: dipisah dari Customer. Mewakili SUPER_ADMIN, OUTLET_ADMIN,
 /// WORKER, dan DRIVER. stationType DIHAPUS TOTAL dari model ini (worker
-/// dinamis -- lihat BR-WRK-01 v2.1). workStatus dan availableSinceAt
-/// tetap nullable karena SUPER_ADMIN tidak memakainya.
+/// dinamis -- lihat BR-WRK-01 v2.1). workStatus tetap nullable
+/// karena SUPER_ADMIN tidak memakainya.
 model Employee {
   id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   role             Role
@@ -192,7 +192,6 @@ model Employee {
   phone            String?
   accountStatus    AccountStatus @map("account_status")
   workStatus       WorkStatus?   @map("work_status")
-  availableSinceAt DateTime?     @map("available_since_at")
   currentOutletId  String?       @map("current_outlet_id") @db.Uuid
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @default(now()) @map("updated_at")
@@ -216,12 +215,12 @@ model Employee {
 }
 
 model AuthToken {
-  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type      AuthTokenType
-  tokenHash String        @map("token_hash")
-  expiresAt DateTime      @map("expires_at")
-  usedAt    DateTime?     @map("used_at")
-  createdAt DateTime      @default(now()) @map("created_at")
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type       AuthTokenType
+  tokenHash  String        @map("token_hash")
+  expiresAt  DateTime      @map("expires_at")
+  usedAt     DateTime?     @map("used_at")
+  createdAt  DateTime      @default(now()) @map("created_at")
 
   // v2.1: hanya salah satu dari customerId/employeeId yang diisi,
   // tergantung pemilik token. Divalidasi di level aplikasi (bukan di
@@ -284,7 +283,6 @@ model Outlet {
   driverAssignments DriverAssignment[]
   workerAssignments WorkerAssignment[]
   attendances       Attendance[]
-  notifications     Notification[]
 
   @@map("outlets")
 }
@@ -419,8 +417,8 @@ model Bill {
   pricePerKgSnapshot  Decimal           @map("price_per_kg_snapshot") @db.Decimal(12, 2)
   shippingRateId      String            @map("shipping_rate_id") @db.Uuid
   shippingFeeSnapshot Decimal           @map("shipping_fee_snapshot") @db.Decimal(12, 2)
-  weightKg            Decimal?          @map("weight_kg") @db.Decimal(10, 2)
-  totalAmount         Decimal?          @map("total_amount") @db.Decimal(12, 2)
+  weightKg            Decimal          @map("weight_kg") @db.Decimal(10, 2)
+  totalAmount         Decimal          @map("total_amount") @db.Decimal(12, 2)
   paymentStatus       BillPaymentStatus @default(UNPAID) @map("payment_status")
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @default(now()) @map("updated_at")
@@ -592,21 +590,21 @@ model PaymentWebhook {
 // ============================================================
 
 model Complaint {
-  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId       String            @unique @map("order_id") @db.Uuid
-  customerId    String            @map("customer_id") @db.Uuid
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String          @unique @map("order_id") @db.Uuid
+  customerId    String          @map("customer_id") @db.Uuid
   category      ComplaintCategory
   description   String
-  proofPhotoUrl String            @map("proof_photo_url")
+  proofPhotoUrl String          @map("proof_photo_url")
   status        ComplaintStatus   @default(OPEN)
-  handledBy     String?           @map("handled_by") @db.Uuid
-  responseNote  String?           @map("response_note")
-  decidedAt     DateTime?         @map("decided_at")
-  createdAt     DateTime          @default(now()) @map("created_at")
+  handledBy     String?         @map("handled_by") @db.Uuid
+  responseNote  String?         @map("response_note")
+  decidedAt     DateTime?       @map("decided_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
 
-  order         Order     @relation(fields: [orderId], references: [id])
-  customer      Customer  @relation(fields: [customerId], references: [id])
-  handledByUser Employee? @relation("ComplaintHandledBy", fields: [handledBy], references: [id])
+  order          Order     @relation(fields: [orderId], references: [id])
+  customer       Customer  @relation(fields: [customerId], references: [id])
+  handledByUser  Employee? @relation("ComplaintHandledBy", fields: [handledBy], references: [id])
 
   @@map("complaints")
 }
@@ -628,31 +626,4 @@ model Attendance {
   @@unique([employeeId, attendanceDate])
   @@index([outletId])
   @@map("attendances")
-}
-
-/// Hanya untuk Driver & Worker (Employee) -- Customer tidak menerima
-/// notifikasi. Bersifat BROADCAST per role + outlet (bukan per individu
-/// employee) -- semua driver di outlet X dapat notifikasi yang sama,
-/// begitu pula semua worker di outlet X. Siapapun yang match kriteria
-/// targetRole + outletId akan melihatnya, termasuk employee yang baru
-/// online setelah notifikasi dibuat.
-/// Sengaja dibuat SANGAT SIMPLE:
-/// - Tidak ada isRead/status baca, tidak ada mark-as-read.
-/// - Tidak ada retention/cleanup job -- data lama DIBIARKAN menumpuk di DB
-///   (keputusan sadar, bukan oversight; lihat diskusi terkait).
-/// - Frontend HANYA menampilkan notifikasi hari berjalan, dengan cara
-///   memfilter `sentAt >= awal hari ini` saat query. Begitu ganti hari,
-///   notifikasi kemarin otomatis tidak tampil lagi tanpa logic tambahan.
-model Notification {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  targetRole Role     @map("target_role")
-  outletId   String   @map("outlet_id") @db.Uuid
-  title      String
-  message    String
-  sentAt     DateTime @default(now()) @map("sent_at")
-
-  outlet Outlet @relation(fields: [outletId], references: [id])
-
-  @@index([targetRole, outletId, sentAt])
-  @@map("notifications")
 }
