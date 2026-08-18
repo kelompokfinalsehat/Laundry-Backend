@@ -5,9 +5,7 @@ import { StationType } from "../../../generated/prisma";
 export class WorkerValidation {
   static readonly AVAILABLE_ASSIGNMENT = zod.object({
     query: paginationSchema.extend({
-      stationType: zod
-        .enum([StationType.WASHING, StationType.IRONING, StationType.PACKING], { message: "Pilihan tidak tersedia!" })
-        .optional(),
+      stationType: zod.enum([StationType.WASHING, StationType.IRONING, StationType.PACKING], { message: "Pilihan tidak tersedia!" }).optional(),
       sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan tidak tersedia!" }).default("desc"),
     }),
   });
@@ -27,8 +25,39 @@ export class WorkerValidation {
       sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan tidak tersedia!" }).default("desc"),
     }),
   });
+
+  static readonly CLAIM_ASSIGNMENT = zod.object({
+    params: zod.object({
+      assignmentId: zod.uuid("ID tidak valid!"),
+    }),
+    body: zod.object({}).strict(),
+  });
+
+  static readonly VALIDATE_QUANTITIES = zod.object({
+    params: zod.object({
+      assignmentId: zod.uuid("ID tidak valid!"),
+    }),
+    body: zod.object({
+      items: zod
+        .array(
+          zod.object({
+            orderItemId: zod.uuid("ID item tidak valid!"),
+            submittedQuantity: zod.number().int("Input harus berupa bilangan bulat!").nonnegative("Input tidak boleh negatif!"),
+          }),
+        )
+        .min(1, "Minimal input 1 items!")
+        .refine((items) => new Set(items.map((id) => id.orderItemId)).size === items.length, {
+          message: "Order item tidak boleh duplikat!", // pengecekan duplikat order Items
+        }),
+    }),
+  });
+
+  static readonly REQUEST_BYPASS = this.VALIDATE_QUANTITIES;
 }
 
 export type WorkerAvailableAssignmentInput = zod.infer<typeof WorkerValidation.AVAILABLE_ASSIGNMENT>;
 export type WorkerPreClaimInput = zod.infer<typeof WorkerValidation.PRE_CLAIM>;
 export type WorkerHistoryInput = zod.infer<typeof WorkerValidation.HISTORY_LIST>;
+export type WorkerClaimInput = zod.infer<typeof WorkerValidation.CLAIM_ASSIGNMENT>;
+export type WorkerValidateQuantitiesInput = zod.infer<typeof WorkerValidation.VALIDATE_QUANTITIES>;
+export type WorkerRequestBypassInput = zod.infer<typeof WorkerValidation.REQUEST_BYPASS>;
