@@ -7,6 +7,8 @@ import laundryItemRoutes from "../features/laundry-item/laundry-item.route";
 import pricingRoutes from "../features/pricing/pricing.route";
 import orderRoutes from "../features/order/order.route"
 import bypassRoutes from "../features/bypass/bypass.route"
+import customerRoutes from "../features/customer/customer.route"
+import complaintRoutes from "../features/complaint/complaint.route"
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use("/internal/laundry-items", laundryItemRoutes);
 router.use("/internal/pricing", pricingRoutes);
 router.use("/internal/orders", orderRoutes)
 router.use("/internal/bypass-requests", bypassRoutes)
+router.use("/internal/customers", customerRoutes)
+router.use("/internal/complaints", complaintRoutes)
 
 export default router;

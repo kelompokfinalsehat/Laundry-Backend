@@ -39,11 +39,11 @@ export class OutletService {
     }
     static async deactivateOutlet(id: string){
         const outlet = await OutletHelper.findOutletByIdOrThrow(id)
-        if(!outlet.isActive) throw new ResponseError('CONFLICT', 'Outlet is already inactive.')
+        if(!outlet.isActive) throw new ResponseError('CONFLICT', 'Outlet sudah tidak aktif.')
         const employeeCount = await OutletRepository.hasActiveEmployee(id)
-        if(employeeCount > 0) throw new ResponseError('CONFLICT', 'Outlet has active employee.')
+        if(employeeCount > 0) throw new ResponseError('CONFLICT', 'Outlet masih memiliki karyawan yang masih aktif.')
         const activeOrderCount = await OutletRepository.hasActiveOrders(id)
-        if(activeOrderCount > 0) throw new ResponseError('CONFLICT', 'Outlet has active order.')
+        if(activeOrderCount > 0) throw new ResponseError('CONFLICT', 'Outlet memiliki order yang masih berjalan/aktif.')
         return await OutletRepository.update(id, {isActive: false})
     }
 }

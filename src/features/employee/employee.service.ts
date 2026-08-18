@@ -34,18 +34,18 @@ export class EmployeeService {
     if (employee.role !== Role.OUTLET_ADMIN)
       throw new ResponseError(
         "FORBIDDEN",
-        "Only outlet admin can access outlet team.",
+        "Hanya outlet admin yang boleh mengakses endpoint ini.",
       );
-    if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', '')
+    if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
     return EmployeeRepository.findOutletTeam(query, employee.currentOutletId);
   }
   static async inviteEmployee(body: InviteEmployeeBody) {
     const existingEmployee = await EmployeeRepository.findByEmail(body.email);
     if (existingEmployee)
-      throw new ResponseError("CONFLICT", "Employee email already exist.");
+      throw new ResponseError("CONFLICT", "Email employee sudah ada.");
     const outlet = await OutletRepository.findById(body.outletId);
     if (!outlet)
-      throw new ResponseError("RESOURCE_NOT_FOUND", "Outlet not found.");
+      throw new ResponseError("RESOURCE_NOT_FOUND", "Outlet tidak ditemukan.");
     const employeeData = {
       name: body.name,
       email: body.email,
@@ -68,7 +68,7 @@ export class EmployeeService {
     if (name) updateData.name = name;
     if (role) {
       if (employee.workStatus === WorkStatus.BUSY)
-        throw new ResponseError("CONFLICT", "Employee is currently busy.");
+        throw new ResponseError("CONFLICT", "Employee sedang sibuk.");
       updateData.role = role;
     }
     return await EmployeeRepository.update(id, updateData);
@@ -78,7 +78,7 @@ export class EmployeeService {
     if (employee.accountStatus !== AccountStatus.INVITED)
       throw new ResponseError(
         "CONFLICT",
-        "Employee account is not waiting for invitation.",
+        "Akun employee tidak sedang menunggu undangan.",
       );
     await AuthTokenIssuer.issueEmployeInvitationToken(
       employee.id,
@@ -90,7 +90,7 @@ export class EmployeeService {
   static async activateEmployee(id: string) {
     const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
     if (employee.accountStatus !== AccountStatus.INACTIVE)
-      throw new ResponseError("CONFLICT", "Account already active.");
+      throw new ResponseError("CONFLICT", "Akun sudah aktif.");
     const updateData: Prisma.EmployeeUpdateInput = {
       accountStatus: AccountStatus.ACTIVE,
     };
@@ -99,9 +99,9 @@ export class EmployeeService {
   static async deactivateEmployee(id: string) {
     const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
     if (employee.accountStatus !== AccountStatus.ACTIVE)
-      throw new ResponseError("CONFLICT", "Account already inactive.");
+      throw new ResponseError("CONFLICT", "Akun sudah tidak aktif.");
     if (employee.workStatus === WorkStatus.BUSY)
-      throw new ResponseError("CONFLICT", "Employee is currently busy.");
+      throw new ResponseError("CONFLICT", "Employee sedang sibuk.");
     const updateData: Prisma.EmployeeUpdateInput = {
       accountStatus: AccountStatus.INACTIVE,
     };
@@ -111,16 +111,16 @@ export class EmployeeService {
     const { employeeId, outletId } = body;
     const employee = await EmployeeHelper.findEmployeeByIdOrThrow(employeeId);
     if (employee.accountStatus !== AccountStatus.ACTIVE)
-      throw new ResponseError("CONFLICT", "Account must be active.");
+      throw new ResponseError("CONFLICT", "Akun harus aktif.");
     if (employee.workStatus === WorkStatus.BUSY)
-      throw new ResponseError("CONFLICT", "Employee is currently busy.");
+      throw new ResponseError("CONFLICT", "Employee sedang sibuk.");
     const outlet = await OutletRepository.findById(outletId);
     if (!outlet)
-      throw new ResponseError("RESOURCE_NOT_FOUND", "Outlet not found.");
+      throw new ResponseError("RESOURCE_NOT_FOUND", "Outlet tidak ditemukan.");
     if (employee.currentOutletId === outletId)
       throw new ResponseError(
         "CONFLICT",
-        "Employee already assigned to this outlet.",
+        "Employee sudah ditempatkan pada outlet ini.",
       );
     const updateData: Prisma.EmployeeUpdateInput = {
       currentOutlet: { connect: { id: outletId } },

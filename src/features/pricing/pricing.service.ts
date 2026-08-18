@@ -10,12 +10,12 @@ export class PricingService {
     }
     static async createLaundryPricing(body: LaundryPricingBody){
         const laundryPricing = await PricingRepository.findCurrentLaundryPricing()
-        if(laundryPricing) throw new ResponseError('CONFLICT', 'Laundry price already exist.')
+        if(laundryPricing) throw new ResponseError('CONFLICT', 'Harga laundry sudah ada.')
         return await PricingRepository.createLaundryPricing(body)
     }
     static async updateLaundryPricing(id: string, body: LaundryPricingBody){
         const laundryPricing = await PricingRepository.findLaundryPricingById(id)
-        if(!laundryPricing) throw new ResponseError('RESOURCE_NOT_FOUND', 'Laundry pricing is not found.')
+        if(!laundryPricing) throw new ResponseError('RESOURCE_NOT_FOUND', 'Harga laundry tidak ditemukan.')
         return await PricingRepository.updateLaundryPricing(id, body)
     }
     static async getShippingRates(query: ShippingRateQuery){
@@ -34,7 +34,7 @@ export class PricingService {
     }
     static async deactivateShippingRate(id: string){
         const shippingRate = await PricingHelper.findShippingRateByIdOrThrow(id)
-        if(shippingRate.deletedAt) throw new ResponseError('CONFLICT', 'Shipping rate already deactivated.')
+        if(shippingRate.deletedAt) throw new ResponseError('CONFLICT', 'Harga ongkir sudah dinonaktifkan.')
         return await PricingRepository.updateShippingRate(id, {deletedAt: new Date()})
     }
     static async getShippingRateByDistance(distance: number){

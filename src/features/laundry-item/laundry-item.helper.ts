@@ -4,7 +4,7 @@ import { LaundryItemRepository } from "./laundry-item.repository";
 export class LaundryItemHelper {
     static async findLaundryItemByIdOrThrow(id: string){
         const laundryItem = await LaundryItemRepository.findById(id)
-        if(!laundryItem) throw new ResponseError('RESOURCE_NOT_FOUND', 'Laundry item not found.')
+        if(!laundryItem) throw new ResponseError('RESOURCE_NOT_FOUND', 'Laundry item tidak ditemukan.')
         return laundryItem
     }
 }

@@ -12,6 +12,8 @@ import {
   StationType,
   BypassStatus,
   PaymentTransactionStatus,
+  ComplaintCategory,
+  ComplaintStatus,
 } from "../generated/prisma";
 import { BcryptUtil } from "../src/utils/Auth/bcrypt.utils";
 
@@ -492,17 +494,18 @@ if (drivers.length < 2) {
       },
     });
 
-  // Worker dilepas ketika bypass
+  // Worker tetap memegang assignment selama bypass.
+  // Sesuai business rule kita, worker tetap BUSY dan tidak
+  // dapat mengambil job lain sampai bypass selesai.
   await prisma.employee.update({
     where: {
       id: worker2.id,
     },
     data: {
       workStatus:
-        WorkStatus.AVAILABLE,
+        WorkStatus.BUSY,
 
-      availableSinceAt:
-        new Date(),
+      availableSinceAt: null,
     },
   });
 
@@ -854,6 +857,190 @@ if (drivers.length < 2) {
   });
 
   // ============================================================
+  // COMPLAINT TEST DATA
+  //
+  // 3 order berbeda karena Complaint.orderId @unique.
+  // Semua complaint dibuat OPEN agar bisa langsung digunakan
+  // untuk test list/detail/filter sebelum endpoint decide selesai.
+  // ============================================================
+
+  console.log("\n🧪 Creating Complaint test data...");
+
+  const complaintOrders = [];
+
+  for (let i = 1; i <= 3; i++) {
+    const complaintOrder = await createOrder(
+      6 + i,
+      CustomerStatus.WAITING_CUSTOMER_CONFIRMATION,
+    );
+
+    const complaintBill = await prisma.bill.create({
+      data: {
+        orderId: complaintOrder.id,
+
+        laundryPricingId: pricing.id,
+        pricePerKgSnapshot: pricing.pricePerKg,
+
+        shippingRateId: shippingRate.id,
+        shippingFeeSnapshot: shippingRate.price,
+
+        weightKg: money(4 + i),
+
+        totalAmount: money(
+          Number(pricing.pricePerKg) * (4 + i) +
+            Number(shippingRate.price),
+        ),
+
+        paymentStatus:
+          BillPaymentStatus.PAID,
+      },
+    });
+
+    await prisma.workerAssignment.create({
+      data: {
+        orderId: complaintOrder.id,
+        outletId: existingOutlet.id,
+
+        stationType:
+          StationType.PACKING,
+
+        workerId: worker3.id,
+
+        assignedAt:
+          new Date(
+            Date.now() - (8 + i) * 60 * 60 * 1000,
+          ),
+
+        startedAt:
+          new Date(
+            Date.now() - (7 + i) * 60 * 60 * 1000,
+          ),
+
+        completedAt:
+          new Date(
+            Date.now() - (6 + i) * 60 * 60 * 1000,
+          ),
+
+        status:
+          WorkerAssignmentStatus.COMPLETED,
+      },
+    });
+
+    await prisma.driverAssignment.create({
+      data: {
+        orderId: complaintOrder.id,
+
+        outletId:
+          existingOutlet.id,
+
+        driverId:
+          driver2.id,
+
+        taskType:
+          PickupDeliveryType.DELIVERY,
+
+        assignedAt:
+          new Date(
+            Date.now() - (5 + i) * 60 * 60 * 1000,
+          ),
+
+        pickedUpAt:
+          new Date(
+            Date.now() - (4 + i) * 60 * 60 * 1000,
+          ),
+
+        deliveredAt:
+          new Date(
+            Date.now() - (3 + i) * 60 * 60 * 1000,
+          ),
+
+        completedAt:
+          new Date(
+            Date.now() - (3 + i) * 60 * 60 * 1000,
+          ),
+
+        status:
+          DriverAssignmentStatus.COMPLETED,
+      },
+    });
+
+    await prisma.payment.create({
+      data: {
+        billId:
+          complaintBill.id,
+
+        gatewayOrderId:
+          `SEED-COMPLAINT-PAY-${Date.now()}-${i}`,
+
+        midtransTransactionId:
+          `SEED-COMPLAINT-MIDTRANS-${Date.now()}-${i}`,
+
+        amount:
+          complaintBill.totalAmount!,
+
+        status:
+          PaymentTransactionStatus.SETTLEMENT,
+
+        isFinal: true,
+
+        paidAt:
+          new Date(
+            Date.now() - (3 + i) * 60 * 60 * 1000,
+          ),
+      },
+    });
+
+    complaintOrders.push(complaintOrder);
+  }
+
+  const complaintCategories = [
+    ComplaintCategory.TIDAK_SESUAI,
+    ComplaintCategory.RUSAK,
+    ComplaintCategory.HILANG,
+  ];
+
+  const complaintDescriptions = [
+    "Jumlah pakaian yang diterima customer tidak sesuai.",
+    "Customer melaporkan pakaian mengalami kerusakan.",
+    "Customer melaporkan terdapat pakaian yang hilang.",
+  ];
+
+  const complaints = [];
+
+  for (let i = 0; i < complaintOrders.length; i++) {
+    const complaintOrder = complaintOrders[i];
+
+    const complaint =
+      await prisma.complaint.create({
+        data: {
+          orderId:
+            complaintOrder?.id!,
+
+          customerId:
+            existingCustomer.id,
+
+          category:
+            complaintCategories[i]!,
+
+          description:
+            complaintDescriptions[i]!,
+
+          proofPhotoUrl:
+            `https://example.com/test-complaint-${i + 1}.jpg`,
+
+          status:
+            ComplaintStatus.OPEN,
+        },
+      });
+
+    complaints.push(complaint);
+
+    console.log(
+      `✅ Complaint OPEN: ${complaint.id} | ${complaintCategories[i]} | ${complaintOrder?.orderCode}`,
+    );
+  }
+
+  // ============================================================
   // RESET WORK STATUS DATA TEST
   // ============================================================
 
@@ -878,8 +1065,7 @@ if (drivers.length < 2) {
     },
   });
 
-  // Worker1 sebenarnya masih punya ASSIGNED job,
-  // jadi kembalikan BUSY.
+  // Worker1 masih punya ASSIGNED job.
   await prisma.employee.update({
     where: {
       id: worker1.id,
@@ -887,11 +1073,25 @@ if (drivers.length < 2) {
     data: {
       workStatus:
         WorkStatus.BUSY,
+
+      availableSinceAt: null,
     },
   });
 
-  // Driver1 punya ASSIGNED delivery,
-  // jadi BUSY.
+  // Worker2 masih memegang ON_HOLD_BYPASS.
+  await prisma.employee.update({
+    where: {
+      id: worker2.id,
+    },
+    data: {
+      workStatus:
+        WorkStatus.BUSY,
+
+      availableSinceAt: null,
+    },
+  });
+
+  // Driver1 masih punya ASSIGNED delivery.
   await prisma.employee.update({
     where: {
       id: driver1.id,
@@ -899,6 +1099,8 @@ if (drivers.length < 2) {
     data: {
       workStatus:
         WorkStatus.BUSY,
+
+      availableSinceAt: null,
     },
   });
 
@@ -954,6 +1156,9 @@ if (drivers.length < 2) {
   );
   console.log(
     "6. WAITING_PAYMENT + PACKING COMPLETED + UNPAID",
+  );
+  console.log(
+    "7. WAITING_CUSTOMER_CONFIRMATION + 3 OPEN COMPLAINTS",
   );
 
   console.log("\n========================================");

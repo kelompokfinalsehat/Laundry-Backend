@@ -145,7 +145,7 @@ export class BypassRepository {
     return await prisma.$transaction(async (tx) => {
         const bypass = await tx.bypassRequest.findFirst({where: {id, status: BypassStatus.PENDING}, include: {workerAssignment: true}})
         if(!bypass) return null
-        if(bypass.workerAssignment.status !== WorkerAssignmentStatus.ON_HOLD_BYPASS) throw new ResponseError('CONFLICT', 'Worker assignment is not on bypass hold.')
+        if(bypass.workerAssignment.status !== WorkerAssignmentStatus.ON_HOLD_BYPASS) throw new ResponseError('CONFLICT', 'Status pengerjaan sedang tidak di-hold.')
         for(const difference of differences){
             await tx.orderItem.update({where: {id: difference.orderItemId}, data: {quantity: difference.submittedQuantity}})
         }
@@ -158,7 +158,7 @@ export class BypassRepository {
     return await prisma.$transaction(async (tx) => {
         const bypass = await tx.bypassRequest.findFirst({where: {id, status: BypassStatus.PENDING}, include: {workerAssignment: true}})
         if(!bypass) return null
-        if(bypass.workerAssignment.status !== WorkerAssignmentStatus.ON_HOLD_BYPASS) throw new ResponseError('CONFLICT', 'Worker assignment is not on bypass hold.')
+        if(bypass.workerAssignment.status !== WorkerAssignmentStatus.ON_HOLD_BYPASS) throw new ResponseError('CONFLICT', 'Status pengerjaan sedang tidak di-hold.')
         await tx.bypassRequest.update({where: {id}, data: {status: BypassStatus.REJECTED, decidedBy, decidedAt: now}})
         return tx.workerAssignment.update({where: {id: bypass.workerAssignmentId}, data: {status: WorkerAssignmentStatus.ASSIGNED}, include: {order: true, worker: true}})
     })

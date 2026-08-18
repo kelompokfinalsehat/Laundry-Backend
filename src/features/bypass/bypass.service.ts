@@ -14,7 +14,7 @@ export class BypassService {
     static async getBypastRequestById(id: string, sub: string){
         const employee = await EmployeeHelper.findEmployeeByIdOrThrow(sub)
         const bypass = await BypassRepository.findById(id, employee.currentOutletId ?? undefined)
-        if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Bypass request not found.')
+        if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Permintaan bypass tidak ditemukan.')
         const differences = BypassHelper.parseQuantityDifferences(bypass.quantityDiffJson)
         const orderItems = bypass.order.orderItems
         return {
@@ -25,7 +25,7 @@ export class BypassService {
             status: bypass.status,
             differences: differences.map(difference => {
                 const orderItem = orderItems.find(item => item.id === difference.orderItemId)
-                if(!orderItem) throw new ResponseError("INTERNAL_SERVER_ERROR", 'Bypass quantity is invalid.')
+                if(!orderItem) throw new ResponseError("INTERNAL_SERVER_ERROR", 'Kuantitas bypas tidak sesuai.')
                 return {
                     orderItemId: difference.orderItemId,
                     itemName: orderItem.laundryItem.name,
@@ -42,7 +42,7 @@ export class BypassService {
         if(!employee.passwordHash) throw new ResponseError('INVALID_CREDENTIALS', 'Password tidak valid.')
         if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
         const bypass = await BypassRepository.findForDecision(id, employee.currentOutletId)
-        if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Bypass request not found.')
+        if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Permintaan bypass tidak ditemukan.')
         const validPassword = await BcryptUtil.compare(password, employee.passwordHash)
         if(!validPassword) throw new ResponseError('INVALID_CREDENTIALS', 'Password tidak valid.')
         const differences = BypassHelper.parseQuantityDifferences(bypass.quantityDiffJson)
@@ -55,7 +55,7 @@ export class BypassService {
         const employee = await EmployeeHelper.findEmployeeByIdOrThrow(decidedBy)
         if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
         const bypass = await BypassRepository.findForDecision(id, employee.currentOutletId)
-        if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Bypass request not found.')
+        if(!bypass) throw new ResponseError('RESOURCE_NOT_FOUND', 'Permintaan bypass tidak ditemukan.')
         const result = await BypassRepository.reject(id, decidedBy)
         if(!result) return BypassRepository.findById(id, employee.currentOutletId)
         return result

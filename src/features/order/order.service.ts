@@ -31,13 +31,13 @@ export class OrderService {
     if (order.customerStatus !== CustomerStatus.ON_THE_WAY_TO_OUTLET)
       throw new ResponseError(
         "INVALID_STATE_TRANSITION",
-        "Order is not ready to be received.",
+        "Order belum siap untuk diterima.",
       );
     const assignment = await OrderRepository.findPickupAssignment(orderId);
     if (!assignment)
       throw new ResponseError(
         "RESOURCE_NOT_FOUND",
-        "Pickup assignment not found/empty.",
+        "Penugasan pickup tidak ditemukan.",
       );
     if (
       assignment.status !== DriverAssignmentStatus.IN_PROGRESS ||
@@ -45,7 +45,7 @@ export class OrderService {
     )
       throw new ResponseError(
         "INVALID_STATE_TRANSITION",
-        "Pickup is not currently in progress.",
+        "Penugasan tidak dalam progress.",
       );
     return OrderRepository.receiveOrder(
       orderId,
@@ -65,13 +65,13 @@ export class OrderService {
     if (!order.receivedAt)
       throw new ResponseError(
         "INVALID_STATE_TRANSITION",
-        "Order has not been received by outlet.",
+        "Order belum diterima outlet.",
       );
     if (order.bill) return order;
     if (order.customerStatus !== CustomerStatus.ARRIVED_AT_OUTLET)
       throw new ResponseError(
         "INVALID_STATE_TRANSITION",
-        "Order is not ready to be created.",
+        "Order belum siap untuk dibuat.",
       );
     const itemIds = body.items.map((item) => item.laundryItemId);
     const laundryItems = await LaundryItemRepository.findByIds(itemIds);
@@ -79,13 +79,13 @@ export class OrderService {
     if (laundryItems.length !== uniqueItemIds.size)
       throw new ResponseError(
         "RESOURCE_NOT_FOUND",
-        "One or more laundry items are not found.",
+        "1 atau lebih laundry item tidak ditemukan.",
       );
     const laundryPricing = await PricingRepository.findCurrentLaundryPricing();
     if (!laundryPricing)
       throw new ResponseError(
         "RESOURCE_NOT_FOUND",
-        "Laundry price is not found/empty.",
+        "Harga laundry tidak ditemukan/kosong.",
       );
     const shippingRate =
       await PricingRepository.findShippingRateByDistanceMeter(
@@ -94,7 +94,7 @@ export class OrderService {
     if (!shippingRate)
       throw new ResponseError(
         "RESOURCE_NOT_FOUND",
-        "Shipping price is not found.",
+        "Harga ongkir tidak ditemukan.",
       );
     const weightKg = new Prisma.Decimal(body.weightKg);
     const laundryCost = weightKg.mul(laundryPricing.pricePerKg);

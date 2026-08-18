@@ -32,7 +32,7 @@ export class EmployeeRepository {
                 include: this.employeeInclude,
                 orderBy: {
                     [query.sortBy]: query.sortOrder
-                },
+                }
             }),
             prisma.employee.count({where})
         ])
