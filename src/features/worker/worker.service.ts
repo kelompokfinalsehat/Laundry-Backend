@@ -2,12 +2,7 @@ import { WorkerAssignmentStatus, WorkStatus, type Prisma } from "../../../genera
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { WorkerHelper } from "./worker.helper";
-import type {
-  WorkerAvailableAssignmentInput,
-  WorkerClaimInput,
-  WorkerHistoryInput,
-  WorkerPreClaimInput,
-} from "./worker.validation";
+import type { WorkerAvailableAssignmentInput, WorkerClaimInput, WorkerHistoryInput, WorkerPreClaimInput, WorkerRequestBypassInput, WorkerValidateQuantitiesInput } from "./worker.validation";
 import { WorkerRepository } from "./worker.repository";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 
@@ -23,10 +18,7 @@ export class WorkerService {
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, limit: query.limit });
     const take = query.limit;
-    const [totalItems, availableAssignments] = await Promise.all([
-      WorkerRepository.countAvailable(where),
-      WorkerRepository.findAvailable(where, skip, take, query.sortOrder),
-    ]);
+    const [totalItems, availableAssignments] = await WorkerRepository.findAvailablePaginated(where, skip, take, query.sortOrder);
     const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
     return { data: availableAssignments, meta };
   }
@@ -48,10 +40,7 @@ export class WorkerService {
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, limit: query.limit });
     const take = query.limit;
-    const [totalItems, historyList] = await Promise.all([
-      WorkerRepository.countHistory(where),
-      WorkerRepository.findHistory(where, skip, take, query.sortOrder),
-    ]);
+    const [totalItems, historyList] = await WorkerRepository.findHistoryPaginated(where, skip, take, query.sortOrder);
     const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
     return { data: historyList, meta };
   }
@@ -72,5 +61,35 @@ export class WorkerService {
     const assignment = await WorkerRepository.findActiveAssignmentDetail(worker.id);
     if (!assignment) return null;
     return WorkerHelper.buildActiveAssignmentResponse(assignment);
+  }
+
+  static async validateQuantities({ workerId, params, body }: { workerId: string } & WorkerValidateQuantitiesInput) {
+    const worker = await EmployeeRepository.findById(workerId);
+    WorkerHelper.assertWorkerValidity(worker);
+    const assignment = await WorkerRepository.findValidatableAssignment(workerId, params.assignmentId); // pengecekan ownership tugas, status tugas digabungkan dalam query prisma where
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    const orderItems = assignment.order.orderItems;
+    const inputItems = body.items;
+    const compare = WorkerHelper.compareQuantity({ orderItems, inputItems });
+    if (compare.matched === false) {
+      throw new ResponseError("QUANTITY_MISMATCH");
+    }
+    const customerStatus = WorkerHelper.getCustomerStatusByStation(assignment.stationType);
+    return WorkerRepository.updateValidateTransaction(worker.id, assignment.id, assignment.order.id, customerStatus);
+  }
+
+  static async requestBypass({ workerId, params, body }: { workerId: string } & WorkerRequestBypassInput) {
+    const worker = await EmployeeRepository.findById(workerId);
+    WorkerHelper.assertWorkerValidity(worker);
+    const assignment = await WorkerRepository.findValidatableAssignment(workerId, params.assignmentId);
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    const orderItems = assignment.order.orderItems;
+    const inputItems = body.items;
+    const compare = WorkerHelper.compareQuantity({ orderItems, inputItems });
+    if (compare.matched) {
+      throw new ResponseError("VALIDATION_ERROR", "Bypass hanya dapat diajukan apabila quantity tidak sesuai!");
+    }
+    const differences = compare.differences;
+    return WorkerRepository.createBypassTransaction({ assignmentId: assignment.id, workerId: worker.id, orderId: assignment.order.id, stationType: assignment.stationType, differences });
   }
 }

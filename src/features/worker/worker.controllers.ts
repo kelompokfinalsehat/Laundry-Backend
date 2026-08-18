@@ -62,4 +62,26 @@ export class WorkerController {
       data: result,
     });
   }
+
+  static async validateQuantities(req: Request, res: Response) {
+    const { params, body } = validate(WorkerValidation.VALIDATE_QUANTITIES, { params: req.params, body: req.body });
+    const payload = res.locals.payload;
+    const result = await WorkerService.validateQuantities({ workerId: payload.sub, params, body });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Validasi berhasil dilakukan",
+      data: result,
+    });
+  }
+
+  static async requestBypass(req: Request, res: Response) {
+    const { params, body } = validate(WorkerValidation.REQUEST_BYPASS, { params: req.params, body: req.body });
+    const payload = res.locals.payload;
+    const result = await WorkerService.requestBypass({ workerId: payload.sub, params, body });
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      message: "Permintaan Bypass berhasil dilakukan!",
+      data: result,
+    });
+  }
 }
