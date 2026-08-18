@@ -8,3 +8,4 @@ generated/prisma/
 .DS_Store
 
 *.zip
+dist/
