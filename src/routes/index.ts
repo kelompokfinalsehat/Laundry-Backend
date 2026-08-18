@@ -4,7 +4,6 @@ import authEmployeRoutes from "../features/authEmployee/authEmployee.routes";
 import profileCustomerRoutes from "../features/cutomerProfile/profile.routes"
 import { AuthMiddleware } from "../middlewares/auth.middlewares";
 import addressCustomerRoutes from "../features/addressCustomer/address.routes";
-import { AuthMiddleware } from "../middlewares/auth.middlewares";
 import { Role } from "../../generated/prisma";
 
 const router = Router();
