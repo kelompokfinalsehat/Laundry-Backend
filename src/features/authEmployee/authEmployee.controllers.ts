@@ -30,7 +30,7 @@ export class AuthEmployeeController {
     return res.status(StatusCodes.OK).json({
       success: true,
       data: employee,
-      massage: "login berhasil",
+      message: "login berhasil",
     });
   }
 

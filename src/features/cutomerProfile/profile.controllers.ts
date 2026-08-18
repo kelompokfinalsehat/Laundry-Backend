@@ -19,7 +19,7 @@ export class CustomerProfileController {
     return res.status(StatusCodes.OK).json({
       success: true,
       data: result,
-      massage: "Update profile berhasil dilakukan.",
+      message: "Update profile berhasil dilakukan.",
     });
   }
   static async updateCustomerProfilePhoto(req: Request, res: Response) {
@@ -40,7 +40,7 @@ export class CustomerProfileController {
     return res.status(StatusCodes.OK).json({
       success: true,
       data: result,
-      massage: "Foto profil baru berhasil di update",
+      message: "Foto profil baru berhasil di update",
     });
   }
   static async requestEmailChange(req: Request, res: Response) {
@@ -71,7 +71,7 @@ export class CustomerProfileController {
     return res.status(StatusCodes.OK).json({
       success: true,
       data: result,
-      massage: "perubahan email berahasil dilakukan ",
+      message: "perubahan email berahasil dilakukan ",
     });
   }
 }
