@@ -53,7 +53,7 @@ export const AppErrors = {
     status: StatusCodes.UNAUTHORIZED,
     message: "Sesi kedaluwarsa. Silakan perbarui sesi Anda.",
   },
-   ACCESS_TOKEN_REQUIRED: {
+  ACCESS_TOKEN_REQUIRED: {
     code: "ACCESS_TOKEN_REQUIRED",
     status: StatusCodes.UNAUTHORIZED,
     message: "Token tidak ditemukan. Silakan perbarui sesi Anda.",
@@ -209,6 +209,24 @@ export const AppErrors = {
     code: "INTERNAL_SERVER_ERROR",
     status: StatusCodes.INTERNAL_SERVER_ERROR,
     message: "Terjadi kesalahan pada server. Silakan coba lagi nanti.",
+  },
+
+  // ===== Address error =====
+  GEOCODING_FAILED: {
+    code: "GEOCODING_FAILED",
+    status: StatusCodes.UNPROCESSABLE_ENTITY,
+    message: "tidak dapat mendapatkan alamat",
+  },
+
+  ADDRESS_LIMIT_REACHED: {
+    code: "ADDRESS_LIMIT_REACHED",
+    status: StatusCodes.CONFLICT,
+    message: "tidak dapat menyimpan alamat",
+  },
+  ADDRESS_FORBIDDEN: {
+    code: "ADDRESS_FORBIDDEN",
+    status: StatusCodes.FORBIDDEN,
+    message: "alamat tidak ditemukan",
   },
 } as const;
 

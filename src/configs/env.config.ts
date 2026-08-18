@@ -26,3 +26,5 @@ export const ACCESS_TOKEN_EXPIRES_IN = "15m";
 export const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 30 hari
 export const EMAIL_VERIFICATION_EXPIRY_HOURS = 1;
 export const PASSWORD_RESET_EXPIRY_HOURS = 1;
+
+export const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
