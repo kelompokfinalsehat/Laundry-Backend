@@ -70,7 +70,7 @@ export class AuthCustomerController {
     return res.status(StatusCodes.OK).json({
       success: true,
       data: { user: customer, homeUrl: "/" },
-      massage: "login berhasil",
+      message: "login berhasil",
     });
   }
 

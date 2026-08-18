@@ -1,4 +1,9 @@
 import { ZodType } from "zod";
+
+export type userPayload = {
+  sub: string;
+};
+
 export function validate<T>(
   schema: ZodType<T>,
   data: unknown,
