@@ -20,6 +20,22 @@ export class AuthTokenIssuer {
     await MailerService.sendEmailVerification({ to: email, token: rawToken });
   }
 
+  static async issueEmailChangeVerificationToken(
+    customerId: string,
+    email: string,
+  ): Promise<void> {
+    const rawToken = await this.issueChangeEmailToken(
+      customerId,
+      email,
+      "EMAIL_VERIFICATION",
+      EMAIL_VERIFICATION_EXPIRY_HOURS,
+    );
+    await MailerService.sendChangeEmailVerification({
+      to: email,
+      token: rawToken,
+    });
+  }
+
   static async issueEmployeInvitationToken(
     customerId: string,
     email: string,
@@ -58,7 +74,7 @@ export class AuthTokenIssuer {
 
   private static async issueCustomerToken(
     customerId: string,
-    
+
     type: AuthTokenType,
     expiryHours: number,
   ): Promise<string> {
@@ -66,6 +82,31 @@ export class AuthTokenIssuer {
     const expiresAt = AuthTokenUtil.addHours(new Date(), expiryHours);
 
     await prisma.$transaction([
+      prisma.authToken.deleteMany({
+        where: { customerId, type, usedAt: null },
+      }),
+      prisma.authToken.create({
+        data: { customerId, type, tokenHash, expiresAt },
+      }),
+    ]);
+
+    return rawToken;
+  }
+
+  private static async issueChangeEmailToken(
+    customerId: string,
+    email: string,
+    type: AuthTokenType,
+    expiryHours: number,
+  ): Promise<string> {
+    const { rawToken, tokenHash } = AuthTokenUtil.generateTokenPair();
+    const expiresAt = AuthTokenUtil.addHours(new Date(), expiryHours);
+
+    await prisma.$transaction([
+      prisma.customer.update({
+        where: { id: customerId },
+        data: { pendingEmail: email },
+      }),
       prisma.authToken.deleteMany({
         where: { customerId, type, usedAt: null },
       }),
@@ -87,7 +128,7 @@ export class AuthTokenIssuer {
 
     await prisma.$transaction([
       prisma.authToken.deleteMany({
-        where: {  employeeId,type, usedAt: null },
+        where: { employeeId, type, usedAt: null },
       }),
       prisma.authToken.create({
         data: { employeeId, type, tokenHash, expiresAt },

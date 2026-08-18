@@ -18,3 +18,5 @@ export function validate<T>(
   }
   return schema.parse(data);
 }
+
+
