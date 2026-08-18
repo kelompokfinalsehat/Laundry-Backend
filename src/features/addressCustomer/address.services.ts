@@ -10,6 +10,7 @@ import {
 } from "./address.validation";
 
 const MAX_ADDRESSES_PER_CUSTOMER = 5;
+const MIN_GEOCODE_CONFIDENCE = 7; 
 
 export class AddressService {
   static async create(payload: userPayload, { body }: CreateAddressInput) {
@@ -24,10 +25,9 @@ export class AddressService {
       );
     }
 
-    const { latitude, longitude } = await GeocodingUtil.geocode(
+    const { latitude, longitude} = await GeocodingUtil.geocode(
       body.formattedAddress,
     );
-
     const shouldBePrimary = existingCount === 0 || body.isPrimary === true;
 
     const result = await prisma.$transaction(async (tx) => {
