@@ -6,8 +6,6 @@ import { JWTUtil } from "../../utils/Auth/jwt.utils";
 import { RefreshTokenService } from "../../utils/Auth/refreshToken.utils";
 import { AuthCookieUtil } from "../../utils/Auth/cookie.utils";
 import { StatusCodes } from "http-status-codes";
-import { ResponseHelper } from "../../helpers/response.helper";
-import { Message } from "../../constants/message.constant";
 
 export class AuthEmployeeController {
   static async login(req: Request, res: Response) {
@@ -32,7 +30,6 @@ export class AuthEmployeeController {
       data: employee,
       massage: "login berhasil",
     });
-    return ResponseHelper.success(res, "Login Berhasil", employee)
   }
 
   static async acceptInvitation(req: Request, res: Response) {
@@ -46,7 +43,6 @@ export class AuthEmployeeController {
       success: true,
       data: result,
     });
-    return ResponseHelper.success(res, "Berhasil set password.", null)
   }
 
   static async forgotPassword(req: Request, res: Response) {
@@ -60,7 +56,6 @@ export class AuthEmployeeController {
       success: true,
       data: result,
     });
-    return ResponseHelper.success(res, "Link reset password telah dikirim ke email.", null)
   }
 
   static async resetPasword(req: Request, res: Response) {
@@ -73,6 +68,5 @@ export class AuthEmployeeController {
       success: true,
       data: result,
     });
-    return ResponseHelper.success(res, "Reset password berhasil.", null)
   }
 }
