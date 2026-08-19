@@ -57,6 +57,21 @@ export class MailerService {
     });
 }
 
+  static async sendChangeEmailVerification({ to, token }: SendEmailVerificationParams) {
+    const verificationUrl = `${APP_BASE_URL}/profil/confirm-email?token=${encodeURIComponent(token)}`;
+ 
+    const html = TemplateUtil.compile("change-email-verification", {
+      verificationUrl,
+      expiryHours: EMAIL_VERIFICATION_EXPIRY_HOURS,
+    });
+ 
+    return MailerUtil.sendMail({
+      to,
+      subject: "Verifikasi perubahan email Popo Laundry kamu",
+      html,
+    });
+  }
+
    static async sendPasswordReset({ to, token }: SendEmailVerificationParams) {
     const resetUrl = `${APP_BASE_URL}/reset-password?token=${encodeURIComponent(token)}`;
  

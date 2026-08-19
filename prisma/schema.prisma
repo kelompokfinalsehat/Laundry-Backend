@@ -475,6 +475,7 @@ model DriverAssignment {
   driver Employee? @relation("DriverAssignmentDriver", fields: [driverId], references: [id])
   outlet Outlet    @relation(fields: [outletId], references: [id])
 
+  @@unique([orderId, taskType])
   @@index([outletId, status])
   @@index([driverId])
   @@index([orderId])
@@ -507,6 +508,7 @@ model WorkerAssignment {
 
   bypassRequests BypassRequest[]
 
+  @@unique([orderId, stationType])
   @@index([outletId, status])
   @@index([workerId])
   @@index([orderId])

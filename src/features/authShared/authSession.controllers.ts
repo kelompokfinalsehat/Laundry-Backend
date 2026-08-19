@@ -74,6 +74,7 @@ export class AuthSessionController {
    * tanpa user perlu login ulang. Role/data diambil ulang dari database
    * (bukan dari token lama) supaya perubahan role terbaru langsung berlaku.
    */
+  
   static async refresh(req: Request, res: Response) {
     const rawRefreshToken = req.cookies.refreshToken;
 
