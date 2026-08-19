@@ -1,8 +1,5 @@
 import { Response } from "express";
-import {
-  ACCESS_TOKEN_MAX_AGE_MS,
-  REFRESH_TOKEN_MAX_AGE_MS,
-} from "../../configs/env.config";
+import { TOKEN_MAX_AGE_MS } from "../../configs/env.config";
 
 export class AuthCookieUtil {
   private static readonly isProd = process.env.NODE_ENV === "production";
@@ -17,15 +14,15 @@ export class AuthCookieUtil {
       secure: this.isProd,
       sameSite: "strict",
       path: "/",
-      maxAge: ACCESS_TOKEN_MAX_AGE_MS,
+      maxAge: TOKEN_MAX_AGE_MS,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: this.isProd,
       sameSite: "strict",
-      path: "/api/v1/auth .",
-      maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+      path: "/api/v1/auth",
+      maxAge: TOKEN_MAX_AGE_MS,
     });
   }
 

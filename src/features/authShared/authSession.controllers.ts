@@ -26,8 +26,9 @@ export class AuthSessionController {
           role: customer.role,
           accountType: "customer",
           phone: customer.phone,
-          profilePic: customer.profilePhotoUrl,
+          profilePhotoUrl: customer.profilePhotoUrl,
           isEmailVerified: customer.isEmailVerified,
+          authProvider: customer.authProvider,
         },
       });
     }
@@ -73,6 +74,7 @@ export class AuthSessionController {
    * tanpa user perlu login ulang. Role/data diambil ulang dari database
    * (bukan dari token lama) supaya perubahan role terbaru langsung berlaku.
    */
+  
   static async refresh(req: Request, res: Response) {
     const rawRefreshToken = req.cookies.refreshToken;
 
@@ -91,25 +93,48 @@ export class AuthSessionController {
     let role: Role;
 
     if (owner.customerId) {
-      const customer = await prisma.customer.findUniqueOrThrow({
-        where: { id: owner.customerId },
+      const customer = await prisma.customer.findUnique({
+        where: {
+          id: owner.customerId,
+        },
       });
+
+      if (!customer || customer.deletedAt) {
+        throw new ResponseError("AUTHENTICATION_REQUIRED", "Sesi tidak valid.");
+      }
+
       sub = customer.id;
       accountType = "customer";
       role = customer.role;
     } else {
-      const employee = await prisma.employee.findUniqueOrThrow({
-        where: { id: owner.employeeId! },
+      const employee = await prisma.employee.findUnique({
+        where: {
+          id: owner.employeeId!,
+        },
       });
+
+      if (!employee || employee.deletedAt) {
+        throw new ResponseError("AUTHENTICATION_REQUIRED", "Sesi tidak valid.");
+      }
+
       sub = employee.id;
       accountType = "employee";
       role = employee.role;
     }
 
-    const newAccessToken = JWTUtil.signAccessToken({ sub, accountType, role });
+    const newAccessToken = JWTUtil.signAccessToken({
+      sub,
+      accountType,
+      role,
+    });
 
     AuthCookieUtil.setAuthCookies(res, newAccessToken, newRawToken);
 
-    return res.json({ success: true, data: { message: "Token diperbarui." } });
+    return res.json({
+      success: true,
+      data: {
+        message: "Token diperbarui.",
+      },
+    });
   }
 }

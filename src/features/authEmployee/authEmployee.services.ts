@@ -2,7 +2,7 @@ import { prisma } from "../../configs/prisma-client.config";
 import { BcryptUtil } from "../../utils/Auth/bcrypt.utils";
 import { AuthTokenUtil } from "../../utils/Auth/token.utils";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import { AuthTokenIssuer } from "../mailers/emailVerification.helpers";
+import { AuthTokenIssuer } from "../mailers/mailer.helpers";
 import {
   AcceptInvitationInput,
   ForgotPasswordEmployeeInput,
