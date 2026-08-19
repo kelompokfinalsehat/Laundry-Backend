@@ -1,4 +1,4 @@
-import { WorkerAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
+import { CustomerStatus, WorkerAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { WorkerHelper } from "./worker.helper";
@@ -104,7 +104,10 @@ export class WorkerService {
   static async complete({ workerId, params }: { workerId: string; params: WorkerCompleteInput["params"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findCompletableAssignment;
+    const assignment = await WorkerRepository.findCompletableAssignment(worker.id, params.assignmentId);
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    if (assignment.order.customerStatus === CustomerStatus.OVERDUE) throw new ResponseError("INVALID_STATE_TRANSITION");
+    const nextStation = WorkerHelper.getNextStation(assignment.stationType);
     
   }
 }

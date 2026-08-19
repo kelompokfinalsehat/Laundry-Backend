@@ -152,7 +152,9 @@ export class WorkerRepository {
     });
   }
   static async findCompletableAssignment(workerId: string, assignmentId: string) {
-    return prisma.workerAssignment.findFirst({ where: { id: assignmentId, workerId, status: WorkerAssignmentStatus.IN_PROGRESS }, 
-      select:{id:true,outletId:true,stationType:true,order:{select:{orderCode}}} });
+    return prisma.workerAssignment.findFirst({
+      where: { id: assignmentId, workerId, status: WorkerAssignmentStatus.IN_PROGRESS },
+      select: { id: true, outletId: true, stationType: true, order: { select: { id: true, orderCode: true, customerStatus: true } } },
+    });
   }
 }

@@ -2,7 +2,6 @@ import { AccountStatus, CustomerStatus, Role, StationType, WorkerAssignmentStatu
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import type { WorkerActiveAssignmentDetail, WorkerValidateQuantitiesDetail, WorkerValidateQuantitiesInput } from "./worker.types";
 
-
 export class WorkerHelper {
   static assertWorkerValidity(worker: Employee | null): asserts worker is Employee {
     if (!worker) throw new ResponseError("RESOURCE_NOT_FOUND", "Data tidak ditemukan!");
@@ -109,6 +108,16 @@ export class WorkerHelper {
         throw new ResponseError("INVALID_STATE_TRANSITION");
     }
   }
+  static getNextStation(stationType: StationType): StationType | null {
+    switch (stationType) {
+      case StationType.WASHING:
+        return StationType.IRONING;
+      case StationType.IRONING:
+        return StationType.PACKING;
+      case StationType.PACKING:
+        return null;
+      default:
+        throw new ResponseError("INVALID_STATE_TRANSITION");
+    }
+  }
 }
-
-
