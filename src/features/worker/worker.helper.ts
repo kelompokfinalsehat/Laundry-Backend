@@ -1,7 +1,6 @@
 import { AccountStatus, CustomerStatus, Role, StationType, WorkerAssignmentStatus, type Employee } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type { WorkerActiveAssignmentDetail, WorkerValidateQuantitiesDetail } from "./worker.repository";
-import type { WorkerValidateQuantitiesInput } from "./worker.validation";
+import type { WorkerActiveAssignmentDetail, WorkerValidateQuantitiesDetail, WorkerValidateQuantitiesInput } from "./worker.types";
 
 export class WorkerHelper {
   static assertWorkerValidity(worker: Employee | null): asserts worker is Employee {
@@ -105,6 +104,18 @@ export class WorkerHelper {
         return CustomerStatus.IRONING;
       case StationType.PACKING:
         return CustomerStatus.PACKING;
+      default:
+        throw new ResponseError("INVALID_STATE_TRANSITION");
+    }
+  }
+  static getNextStation(stationType: StationType): StationType | null {
+    switch (stationType) {
+      case StationType.WASHING:
+        return StationType.IRONING;
+      case StationType.IRONING:
+        return StationType.PACKING;
+      case StationType.PACKING:
+        return null;
       default:
         throw new ResponseError("INVALID_STATE_TRANSITION");
     }

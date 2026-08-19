@@ -1,8 +1,16 @@
-import { WorkerAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
+import { CustomerStatus, WorkerAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { WorkerHelper } from "./worker.helper";
-import type { WorkerAvailableAssignmentInput, WorkerClaimInput, WorkerHistoryInput, WorkerPreClaimInput, WorkerRequestBypassInput, WorkerValidateQuantitiesInput } from "./worker.validation";
+import type {
+  WorkerAvailableAssignmentInput,
+  WorkerClaimInput,
+  WorkerCompleteInput,
+  WorkerHistoryInput,
+  WorkerPreClaimInput,
+  WorkerRequestBypassInput,
+  WorkerValidateQuantitiesInput,
+} from "./worker.types";
 import { WorkerRepository } from "./worker.repository";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 
@@ -49,7 +57,7 @@ export class WorkerService {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
     if (worker.workStatus !== WorkStatus.AVAILABLE) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
-    const isActive = await WorkerRepository.findActiveAssignment(worker.id);
+    const isActive = await WorkerRepository.findActiveAssignmentDetail(worker.id);
     if (isActive) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
     const result = await WorkerRepository.claimAssignment(params.assignmentId, worker.id, worker.currentOutletId!);
     return result;
@@ -75,7 +83,12 @@ export class WorkerService {
       throw new ResponseError("QUANTITY_MISMATCH");
     }
     const customerStatus = WorkerHelper.getCustomerStatusByStation(assignment.stationType);
-    return WorkerRepository.updateValidateTransaction(worker.id, assignment.id, assignment.order.id, customerStatus);
+    return WorkerRepository.updateValidateTransaction({
+      workerId: worker.id,
+      assignmentId: assignment.id,
+      orderId: assignment.order.id,
+      customerStatus: customerStatus,
+    });
   }
 
   static async requestBypass({ workerId, params, body }: { workerId: string } & WorkerRequestBypassInput) {
@@ -90,6 +103,28 @@ export class WorkerService {
       throw new ResponseError("VALIDATION_ERROR", "Bypass hanya dapat diajukan apabila quantity tidak sesuai!");
     }
     const differences = compare.differences;
-    return WorkerRepository.createBypassTransaction({ assignmentId: assignment.id, workerId: worker.id, orderId: assignment.order.id, stationType: assignment.stationType, differences });
+    return WorkerRepository.createBypassTransaction({
+      assignmentId: assignment.id,
+      workerId: worker.id,
+      orderId: assignment.order.id,
+      stationType: assignment.stationType,
+      differences,
+    });
+  }
+
+  static async complete({ workerId, params }: { workerId: string; params: WorkerCompleteInput["params"] }) {
+    const worker = await EmployeeRepository.findById(workerId);
+    WorkerHelper.assertWorkerValidity(worker);
+    const assignment = await WorkerRepository.findCompletableAssignment(worker.id, params.assignmentId);
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    if (assignment.order.customerStatus === CustomerStatus.OVERDUE) throw new ResponseError("INVALID_STATE_TRANSITION");
+    const nextStation = WorkerHelper.getNextStation(assignment.stationType);
+    return await WorkerRepository.completeTransaction({
+      assignmentId: assignment.id,
+      workerId: worker.id,
+      nextStation,
+      orderId: assignment.order.id,
+      outletId: assignment.outletId,
+    });
   }
 }
