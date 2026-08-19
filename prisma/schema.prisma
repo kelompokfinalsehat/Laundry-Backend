@@ -183,19 +183,19 @@ model Customer {
 /// dinamis -- lihat BR-WRK-01 v2.1). workStatus tetap nullable
 /// karena SUPER_ADMIN tidak memakainya.
 model Employee {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  role             Role
-  name             String
-  email            String        @unique
-  passwordHash     String?       @map("password_hash")
-  profilePhotoUrl  String?       @map("profile_photo_url")
-  phone            String?
-  accountStatus    AccountStatus @map("account_status")
-  workStatus       WorkStatus?   @map("work_status")
-  currentOutletId  String?       @map("current_outlet_id") @db.Uuid
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @default(now()) @map("updated_at")
-  deletedAt        DateTime?     @map("deleted_at")
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role            Role
+  name            String
+  email           String        @unique
+  passwordHash    String?       @map("password_hash")
+  profilePhotoUrl String?       @map("profile_photo_url")
+  phone           String?
+  accountStatus   AccountStatus @map("account_status")
+  workStatus      WorkStatus?   @map("work_status")
+  currentOutletId String?       @map("current_outlet_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @default(now()) @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
 
   currentOutlet Outlet? @relation("EmployeeCurrentOutlet", fields: [currentOutletId], references: [id])
 
@@ -215,12 +215,12 @@ model Employee {
 }
 
 model AuthToken {
-  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type       AuthTokenType
-  tokenHash  String        @map("token_hash")
-  expiresAt  DateTime      @map("expires_at")
-  usedAt     DateTime?     @map("used_at")
-  createdAt  DateTime      @default(now()) @map("created_at")
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type      AuthTokenType
+  tokenHash String        @map("token_hash")
+  expiresAt DateTime      @map("expires_at")
+  usedAt    DateTime?     @map("used_at")
+  createdAt DateTime      @default(now()) @map("created_at")
 
   // v2.1: hanya salah satu dari customerId/employeeId yang diisi,
   // tergantung pemilik token. Divalidasi di level aplikasi (bukan di
@@ -374,6 +374,7 @@ model Order {
   pickupScheduledAt DateTime @map("pickup_scheduled_at")
 
   customerStatus CustomerStatus @map("customer_status")
+  paidAt         DateTime?      @map("paid_at")
   receivedAt     DateTime?      @map("received_at")
   receivedBy     String?        @map("received_by") @db.Uuid
   createdAt      DateTime       @default(now()) @map("created_at")
@@ -417,9 +418,11 @@ model Bill {
   pricePerKgSnapshot  Decimal           @map("price_per_kg_snapshot") @db.Decimal(12, 2)
   shippingRateId      String            @map("shipping_rate_id") @db.Uuid
   shippingFeeSnapshot Decimal           @map("shipping_fee_snapshot") @db.Decimal(12, 2)
-  weightKg            Decimal          @map("weight_kg") @db.Decimal(10, 2)
-  totalAmount         Decimal          @map("total_amount") @db.Decimal(12, 2)
+  weightKg            Decimal           @map("weight_kg") @db.Decimal(10, 2)
+  totalAmount         Decimal           @map("total_amount") @db.Decimal(12, 2)
   paymentStatus       BillPaymentStatus @default(UNPAID) @map("payment_status")
+  paidAt              DateTime?         @map("paid_at")
+  expiresAt           DateTime?         @map("expires_at")
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @default(now()) @map("updated_at")
 
@@ -592,21 +595,21 @@ model PaymentWebhook {
 // ============================================================
 
 model Complaint {
-  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId       String          @unique @map("order_id") @db.Uuid
-  customerId    String          @map("customer_id") @db.Uuid
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String            @unique @map("order_id") @db.Uuid
+  customerId    String            @map("customer_id") @db.Uuid
   category      ComplaintCategory
   description   String
-  proofPhotoUrl String          @map("proof_photo_url")
+  proofPhotoUrl String            @map("proof_photo_url")
   status        ComplaintStatus   @default(OPEN)
-  handledBy     String?         @map("handled_by") @db.Uuid
-  responseNote  String?         @map("response_note")
-  decidedAt     DateTime?       @map("decided_at")
-  createdAt     DateTime        @default(now()) @map("created_at")
+  handledBy     String?           @map("handled_by") @db.Uuid
+  responseNote  String?           @map("response_note")
+  decidedAt     DateTime?         @map("decided_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
 
-  order          Order     @relation(fields: [orderId], references: [id])
-  customer       Customer  @relation(fields: [customerId], references: [id])
-  handledByUser  Employee? @relation("ComplaintHandledBy", fields: [handledBy], references: [id])
+  order         Order     @relation(fields: [orderId], references: [id])
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  handledByUser Employee? @relation("ComplaintHandledBy", fields: [handledBy], references: [id])
 
   @@map("complaints")
 }
