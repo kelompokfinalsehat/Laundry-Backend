@@ -9,12 +9,9 @@ export class WorkerController {
     const { query } = validate(WorkerValidation.AVAILABLE_ASSIGNMENT, { query: req.query });
     const payload = res.locals.payload;
     const result = await WorkerService.getAvailableAssignments({ workerId: payload.sub, query });
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Berhasil mengambil daftar tugas yang tersedia",
-      data: result.data,
-      meta: result.meta,
-    });
+    res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Berhasil mengambil daftar tugas yang tersedia", data: result.data, meta: result.meta });
   }
 
   static async getPreClaimDetail(req: Request, res: Response) {
@@ -22,11 +19,7 @@ export class WorkerController {
     const payload = res.locals.payload;
 
     const result = await WorkerService.getPreClaimDetail({ workerId: payload.sub, params });
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Detail tugas berhasil diterima!",
-      data: result,
-    });
+    res.status(StatusCodes.OK).json({ success: true, message: "Detail tugas berhasil diterima!", data: result });
   }
 
   static async getHistoryList(req: Request, res: Response) {
@@ -34,60 +27,40 @@ export class WorkerController {
     const payload = res.locals.payload;
 
     const result = await WorkerService.getHistoryList({ workerId: payload.sub, query });
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Berhasil mengambil riwayat tugas!",
-      data: result.data,
-      meta: result.meta,
-    });
+    res.status(StatusCodes.OK).json({ success: true, message: "Berhasil mengambil riwayat tugas!", data: result.data, meta: result.meta });
   }
 
   static async claimAssignment(req: Request, res: Response) {
     const { params } = validate(WorkerValidation.CLAIM_ASSIGNMENT, { params: req.params, body: req.body });
     const payload = res.locals.payload;
     const result = await WorkerService.claimAssignment({ workerId: payload.sub, params });
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Berhasil mengklaim tugas!",
-      data: result,
-    });
+    res.status(StatusCodes.OK).json({ success: true, message: "Berhasil mengklaim tugas!", data: result });
   }
 
   static async getActive(_req: Request, res: Response) {
     const payload = res.locals.payload;
     const result = await WorkerService.getActive(payload.sub);
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Data tugas aktif berhasil diterima!",
-      data: result,
-    });
+    res.status(StatusCodes.OK).json({ success: true, message: "Data tugas aktif berhasil diterima!", data: result });
   }
 
   static async validateQuantities(req: Request, res: Response) {
     const { params, body } = validate(WorkerValidation.VALIDATE_QUANTITIES, { params: req.params, body: req.body });
     const payload = res.locals.payload;
     const result = await WorkerService.validateQuantities({ workerId: payload.sub, params, body });
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Validasi berhasil dilakukan",
-      data: result,
-    });
+    res.status(StatusCodes.OK).json({ success: true, message: "Validasi berhasil dilakukan", data: result });
   }
 
   static async requestBypass(req: Request, res: Response) {
     const { params, body } = validate(WorkerValidation.REQUEST_BYPASS, { params: req.params, body: req.body });
     const payload = res.locals.payload;
     const result = await WorkerService.requestBypass({ workerId: payload.sub, params, body });
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      message: "Permintaan Bypass berhasil dilakukan!",
-      data: result,
-    });
+    res.status(StatusCodes.CREATED).json({ success: true, message: "Permintaan Bypass berhasil dilakukan!", data: result });
   }
 
   static async complete(req: Request, res: Response) {
     const { params } = validate(WorkerValidation.COMPLETE, { params: req.params, body: req.body });
     const payload = res.locals.payload;
     const result = await WorkerService.complete({ workerId: payload.sub, params });
+    res.status(StatusCodes.OK).json({ success: true, message: "Complete Berhasil!", data: result });
   }
 }

@@ -83,7 +83,12 @@ export class WorkerService {
       throw new ResponseError("QUANTITY_MISMATCH");
     }
     const customerStatus = WorkerHelper.getCustomerStatusByStation(assignment.stationType);
-    return WorkerRepository.updateValidateTransaction(worker.id, assignment.id, assignment.order.id, customerStatus);
+    return WorkerRepository.updateValidateTransaction({
+      workerId: worker.id,
+      assignmentId: assignment.id,
+      orderId: assignment.order.id,
+      customerStatus: customerStatus,
+    });
   }
 
   static async requestBypass({ workerId, params, body }: { workerId: string } & WorkerRequestBypassInput) {
@@ -98,7 +103,13 @@ export class WorkerService {
       throw new ResponseError("VALIDATION_ERROR", "Bypass hanya dapat diajukan apabila quantity tidak sesuai!");
     }
     const differences = compare.differences;
-    return WorkerRepository.createBypassTransaction({ assignmentId: assignment.id, workerId: worker.id, orderId: assignment.order.id, stationType: assignment.stationType, differences });
+    return WorkerRepository.createBypassTransaction({
+      assignmentId: assignment.id,
+      workerId: worker.id,
+      orderId: assignment.order.id,
+      stationType: assignment.stationType,
+      differences,
+    });
   }
 
   static async complete({ workerId, params }: { workerId: string; params: WorkerCompleteInput["params"] }) {
@@ -108,6 +119,12 @@ export class WorkerService {
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
     if (assignment.order.customerStatus === CustomerStatus.OVERDUE) throw new ResponseError("INVALID_STATE_TRANSITION");
     const nextStation = WorkerHelper.getNextStation(assignment.stationType);
-    
+    return await WorkerRepository.completeTransaction({
+      assignmentId: assignment.id,
+      workerId: worker.id,
+      nextStation,
+      orderId: assignment.order.id,
+      outletId: assignment.outletId,
+    });
   }
 }
