@@ -1,7 +1,7 @@
 import { AccountStatus, CustomerStatus, Role, StationType, WorkerAssignmentStatus, type Employee } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type { WorkerActiveAssignmentDetail, WorkerValidateQuantitiesDetail } from "./worker.repository";
-import type { WorkerValidateQuantitiesInput } from "./worker.validation";
+import type { WorkerActiveAssignmentDetail, WorkerValidateQuantitiesDetail, WorkerValidateQuantitiesInput } from "./worker.types";
+
 
 export class WorkerHelper {
   static assertWorkerValidity(worker: Employee | null): asserts worker is Employee {
@@ -110,3 +110,5 @@ export class WorkerHelper {
     }
   }
 }
+
+

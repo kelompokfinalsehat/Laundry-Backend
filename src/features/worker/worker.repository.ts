@@ -1,6 +1,7 @@
-import { BypassStatus, WorkerAssignmentStatus, WorkStatus, type CustomerStatus, type Prisma, type StationType } from "../../../generated/prisma";
+import { BypassStatus, WorkerAssignmentStatus, WorkStatus, type CustomerStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import type { CreateBypassTypes } from "./worker.types";
 
 export class WorkerRepository {
   static async findAvailablePaginated(where: Prisma.WorkerAssignmentWhereInput, skip: number, take: number, sortOrder: "asc" | "desc") {
@@ -42,15 +43,6 @@ export class WorkerRepository {
     ]);
   }
 
-  static async findActiveAssignment(workerId: string) {
-    return prisma.workerAssignment.findFirst({
-      where: {
-        workerId: workerId,
-        status: { notIn: [WorkerAssignmentStatus.QUEUED, WorkerAssignmentStatus.COMPLETED] },
-      },
-    });
-  }
-
   static async claimAssignment(assignmentId: string, workerId: string, workerOutletId: string) {
     return prisma.$transaction(async (tx) => {
       const claimedAssignment = await tx.workerAssignment.updateMany({
@@ -90,6 +82,7 @@ export class WorkerRepository {
         status: true,
         assignedAt: true,
         startedAt: true,
+        outletId: true,
         order: {
           select: {
             id: true,
@@ -142,19 +135,7 @@ export class WorkerRepository {
     });
   }
 
-  static async createBypassTransaction({
-    assignmentId,
-    workerId,
-    orderId,
-    stationType,
-    differences,
-  }: {
-    assignmentId: string;
-    workerId: string;
-    orderId: string;
-    stationType: StationType;
-    differences: { orderItemId: string; officialQuantity: number; submittedQuantity: number; difference: number }[];
-  }) {
+  static async createBypassTransaction({ assignmentId, workerId, orderId, stationType, differences }: CreateBypassTypes) {
     return prisma.$transaction(async (tx) => {
       const updateAssignment = await tx.workerAssignment.updateMany({
         where: { id: assignmentId, workerId: workerId, status: WorkerAssignmentStatus.ASSIGNED },
@@ -170,6 +151,8 @@ export class WorkerRepository {
       });
     });
   }
+  static async findCompletableAssignment(workerId: string, assignmentId: string) {
+    return prisma.workerAssignment.findFirst({ where: { id: assignmentId, workerId, status: WorkerAssignmentStatus.IN_PROGRESS }, 
+      select:{id:true,outletId:true,stationType:true,order:{select:{orderCode}}} });
+  }
 }
-export type WorkerActiveAssignmentDetail = NonNullable<Awaited<ReturnType<typeof WorkerRepository.findActiveAssignmentDetail>>>;
-export type WorkerValidateQuantitiesDetail = NonNullable<Awaited<ReturnType<typeof WorkerRepository.findValidatableAssignment>>>;

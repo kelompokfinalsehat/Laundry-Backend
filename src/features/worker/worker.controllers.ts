@@ -84,4 +84,10 @@ export class WorkerController {
       data: result,
     });
   }
+
+  static async complete(req: Request, res: Response) {
+    const { params } = validate(WorkerValidation.COMPLETE, { params: req.params, body: req.body });
+    const payload = res.locals.payload;
+    const result = await WorkerService.complete({ workerId: payload.sub, params });
+  }
 }

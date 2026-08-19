@@ -11,3 +11,4 @@ WorkerRoute.get("/:assignmentId/pre-claim", AuthMiddleware.authenticated(), Auth
 WorkerRoute.post("/:assignmentId/claim", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.claimAssignment);
 WorkerRoute.post("/:assignmentId/validate-quantities", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.validateQuantities);
 WorkerRoute.post("/:assignmentId/bypass-request", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.requestBypass);
+WorkerRoute.post("/:assignmentId/complete", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.complete);
