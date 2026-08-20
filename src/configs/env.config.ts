@@ -28,5 +28,4 @@ export const EMAIL_VERIFICATION_EXPIRY_HOURS = 1;
 export const PASSWORD_RESET_EXPIRY_HOURS = 1;
 
 export const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
-export const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY
 export const OPENCAGE_BASE_URL = process.env.OPENCAGE_BASE_URL

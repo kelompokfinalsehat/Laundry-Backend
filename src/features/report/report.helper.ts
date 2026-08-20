@@ -49,7 +49,7 @@ export class ReportHelper {
       endDate,
     };
   }
-  static buildSumary(
+  static buildSummary(
     bills: { totalAmount: Prisma.Decimal | null }[],
   ): SalesSummary {
     const totalRevenue = bills.reduce(

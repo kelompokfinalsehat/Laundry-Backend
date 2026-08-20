@@ -12,4 +12,10 @@ export class ReportController {
         const report = await ReportService.getSalesReport(query, sub)
         return ResponseHelper.success(res, Message.FETCHED, report)
     }
+    static async getEmployeePerformanceReport(req: Request, res: Response){
+        const query = validate(ReportValidation.QUERY.getEmployeePeformance, req.query)
+        const {sub} = res.locals.payload
+        const report = await ReportService.getEmployeePerformanceReport(query, sub)
+        return ResponseHelper.paginated(res, Message.FETCHED, report.data, report.meta)
+    }
 }

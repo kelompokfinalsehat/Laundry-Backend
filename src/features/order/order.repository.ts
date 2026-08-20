@@ -1,4 +1,4 @@
-import { BillPaymentStatus, CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, Prisma, Role, StationType, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
+import { CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, Prisma, Role, StationType, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
 import { CreateOrderTransactionData, OrderQuery } from "./order.type";
@@ -152,7 +152,7 @@ export class OrderRepository {
     return await prisma.$transaction(async (tx) => {
         const assignment = await tx.driverAssignment.updateMany({where: {id: assignmentId, orderId, driverId, status: DriverAssignmentStatus.IN_PROGRESS}, data: {status: DriverAssignmentStatus.COMPLETED, completedAt: now}})
         if(assignment.count === 0) return null
-        await tx.employee.update({where: {id: driverId, role: Role.DRIVER}, data: {workStatus: WorkStatus.AVAILABLE, availableSinceAt: now}})
+        await tx.employee.update({where: {id: driverId, role: Role.DRIVER}, data: {workStatus: WorkStatus.AVAILABLE}})
         return tx.order.update({where: {id: orderId}, data: {receivedAt: now, receivedBy, customerStatus: CustomerStatus.ARRIVED_AT_OUTLET}})
     })
   }
@@ -177,12 +177,6 @@ export class OrderRepository {
             outletId: data.outletId,
             stationType: StationType.WASHING,
             status: WorkerAssignmentStatus.QUEUED
-        }})
-        await tx.notification.create({data: {
-            targetRole: Role.WORKER,
-            outletId: data.outletId,
-            title: "Job Washing Baru",
-            message: "Ada job washing baru menunggu di daftar tugas."
         }})
         return tx.order.findUnique({where: {id: data.orderId}})
     })
