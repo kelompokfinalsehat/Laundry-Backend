@@ -90,7 +90,7 @@ export class DashboardRepository {
     startDate.setHours(0, 0, 0, 0);
     const revenueTrendWhere: Prisma.BillWhereInput = {
       ...paidBillWhere,
-      createdAt: {
+      paidAt: {
         gte: startDate,
         lte: endDate,
       },

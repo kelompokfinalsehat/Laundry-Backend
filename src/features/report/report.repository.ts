@@ -23,7 +23,7 @@ export class ReportRepository {
     const outletId = scopedOutletId ?? query.outletId;
     const where: Prisma.BillWhereInput = {
       paymentStatus: BillPaymentStatus.PAID,
-      createdAt: {
+      paidAt: {
         gte: startDate,
         lt: endDate,
       },
@@ -32,7 +32,7 @@ export class ReportRepository {
     const bills = await prisma.bill.findMany({
       where,
       select: ReportHelper.billSelect,
-      orderBy: { createdAt: "asc" },
+      orderBy: { paidAt: "asc" },
     });
     const summary = ReportHelper.buildSummary(bills);
     const trend = ReportHelper.buildTrend(
