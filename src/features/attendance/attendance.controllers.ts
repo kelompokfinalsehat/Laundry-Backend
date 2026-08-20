@@ -6,56 +6,29 @@ import { StatusCodes } from "http-status-codes";
 
 export class AttendanceController {
   static async clockIn(req: Request, res: Response) {
-    validate(AttendanceValidation.CLOCK_IN, {
-      body: req.body,
-    });
-
+    validate(AttendanceValidation.CLOCK_IN, { body: req.body });
     const payload = res.locals.payload;
-
-    const result = await AttendanceService.clockIn(payload);
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      message: "Clock in berhasil!",
-      data: result,
-    });
+    const result = await AttendanceService.clockIn(payload.sub);
+    res.status(StatusCodes.CREATED).json({ success: true, message: "Clock in berhasil!", data: result });
   }
 
   static async clockOut(req: Request, res: Response) {
     validate(AttendanceValidation.CLOCK_OUT, { body: req.body });
-
     const payload = res.locals.payload;
-    const result = await AttendanceService.clockOut(payload);
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Clock Out berhasil!",
-      data: result,
-    });
+    const result = await AttendanceService.clockOut(payload.sub);
+    res.status(StatusCodes.OK).json({ success: true, message: "Clock Out berhasil!", data: result });
   }
 
   static async getHistory(req: Request, res: Response) {
     const { query } = validate(AttendanceValidation.HISTORY, { query: req.query });
-
     const payload = res.locals.payload;
-
-    const result = await AttendanceService.getHistory({ payload, query });
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "History Absensi berhasil didapat!",
-      data: result.data,
-      meta: result.meta,
-    });
+    const result = await AttendanceService.getHistory({ employeeId: payload.sub, query });
+    res.status(StatusCodes.OK).json({ success: true, message: "History Absensi berhasil didapat!", data: result.data, meta: result.meta });
   }
 
   static async getAttendanceStatus(_req: Request, res: Response) {
     const payload = res.locals.payload;
-
-    const result = await AttendanceService.getAttendanceStatus({ payload });
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Status Absensi berhasil diterima!",
-      data: result,
-    });
+    const result = await AttendanceService.getAttendanceStatus(payload.sub);
+    res.status(StatusCodes.OK).json({ success: true, message: "Status Absensi berhasil diterima!", data: result });
   }
 }

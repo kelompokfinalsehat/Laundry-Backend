@@ -207,6 +207,11 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "Tidak dapat absen pulang karena masih ada tugas aktif.",
   },
+  ATTENDANCE_STILL_OPEN: {
+    code: "ATTENDANCE_STILL_OPEN",
+    status: StatusCodes.CONFLICT,
+    message: "Anda masih memiliki sesi absen yang belum ditutup. Harap absen pulang terlebih dahulu.",
+  },
 
   // ===== Komplain (BR-CMP) =====
   COMPLAINT_NOT_ALLOWED: {

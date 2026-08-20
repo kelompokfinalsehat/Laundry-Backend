@@ -20,4 +20,4 @@ export class AttendanceValidation {
   });
 }
 
-export type AttendanceHistoryInput = zod.infer<typeof AttendanceValidation.HISTORY>;
+

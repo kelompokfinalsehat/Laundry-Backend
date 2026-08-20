@@ -1,15 +1,16 @@
 import { Router } from "express";
 import { fakeAuth } from "../../middlewares/fake-auth.middleware";
 import { DriverController } from "./driver.controllers";
+import { AuthMiddleware } from "../../middlewares/auth.middlewares";
 
 export const DriverRoute = Router();
 
 DriverRoute.get(
   "/available",
-  fakeAuth,
-  //Authmiddleware.authenticated
-  //Authmiddleware.authorized[Role.DRIVER]
-  DriverController.getAvailableAssignment,
+  
+  // Authmiddleware.authenticated(),
+  // AuthMiddleware.authorized[Role.DRIVER]
+  // DriverController.getAvailableAssignment,
 );
 
 DriverRoute.post("/:assignmentId/claim", fakeAuth, DriverController.claimAssignment);

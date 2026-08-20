@@ -144,6 +144,7 @@ export class WorkerRepository {
       select: { id: true, outletId: true, stationType: true, order: { select: { id: true, orderCode: true, customerStatus: true } } },
     });
   }
+  
   static async completeTransaction({ assignmentId, workerId, nextStation, orderId, outletId }: CompleteTransactionTypes) {
     return prisma.$transaction(async (tx) => {
       const completeAssignment = await tx.workerAssignment.updateMany({
