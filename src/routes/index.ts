@@ -14,6 +14,7 @@ import bypassRoutes from "../features/bypass/bypass.route"
 import customerRoutes from "../features/customer/customer.route"
 import complaintRoutes from "../features/complaint/complaint.route"
 import reportRoutes from "../features/report/report.route";
+import dashboardRoutes from "../features/dashboard/dashboard.route"
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use("/internal/bypass-requests", bypassRoutes)
 router.use("/internal/customers", customerRoutes)
 router.use("/internal/complaints", complaintRoutes)
 router.use("/internal/reports", reportRoutes)
+router.use("/internal/dashboard", dashboardRoutes)
 
 export default router;

@@ -83,6 +83,18 @@ export class DashboardRepository {
       ...billWhere,
       paymentStatus: BillPaymentStatus.PAID,
     };
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - 6);
+    startDate.setHours(0, 0, 0, 0);
+    const revenueTrendWhere: Prisma.BillWhereInput = {
+      ...paidBillWhere,
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    };
     const [totalPendingReceive, itemsPendingReceive] = await Promise.all([
       prisma.order.count({
         where: pendingReceiveWhere,
@@ -134,12 +146,22 @@ export class DashboardRepository {
       select: this.RecentOrderSelect,
     });
     const orderOverview = await prisma.order.groupBy({
-        by: ["customerStatus"],
-        where: orderWhere,
-        _count:{
-            id: true
-        }
-    })
+      by: ["customerStatus"],
+      where: orderWhere,
+      _count: {
+        id: true,
+      },
+    });
+    const revenueBills = await prisma.bill.findMany({
+      where: revenueTrendWhere,
+      select: {
+        createdAt: true,
+        totalAmount: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
     const pendingReceive = {
       total: totalPendingReceive,
       items: itemsPendingReceive.map((order) => ({
@@ -155,7 +177,7 @@ export class DashboardRepository {
         id: request.id,
         orderId: request.workerAssignment.order.id,
         orderCode: request.workerAssignment.order.orderCode,
-        workerName: request.workerAssignment.worker?.name,
+        workerName: request.workerAssignment.worker?.name ?? "-",
         stationType: request.workerAssignment.stationType,
         createdAt: request.createdAt,
       })),
@@ -164,7 +186,7 @@ export class DashboardRepository {
       totalOrders,
       activeOrders,
       completedOrders,
-      totalRevenue: revenueAggregate._sum.totalAmount ?? 0,
+      totalRevenue: Number(revenueAggregate._sum.totalAmount) ?? 0,
     };
     const recentOrderData = recentOrders.map((order) => ({
       id: order.id,
@@ -173,10 +195,43 @@ export class DashboardRepository {
       status: order.customerStatus,
       createdAt: order.createdAt,
     }));
-    const orderOverviewData = orderOverview.map(order => ({
-        status: order.customerStatus,
-        total: order._count.id
-    }))
-    return {} as DashboardResponse;
+    const orderOverviewData = orderOverview.map((order) => ({
+      status: order.customerStatus,
+      total: order._count.id,
+    }));
+    const revenueMap = new Map<string, number>();
+    const getDateKey = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    };
+    for (const bill of revenueBills) {
+      const key = getDateKey(bill.createdAt);
+      revenueMap.set(
+        key,
+        (revenueMap.get(key) ?? 0) + Number(bill.totalAmount),
+      );
+    }
+    const revenueTrend = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + index);
+
+      const key = getDateKey(date);
+
+      return {
+        date: key,
+        revenue: revenueMap.get(key) ?? 0,
+      };
+    });
+    return {
+      summary,
+      revenueTrend,
+      orderOverview: orderOverviewData,
+      recentOrders: recentOrderData,
+      pendingReceive,
+      pendingBypass,
+    };
   }
 }

@@ -1,59 +1,66 @@
 import z from "zod";
+import {
+  CustomerStatus,
+  StationType,
+} from "../../../generated/prisma";
 import { DashboardValidation } from "./dashboard.validation";
 
 export type DashboardQuery = z.infer<typeof DashboardValidation.QUERY.getDashboard>
-export type DashboardActionItem = {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  createdAt: Date;
-};
-export type PendingBypassItem = {
-  id: string;
-  orderId: string;
-  orderNumber: string;
-  workerName: string;
-  stationType: string;
-  createdAt: Date;
-};
-export type DashboardSummary = {
+
+export interface DashboardSummary {
   totalOrders: number;
   activeOrders: number;
-  totalRevenue: number;
   completedOrders: number;
-};
-export type RevenueTrendItem = {
+  totalRevenue: number;
+}
+
+export interface RevenueTrendItem {
   date: string;
   revenue: number;
-};
-export type OrderOverviewItem = {
-  status: string;
+}
+
+export interface OrderOverviewItem {
+  status: CustomerStatus;
   total: number;
-};
-export type RecentOrderItem = {
+}
+
+export interface RecentOrderItem {
   id: string;
-  orderNumber: string;
+  orderCode: string;
   customerName: string;
-  status: string;
+  status: CustomerStatus;
   createdAt: Date;
-};
-export type DashboardResponse = {
-  actionRequired: {
-    pendingReceive: {
-      total: number;
-      items: DashboardActionItem[];
-    };
-    pendingBypass: {
-      total: number;
-      items: PendingBypassItem[];
-    };
+}
+
+export interface PendingReceiveItem {
+  id: string;
+  orderCode: string;
+  customerName: string;
+  createdAt: Date;
+}
+
+export interface PendingBypassItem {
+  id: string;
+  orderId: string;
+  orderCode: string;
+  workerName: string;
+  stationType: StationType;
+  createdAt: Date;
+}
+
+export interface DashboardResponse {
+  summary: DashboardSummary;
+  revenueTrend: RevenueTrendItem[];
+  orderOverview: OrderOverviewItem[];
+  recentOrders: RecentOrderItem[];
+
+  pendingReceive: {
+    total: number;
+    items: PendingReceiveItem[];
   };
 
-  summary: DashboardSummary;
-
-  revenueTrend: RevenueTrendItem[];
-
-  orderOverview: OrderOverviewItem[];
-
-  recentOrders: RecentOrderItem[];
-};
+  pendingBypass: {
+    total: number;
+    items: PendingBypassItem[];
+  };
+}
