@@ -18,7 +18,7 @@ export class WorkerController {
     const { params } = validate(WorkerValidation.PRE_CLAIM, { params: req.params });
     const payload = res.locals.payload;
 
-    const result = await WorkerService.getPreClaimDetail({ workerId: payload.sub, params });
+    const result = await WorkerService.getPreClaimDetail({ workerId: payload.sub, assignmentId: params.assignmentId });
     res.status(StatusCodes.OK).json({ success: true, message: "Detail tugas berhasil diterima!", data: result });
   }
 
@@ -33,7 +33,7 @@ export class WorkerController {
   static async claimAssignment(req: Request, res: Response) {
     const { params } = validate(WorkerValidation.CLAIM_ASSIGNMENT, { params: req.params, body: req.body });
     const payload = res.locals.payload;
-    const result = await WorkerService.claimAssignment({ workerId: payload.sub, params });
+    const result = await WorkerService.claimAssignment({ workerId: payload.sub, assignmentId: params.assignmentId });
     res.status(StatusCodes.OK).json({ success: true, message: "Berhasil mengklaim tugas!", data: result });
   }
 
@@ -46,21 +46,21 @@ export class WorkerController {
   static async validateQuantities(req: Request, res: Response) {
     const { params, body } = validate(WorkerValidation.VALIDATE_QUANTITIES, { params: req.params, body: req.body });
     const payload = res.locals.payload;
-    const result = await WorkerService.validateQuantities({ workerId: payload.sub, params, body });
+    const result = await WorkerService.validateQuantities({ workerId: payload.sub, assignmentId: params.assignmentId, items: body.items });
     res.status(StatusCodes.OK).json({ success: true, message: "Validasi berhasil dilakukan", data: result });
   }
 
   static async requestBypass(req: Request, res: Response) {
     const { params, body } = validate(WorkerValidation.REQUEST_BYPASS, { params: req.params, body: req.body });
     const payload = res.locals.payload;
-    const result = await WorkerService.requestBypass({ workerId: payload.sub, params, body });
+    const result = await WorkerService.requestBypass({ workerId: payload.sub, assignmentId: params.assignmentId, items: body.items });
     res.status(StatusCodes.CREATED).json({ success: true, message: "Permintaan Bypass berhasil dilakukan!", data: result });
   }
 
   static async complete(req: Request, res: Response) {
     const { params } = validate(WorkerValidation.COMPLETE, { params: req.params, body: req.body });
     const payload = res.locals.payload;
-    const result = await WorkerService.complete({ workerId: payload.sub, params });
+    const result = await WorkerService.complete({ workerId: payload.sub, assignmentId: params.assignmentId });
     res.status(StatusCodes.OK).json({ success: true, message: "Complete Berhasil!", data: result });
   }
 }

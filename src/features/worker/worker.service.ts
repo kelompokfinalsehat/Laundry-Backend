@@ -13,9 +13,10 @@ import type {
 } from "./worker.types";
 import { WorkerRepository } from "./worker.repository";
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import { AttendanceRepository } from "../attendance/attendance.repository";
 
 export class WorkerService {
-  static async getAvailableAssignments({ workerId, query }: { workerId: string } & WorkerAvailableAssignmentInput) {
+  static async getAvailableAssignments({ workerId, query }: { workerId: string; query: WorkerAvailableAssignmentInput["query"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
     const where: Prisma.WorkerAssignmentWhereInput = {
@@ -26,19 +27,19 @@ export class WorkerService {
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, limit: query.limit });
     const take = query.limit;
-    const [totalItems, availableAssignments] = await WorkerRepository.findAvailablePaginated(where, skip, take, query.sortOrder);
+    const [totalItems, availableAssignments] = await WorkerRepository.findAvailablePaginated({ where, skip, take, sortOrder: query.sortOrder });
     const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
     return { data: availableAssignments, meta };
   }
 
-  static async getPreClaimDetail({ workerId, params }: { workerId: string } & WorkerPreClaimInput) {
+  static async getPreClaimDetail({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerPreClaimInput["params"]["assignmentId"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findPreClaimDetail(params.assignmentId, worker.currentOutletId!);
+    const assignment = await WorkerRepository.findPreClaimDetail({ assignmentId, workerOutletId: worker.currentOutletId });
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan atau sudah tidak tersedia!");
     return assignment;
   }
-  static async getHistoryList({ workerId, query }: { workerId: string } & WorkerHistoryInput) {
+  static async getHistoryList({ workerId, query }: { workerId: string; query: WorkerHistoryInput["query"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
     const where: Prisma.WorkerAssignmentWhereInput = {
@@ -48,18 +49,21 @@ export class WorkerService {
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, limit: query.limit });
     const take = query.limit;
-    const [totalItems, historyList] = await WorkerRepository.findHistoryPaginated(where, skip, take, query.sortOrder);
+    const [totalItems, historyList] = await WorkerRepository.findHistoryPaginated({ where, skip, take, sortOrder: query.sortOrder });
     const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
     return { data: historyList, meta };
   }
 
-  static async claimAssignment({ workerId, params }: { workerId: string; params: WorkerClaimInput["params"] }) {
+  static async claimAssignment({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerClaimInput["params"]["assignmentId"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
     if (worker.workStatus !== WorkStatus.AVAILABLE) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
+    const attendanceDate = WorkerHelper.getAttendanceDateWIB();
+    const todayAttendance = await AttendanceRepository.findTodayAttendance({ employeeId: worker.id, attendanceDate });
+    if (!todayAttendance || todayAttendance.clockOutAt !== null) throw new ResponseError("ATTENDANCE_NOT_CLOCKED_IN");
     const isActive = await WorkerRepository.findActiveAssignmentDetail(worker.id);
     if (isActive) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
-    const result = await WorkerRepository.claimAssignment(params.assignmentId, worker.id, worker.currentOutletId!);
+    const result = await WorkerRepository.claimAssignment({ assignmentId, workerId: worker.id, workerOutletId: worker.currentOutletId });
     return result;
   }
 
@@ -71,13 +75,21 @@ export class WorkerService {
     return WorkerHelper.buildActiveAssignmentResponse(assignment);
   }
 
-  static async validateQuantities({ workerId, params, body }: { workerId: string } & WorkerValidateQuantitiesInput) {
+  static async validateQuantities({
+    workerId,
+    assignmentId,
+    items,
+  }: {
+    workerId: string;
+    assignmentId: WorkerValidateQuantitiesInput["params"]["assignmentId"];
+    items: WorkerValidateQuantitiesInput["body"]["items"];
+  }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findValidatableAssignment(workerId, params.assignmentId); // pengecekan ownership tugas, status tugas digabungkan dalam query prisma where
+    const assignment = await WorkerRepository.findValidatableAssignment({ workerId, assignmentId }); // pengecekan ownership tugas, status tugas digabungkan dalam query prisma where
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
     const orderItems = assignment.order.orderItems;
-    const inputItems = body.items;
+    const inputItems = items;
     const compare = WorkerHelper.compareQuantity({ orderItems, inputItems });
     if (compare.matched === false) {
       throw new ResponseError("QUANTITY_MISMATCH");
@@ -91,13 +103,21 @@ export class WorkerService {
     });
   }
 
-  static async requestBypass({ workerId, params, body }: { workerId: string } & WorkerRequestBypassInput) {
+  static async requestBypass({
+    workerId,
+    assignmentId,
+    items,
+  }: {
+    workerId: string;
+    assignmentId: WorkerRequestBypassInput["params"]["assignmentId"];
+    items: WorkerRequestBypassInput["body"]["items"];
+  }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findValidatableAssignment(workerId, params.assignmentId);
+    const assignment = await WorkerRepository.findValidatableAssignment({workerId, assignmentId});
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
     const orderItems = assignment.order.orderItems;
-    const inputItems = body.items;
+    const inputItems = items;
     const compare = WorkerHelper.compareQuantity({ orderItems, inputItems });
     if (compare.matched) {
       throw new ResponseError("VALIDATION_ERROR", "Bypass hanya dapat diajukan apabila quantity tidak sesuai!");
@@ -112,10 +132,10 @@ export class WorkerService {
     });
   }
 
-  static async complete({ workerId, params }: { workerId: string; params: WorkerCompleteInput["params"] }) {
+  static async complete({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerCompleteInput["params"]["assignmentId"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findCompletableAssignment(worker.id, params.assignmentId);
+    const assignment = await WorkerRepository.findCompletableAssignment({workerId, assignmentId});
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
     if (assignment.order.customerStatus === CustomerStatus.OVERDUE) throw new ResponseError("INVALID_STATE_TRANSITION");
     const nextStation = WorkerHelper.getNextStation(assignment.stationType);

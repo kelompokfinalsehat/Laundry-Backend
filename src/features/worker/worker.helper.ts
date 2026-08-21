@@ -3,11 +3,16 @@ import { ResponseError } from "../../utils/errors/response-error.utils";
 import type { WorkerActiveAssignmentDetail, WorkerValidateQuantitiesDetail, WorkerValidateQuantitiesInput } from "./worker.types";
 
 export class WorkerHelper {
-  static assertWorkerValidity(worker: Employee | null): asserts worker is Employee {
+  static assertWorkerValidity(worker: Employee | null): asserts worker is Employee & { currentOutletId: string } {
     if (!worker) throw new ResponseError("RESOURCE_NOT_FOUND", "Data tidak ditemukan!");
     if (worker.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError("ACCOUNT_NOT_ACTIVE");
     if (worker.role !== Role.WORKER) throw new ResponseError("FORBIDDEN");
     if (!worker.currentOutletId) throw new ResponseError("INVALID_STATE_TRANSITION", "Worker belum memiliki outlet aktif!");
+  }
+
+  static getAttendanceDateWIB(date: Date = new Date()) {
+    const dateWIB = date.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    return new Date(`${dateWIB}T00:00:00.000Z`); // Mendapat Tanggal YY}YY-MM-DD
   }
 
   private static buildBaseResponse(assignment: WorkerActiveAssignmentDetail) {
@@ -52,7 +57,13 @@ export class WorkerHelper {
   2. ID yg dikirim sama ? 
   3. Cek perbedaan quantity ?
   */
-  static compareQuantity({ orderItems, inputItems }: { orderItems: WorkerValidateQuantitiesDetail["order"]["orderItems"]; inputItems: WorkerValidateQuantitiesInput["body"]["items"] }) {
+  static compareQuantity({
+    orderItems,
+    inputItems,
+  }: {
+    orderItems: WorkerValidateQuantitiesDetail["order"]["orderItems"];
+    inputItems: WorkerValidateQuantitiesInput["body"]["items"];
+  }) {
     if (orderItems.length !== inputItems.length) throw new ResponseError("VALIDATION_ERROR"); // [{a},{b},{c}] vs [{a},{b}]
     const inputMap = new Map(inputItems.map((input) => [input.orderItemId, input.submittedQuantity])); // ^ menjadi [[a,1],[b,2] new Map -> {a:1,b:2} jadi objek!
     const differences = orderItems
@@ -66,36 +77,6 @@ export class WorkerHelper {
     return { matched: differences.length === 0, differences };
   }
 
-  // static checkQuantity({
-  //   orderItems,
-  //   inputItems,
-  // }: {
-  //   orderItems: WorkerValidateQuantitiesDetail["order"]["orderItems"];
-  //   inputItems: WorkerValidateQuantitiesInput["body"]["items"];
-  // }) {
-  //   // pengecekan panjang dulu, biar sejak awal tahu worker kirimnya bener atau ga
-  //   if (inputItems.length !== orderItems.length) throw new ResponseError("VALIDATION_ERROR");
-
-  //   /*
-  //   orderItems & inputItems itu array of objects
-  //   [{ID : "a", quantity : 10},{ID : "b", quantity : 25}]
-  //   kita ubah dulu ke object
-
-  //   caranya pakai new Map()
-  //   */
-  //   const inputMap = new Map(inputItems.map((input) => [input.orderItemId, input.actualQuantity]));
-  //   //kita cari perbedaan-perbedaan. OrderITems.map karna dia source truthnya
-  //   const differences = orderItems
-  //     .map((orderItem) => {
-  //       const actualQuantity = inputMap.get(orderItem.id); // ngecek satu per satu orderItem id ada ga di inputItem ID
-  //       // get kalau tidak ketemu mereturn undefined
-  //       if (actualQuantity === undefined) throw new ResponseError("VALIDATION_ERROR");
-  //       const difference = actualQuantity - orderItem.quantity;
-  //       return { orderItemId: orderItem.id, officialQuantity: orderItem.quantity, actualQuantity, difference };
-  //     })
-  //     .filter((item) => item.difference !== 0);
-  //   return { matched: differences.length === 0, differences };
-  // }
   static getCustomerStatusByStation(stationType: StationType): CustomerStatus {
     switch (stationType) {
       case StationType.WASHING:

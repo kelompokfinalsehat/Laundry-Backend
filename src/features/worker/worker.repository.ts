@@ -6,14 +6,19 @@ import {
   PickupDeliveryType,
   WorkerAssignmentStatus,
   WorkStatus,
-  type Prisma,
 } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type { CompleteTransactionTypes, CreateBypassTypes, UpdateValidateTransactionTypes } from "./worker.types";
+import type {
+  CompleteTransactionTypes,
+  CreateBypassTypes,
+  FindAvailablePaginated,
+  FindHistoryPaginated,
+  UpdateValidateTransactionTypes,
+} from "./worker.types";
 
 export class WorkerRepository {
-  static async findAvailablePaginated(where: Prisma.WorkerAssignmentWhereInput, skip: number, take: number, sortOrder: "asc" | "desc") {
+  static async findAvailablePaginated({ where, skip, take, sortOrder }: FindAvailablePaginated) {
     return prisma.$transaction([
       prisma.workerAssignment.count({ where }),
       prisma.workerAssignment.findMany({
@@ -26,14 +31,14 @@ export class WorkerRepository {
     ]);
   }
 
-  static async findPreClaimDetail(assignmentId: string, workerOutletId: string) {
+  static async findPreClaimDetail({ assignmentId, workerOutletId }: { assignmentId: string; workerOutletId: string }) {
     return prisma.workerAssignment.findFirst({
       where: { id: assignmentId, outletId: workerOutletId, status: WorkerAssignmentStatus.QUEUED, workerId: null },
       select: { id: true, stationType: true, status: true, createdAt: true, order: { select: { id: true, orderCode: true } } },
     });
   }
 
-  static async findHistoryPaginated(where: Prisma.WorkerAssignmentWhereInput, skip: number, take: number, sortOrder: "asc" | "desc") {
+  static async findHistoryPaginated({ where, skip, take, sortOrder }: FindHistoryPaginated) {
     return prisma.$transaction([
       prisma.workerAssignment.count({ where }),
       prisma.workerAssignment.findMany({
@@ -46,7 +51,7 @@ export class WorkerRepository {
     ]);
   }
 
-  static async claimAssignment(assignmentId: string, workerId: string, workerOutletId: string) {
+  static async claimAssignment({ assignmentId, workerId, workerOutletId }: { assignmentId: string; workerId: string; workerOutletId: string }) {
     return prisma.$transaction(async (tx) => {
       const claimedAssignment = await tx.workerAssignment.updateMany({
         where: { id: assignmentId, outletId: workerOutletId, status: WorkerAssignmentStatus.QUEUED, workerId: null },
@@ -77,14 +82,13 @@ export class WorkerRepository {
         status: true,
         assignedAt: true,
         startedAt: true,
-        outletId: true,
         order: {
           select: { id: true, orderCode: true, orderItems: { select: { id: true, laundryItem: { select: { id: true, name: true } } } } },
         },
       },
     });
   }
-  static async findValidatableAssignment(workerId: string, assignmentId: string) {
+  static async findValidatableAssignment({ workerId, assignmentId }: { workerId: string; assignmentId: string }) {
     return prisma.workerAssignment.findFirst({
       where: { id: assignmentId, workerId: workerId, status: WorkerAssignmentStatus.ASSIGNED },
       select: {
@@ -138,7 +142,7 @@ export class WorkerRepository {
       });
     });
   }
-  static async findCompletableAssignment(workerId: string, assignmentId: string) {
+  static async findCompletableAssignment({ workerId, assignmentId }: { workerId: string; assignmentId: string }) {
     return prisma.workerAssignment.findFirst({
       where: { id: assignmentId, workerId, status: WorkerAssignmentStatus.IN_PROGRESS },
       select: { id: true, outletId: true, stationType: true, order: { select: { id: true, orderCode: true, customerStatus: true } } },

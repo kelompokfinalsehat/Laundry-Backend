@@ -4,11 +4,31 @@ import { AuthMiddleware } from "../../middlewares/auth.middlewares";
 
 export const WorkerRoute = Router();
 
-WorkerRoute.get("/available", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getAvailableAssignments);
-WorkerRoute.get("/active", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getActive);
-WorkerRoute.get("/history", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getHistoryList);
-WorkerRoute.get("/:assignmentId/pre-claim", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getPreClaimDetail);
-WorkerRoute.post("/:assignmentId/claim", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.claimAssignment);
-WorkerRoute.post("/:assignmentId/validate-quantities", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.validateQuantities);
-WorkerRoute.post("/:assignmentId/bypass-request", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.requestBypass);
-WorkerRoute.post("/:assignmentId/complete", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.complete);
+WorkerRoute.get("/jobs/available", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getAvailableAssignments);
+WorkerRoute.get("/jobs/active", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getActive);
+WorkerRoute.get("/jobs/history", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getHistoryList);
+WorkerRoute.get(
+  "/jobs/:assignmentId/pre-claim",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.getPreClaimDetail,
+);
+WorkerRoute.post(
+  "/jobs/:assignmentId/claim",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.claimAssignment,
+);
+WorkerRoute.post(
+  "/jobs/:assignmentId/validate-quantities",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.validateQuantities,
+);
+WorkerRoute.post(
+  "/jobs/:assignmentId/bypass-requests",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["WORKER"]),
+  WorkerController.requestBypass,
+);
+WorkerRoute.post("/jobs/:assignmentId/complete", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.complete);
