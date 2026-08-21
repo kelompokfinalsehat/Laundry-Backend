@@ -14,8 +14,8 @@ import { Role } from "../../generated/prisma";
 const router = Router();
 
 router.use("/internal/attendance", AttendanceRoute);
-router.use("/internal/driver/assignment", DriverRoute);
-router.use("/internal/worker/assignment", WorkerRoute);
+router.use("/internal/driver", DriverRoute);
+router.use("/internal/worker", WorkerRoute);
 
 router.use("/auth", authCustomerRoutes);
 router.use("/auth/employe", authEmployeeRoutes);

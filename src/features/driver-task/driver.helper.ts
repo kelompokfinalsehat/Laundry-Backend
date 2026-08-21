@@ -1,64 +1,15 @@
-import { Prisma, AccountStatus, DriverAssignmentStatus, Role } from "../../../generated/prisma";
-import { DriverAssignment, Employee, PickupDeliveryType } from "../../../generated/prisma";
+import { AccountStatus, DriverAssignmentStatus, Role } from "../../../generated/prisma";
+import { Employee, PickupDeliveryType } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import type { DriverActiveAssignmentDetail } from "./driver.types";
 
-export const ACTIVE_TASK_SELECT = {
-  id: true,
-  taskType: true,
-  status: true,
-  pickedUpAt: true,
-  order: {
-    select: {
-      orderCode: true,
-      pickupScheduledAt: true,
-      addressSnapshot: true,
-      addressPhoneSnapshot: true,
-      addressLatitude: true,
-      addressLongitude: true,
-      customer: { select: { name: true } },
-    },
-  },
-  outlet: {
-    select: { name: true, address: true, latitude: true, longitude: true },
-  },
-} satisfies Prisma.DriverAssignmentSelect;
-
-export type ActiveAssignmentData = Prisma.DriverAssignmentGetPayload<{ select: typeof ACTIVE_TASK_SELECT }>;
-export interface BaseTaskResponse {
-  id: string;
-  taskType: PickupDeliveryType;
-  status: DriverAssignmentStatus;
-  orderCode: string;
-  state: string;
-  action: string | null;
-}
-
-export interface CustomerDestination {
-  name: string;
-  phone: string;
-  latitude: number;
-  longitude: number;
-}
 export class DriverHelper {
   // CHECKER UMUM untuk beberapa function
-  static assertDriver(driver: Employee | null): asserts driver is Employee {
+  static assertDriver(driver: Employee | null): asserts driver is Employee & { currentOutletId: string } {
     if (!driver) throw new ResponseError("RESOURCE_NOT_FOUND", "Data tidak ditemukan!");
     if (driver.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError("ACCOUNT_NOT_ACTIVE");
     if (driver.role !== Role.DRIVER) throw new ResponseError("FORBIDDEN");
-    if (driver.currentOutletId === null)
-      throw new ResponseError("INVALID_STATE_TRANSITION", "Driver belum memiliki outlet aktif!");
-  }
-
-  //  CHECKER untuk Claim Assignment
-  // -> AssignmentId VALID, OUTLET sama dengan Driver, QUEUED belum diambil
-  static assertClaimableAssignment(
-    assignment: DriverAssignment | null,
-    driverOutletId: string,
-  ): asserts assignment is DriverAssignment {
-    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan!");
-    if (assignment.outletId !== driverOutletId) throw new ResponseError("OUTLET_SCOPE_FORBIDDEN");
-    if (assignment.status !== DriverAssignmentStatus.QUEUED || assignment.driverId !== null)
-      throw new ResponseError("ASSIGNMENT_ALREADY_CLAIMED");
+    if (driver.currentOutletId === null) throw new ResponseError("INVALID_STATE_TRANSITION", "Driver belum memiliki outlet aktif!");
   }
 
   // DATE-HELPER
@@ -68,7 +19,7 @@ export class DriverHelper {
   }
 
   // TASK STATE dan ACTION -> Method /active
-  private static getAssignmentState(assignment: ActiveAssignmentData) {
+  private static getAssignmentState(assignment: DriverActiveAssignmentDetail) {
     // PICKUP
     if (assignment.taskType === PickupDeliveryType.PICKUP) {
       if (assignment.status === DriverAssignmentStatus.ASSIGNED) return "PICKUP_ASSIGNED";
@@ -89,7 +40,7 @@ export class DriverHelper {
     return null;
   }
 
-  private static getBaseResponse(assignment: ActiveAssignmentData, state: string) {
+  private static getBaseResponse(assignment: DriverActiveAssignmentDetail, state: string) {
     return {
       id: assignment.id,
       taskType: assignment.taskType,
@@ -99,64 +50,37 @@ export class DriverHelper {
       action: this.getAssignmentAction(state),
     };
   }
-  private static getCustomerDest(assignment: ActiveAssignmentData) {
+  private static getCustomerDestination(assignment: DriverActiveAssignmentDetail) {
     return {
       name: assignment.order.customer.name,
+      address: assignment.order.addressSnapshot,
       phone: assignment.order.addressPhoneSnapshot,
       latitude: Number(assignment.order.addressLatitude),
       longitude: Number(assignment.order.addressLongitude),
     };
   }
 
-  static buildActiveResponse(assignment: ActiveAssignmentData) {
+  static buildActiveResponse(assignment: DriverActiveAssignmentDetail) {
     const state = this.getAssignmentState(assignment);
     const base = this.getBaseResponse(assignment, state);
-    const customerDest = this.getCustomerDest(assignment);
-    const outletDest = { outletName: assignment.outlet.name, address: assignment.outlet.address };
+    const customerDest = this.getCustomerDestination(assignment);
+    const outletDest = {
+      outletName: assignment.outlet.name,
+      address: assignment.outlet.address,
+      latitude: assignment.outlet.latitude,
+      longitude: assignment.outlet.longitude,
+    };
     // LOGIC untuk delivery
     if (assignment.taskType === PickupDeliveryType.DELIVERY) {
       return { ...base, destination: customerDest };
     }
     // LOGIC untuk pickup
     if (state === "PICKUP_TO_OUTLET") {
-      return { ...base, destination: outletDest };
+      return { ...base, destination: outletDest, message: "Menunggu konfirmasi dari Outlet Admin" };
     }
     if (state === "PICKUP_ASSIGNED") {
       return { ...base, destination: customerDest, pickupScheduledAt: assignment.order.pickupScheduledAt };
     }
     return { ...base, destination: customerDest };
-  }
-
-  // CHECKER untuk /start-task
-  static assertStartableAssignment(
-    assignment: DriverAssignment | null,
-    currentDriverId: string,
-  ): asserts assignment is DriverAssignment {
-    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan");
-    if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
-    if (assignment.status !== DriverAssignmentStatus.ASSIGNED) throw new ResponseError("INVALID_STATE_TRANSITION");
-  }
-
-  static assertPickupableAssignment(
-    assignment: DriverAssignment | null,
-    currentDriverId: string,
-  ): asserts assignment is DriverAssignment {
-    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan!");
-    if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
-    if (assignment.taskType !== PickupDeliveryType.PICKUP) throw new ResponseError("INVALID_STATE_TRANSITION");
-    if (assignment.status !== DriverAssignmentStatus.IN_PROGRESS) throw new ResponseError("INVALID_STATE_TRANSITION");
-    if (assignment.pickedUpAt !== null) throw new ResponseError("CONFLICT");
-  }
-
-  static assertCompleteableDelivery(
-    assignment: DriverAssignment | null,
-    currentDriverId: string,
-  ): asserts assignment is DriverAssignment {
-    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan!");
-    if (assignment.driverId !== currentDriverId) throw new ResponseError("FORBIDDEN");
-    if (assignment.taskType !== PickupDeliveryType.DELIVERY) throw new ResponseError("INVALID_STATE_TRANSITION");
-    if (assignment.status !== DriverAssignmentStatus.IN_PROGRESS) throw new ResponseError("INVALID_STATE_TRANSITION");
-    if (assignment.deliveredAt !== null || assignment.completedAt !== null)
-      throw new ResponseError("INVALID_STATE_TRANSITION", "Delivery sudah diselesaikan!");
   }
 }

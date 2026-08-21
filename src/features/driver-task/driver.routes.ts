@@ -1,22 +1,40 @@
 import { Router } from "express";
-import { fakeAuth } from "../../middlewares/fake-auth.middleware";
 import { DriverController } from "./driver.controllers";
 import { AuthMiddleware } from "../../middlewares/auth.middlewares";
 
 export const DriverRoute = Router();
 
-DriverRoute.get(
-  "/available",
-  
-  // Authmiddleware.authenticated(),
-  // AuthMiddleware.authorized[Role.DRIVER]
-  // DriverController.getAvailableAssignment,
-);
+DriverRoute.get("/task/available", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getAvailableAssignment);
 
-DriverRoute.post("/:assignmentId/claim", fakeAuth, DriverController.claimAssignment);
-DriverRoute.get("/active", fakeAuth, DriverController.getActiveAssignment);
-DriverRoute.post("/:assignmentId/start", fakeAuth, DriverController.startAssignment);
-DriverRoute.post("/:assignmentId/pickup-collected", fakeAuth, DriverController.pickupCollected);
-DriverRoute.post("/:assignmentId/complete-delivery", fakeAuth, DriverController.completeDelivery);
-DriverRoute.get("/history", fakeAuth, DriverController.getHistoryList);
-DriverRoute.get("/history/:assignmentId", fakeAuth, DriverController.getHistoryDetail);
+DriverRoute.post(
+  "/task/:assignmentId/claim",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["DRIVER"]),
+  DriverController.claimAssignment,
+);
+DriverRoute.get("/task/active", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getActiveAssignment);
+DriverRoute.post(
+  "/task/:assignmentId/start",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["DRIVER"]),
+  DriverController.startAssignment,
+);
+DriverRoute.post(
+  "/task/:assignmentId/pickup-collected",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["DRIVER"]),
+  DriverController.pickupCollected,
+);
+DriverRoute.post(
+  "/task/:assignmentId/complete-delivery",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["DRIVER"]),
+  DriverController.completeDelivery,
+);
+DriverRoute.get("/task/history", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getHistoryList);
+DriverRoute.get(
+  "/task/history/:assignmentId",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized(["DRIVER"]),
+  DriverController.getHistoryDetail,
+);
