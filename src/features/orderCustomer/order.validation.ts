@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { ORDER_STATUS_GROUPS } from "./order.constans";
+import { OrderHelper } from "./order.helpers";
 
 const SORTABLE_FIELDS = ["createdAt", "pickupDate"] as const;
 
@@ -23,13 +24,23 @@ export class OrderCustomerValidation {
         locationPermissionGranted: z.boolean(),
       })
       .refine(
+  (data) => {
+    const today = OrderHelper.getTodayInJakarta();
+    return data.pickupDate === today;
+  },
+  {
+    message: "Tanggal pickup harus hari ini",
+    path: ["pickupDate"],
+  },
+)
+      .refine(
         (data) => {
           const pickupDateTime = new Date(
             `${data.pickupDate}T${data.pickupTime}:00`,
           );
           return pickupDateTime.getTime() > Date.now();
         },
-        { message: "Waktu pickup harus di masa depan", path: ["pickupDate"] },
+        { message: "Waktu pickup harus di masa depan", path: ["pickupTime"] },
       ),
   });
 

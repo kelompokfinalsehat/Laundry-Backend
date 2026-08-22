@@ -4,6 +4,7 @@ import { OrderCustomerValidation } from "./order.validation";
 import { OrderService } from "./order.services";
 import { StatusCodes } from "http-status-codes";
 
+
 export class OrderController {
   static async create(req: Request, res: Response) {
     const payload = res.locals.payload;
@@ -25,14 +26,14 @@ export class OrderController {
       query: req.query,
     });
 
-    const { orders, meta } = await OrderService.getListOrder(payload, {
+    const { data, meta } = await OrderService.getListOrder(payload, {
       query,
     });
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: "histori laundy kamu berahasil di dapatkan",
-      data: orders,
+      data: data,
       meta,
     });
   }

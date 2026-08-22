@@ -1,13 +1,23 @@
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import { CUSTOMER_STATUS_LABELS, CUSTOMER_STATUS_ORDER } from "./order.constans";
+import {
+  CUSTOMER_STATUS_LABELS,
+  CUSTOMER_STATUS_ORDER,
+} from "./order.constans";
 
 const OPERATIONAL_START_HOUR = 8; // BR-OUTLET-01
 const OPERATIONAL_END_HOUR = 19; // BR-PICKUP-01 (jendela request, bukan jam tutup outlet 20.00)
 
+const JAKARTA_OFFSET_HOURS = 7; // WIB = UTC+7, tanpa DST
+
+function toJakartaTime(now: Date): Date {
+  return new Date(now.getTime() + JAKARTA_OFFSET_HOURS * 60 * 60 * 1000);
+}
+
 export class OrderHelper {
   static assertWithinRequestWindow(now: Date) {
-    const day = now.getDay(); // 0 = Minggu, 6 = Sabtu
-    const hour = now.getHours();
+    const jakartaTime = toJakartaTime(now);
+    const day = jakartaTime.getUTCDay(); // pakai getUTCDay, bukan getDay
+    const hour = jakartaTime.getUTCHours(); // pakai getUTCHours, bukan getHours
 
     const isMondayToSaturday = day >= 1 && day <= 6;
     const isWithinHours =
@@ -113,4 +123,12 @@ export class OrderHelper {
       isCurrent: status === order.customerStatus,
     }));
   }
+
+  static getTodayInJakarta(now: Date = new Date()): string {
+  const jakartaTime = toJakartaTime(now);
+  const yyyy = jakartaTime.getUTCFullYear();
+  const mm = String(jakartaTime.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(jakartaTime.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 }

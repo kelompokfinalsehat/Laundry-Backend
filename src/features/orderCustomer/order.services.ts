@@ -31,6 +31,7 @@ export class OrderService {
       throw new ResponseError("LOCATION_PERMISSION_REQUIRED");
     }
 
+    // ini di comment supaya bisa di tes kapanpun
     // const now = new Date();
     // OrderHelper.assertWithinRequestWindow(now);
 
@@ -161,12 +162,25 @@ export class OrderService {
         skip,
         take,
         orderBy: { [query.sortBy]: query.sortOrder },
+        include: {
+          bill: { select: { totalAmount: true, paymentStatus: true } },
+        },
       }),
       prisma.order.count({ where }),
     ]);
 
+    const data = orders.map((order) => ({
+      id: order.id,
+      orderCode: order.orderCode,
+      customerStatus: order.customerStatus,
+      customerStatusLabel: CUSTOMER_STATUS_LABELS[order.customerStatus],
+      pickupDate: order.pickupDate,
+      totalAmount: order.bill?.totalAmount ?? null,
+      paymentStatus: order.bill?.paymentStatus ?? null,
+    }));
+
     return {
-      orders,
+      data,
       meta: {
         page: query.page,
         limit: take,
@@ -175,7 +189,7 @@ export class OrderService {
       },
     };
   }
-  
+
   static async getDetailOrder(
     payload: userPayload,
     { params }: DetailOrderInput,
