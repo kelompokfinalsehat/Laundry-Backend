@@ -9,7 +9,7 @@ router.use(AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.SUPER
 router.get("/", OutletController.getOutlets)
 router.get("/:id", OutletController.getOutletById)
 router.post("/", OutletController.createOutlet)
-router.patch("/:id", OutletController.udpateOutlet)
-router.patch("/:id/deactivate", OutletController.deactivateOutlet)
+router.patch("/:id", OutletController.updateOutlet)
+router.delete("/:id/deactivate", OutletController.deactivateOutlet)
 
 export default router

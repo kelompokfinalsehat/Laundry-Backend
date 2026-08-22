@@ -21,7 +21,7 @@ export class OutletController {
         const outlet = await OutletService.createOutlet(body)
         return ResponseHelper.created(res, Message.CREATED, outlet)
     }
-    static async udpateOutlet(req: Request, res: Response){
+    static async updateOutlet(req: Request, res: Response){
         const {id} = validate(OutletValidation.PARAMS.outletId, req.params)
         const body = validate(OutletValidation.BODY.updateOutlet, req.body)
         const outlet = await OutletService.updateOutlet(id, body)

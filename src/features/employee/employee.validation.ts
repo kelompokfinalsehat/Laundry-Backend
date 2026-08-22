@@ -5,7 +5,7 @@ export class EmployeeValidation {
     static readonly Query = {
         getEmployees: z.object({
             page: z.coerce.number().int().min(1).positive().optional(),
-            pageSize: z.coerce.number().int().min(1).max(10).positive().optional(),
+            pageSize: z.coerce.number().int().min(1).max(50).positive().optional(),
             search: z.string().trim().optional(),
             role: z.enum([Role.OUTLET_ADMIN, Role.WORKER, Role.DRIVER]).optional(),
             accountStatus: z.enum(AccountStatus).optional(),
@@ -45,7 +45,6 @@ export class EmployeeValidation {
             name: z.string().trim().min(3).max(100),
             email: z.email(),
             role: z.enum([Role.OUTLET_ADMIN, Role.WORKER, Role.DRIVER]),
-            outletId: z.uuid()
         }),
         updateEmployee: z.object({
             name: z.string().trim().min(3).max(100).optional(),

@@ -7,7 +7,7 @@ export class EmployeeRepository {
     private static readonly employeeInclude = Prisma.validator<Prisma.EmployeeInclude>()({currentOutlet: true})
     static async findAll(query: EmployeeQuery){
         const {page, pageSize, skip, take} = PaginationHelper.paginate(query)
-        const where: Prisma.EmployeeWhereInput = {deletedAt: null}
+        const where: Prisma.EmployeeWhereInput = {deletedAt: null, role: {not: Role.SUPER_ADMIN}}
         if(query.search){
             where.OR = [
                 {name: {

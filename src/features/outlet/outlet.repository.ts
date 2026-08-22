@@ -19,7 +19,7 @@ export class OutletRepository {
   static async findAll(query: OutletQuery) {
     const { page, take, pageSize, skip } = PaginationHelper.paginate(query);
     const sortField = query.sortBy ?? "createdAt";
-    const where: Prisma.OutletWhereInput = {deletedAt: null};
+    const where: Prisma.OutletWhereInput = {deletedAt: null, isActive: true};
     if (query.search) {
       where.name = {
         contains: query.search,

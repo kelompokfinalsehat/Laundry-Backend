@@ -38,12 +38,13 @@ export class OutletService {
         return await OutletRepository.update(id, updateData)
     }
     static async deactivateOutlet(id: string){
+        const now = new Date()
         const outlet = await OutletHelper.findOutletByIdOrThrow(id)
         if(!outlet.isActive) throw new ResponseError('CONFLICT', 'Outlet sudah tidak aktif.')
         const employeeCount = await OutletRepository.hasActiveEmployee(id)
-        if(employeeCount > 0) throw new ResponseError('CONFLICT', 'Outlet masih memiliki karyawan yang masih aktif.')
+        if(employeeCount > 0) throw new ResponseError('CONFLICT', 'Outlet memiliki karyawan yang masih aktif.')
         const activeOrderCount = await OutletRepository.hasActiveOrders(id)
         if(activeOrderCount > 0) throw new ResponseError('CONFLICT', 'Outlet memiliki order yang masih berjalan/aktif.')
-        return await OutletRepository.update(id, {isActive: false})
+        return await OutletRepository.update(id, {isActive: false, deletedAt: now})
     }
 }

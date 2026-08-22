@@ -22,7 +22,8 @@ export class EmployeeService {
     return await EmployeeRepository.findAll(query);
   }
   static async getEmployeeById(id: string) {
-    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
+    const employee = await EmployeeRepository.findById(id);
+    if(!employee) throw new ResponseError('RESOURCE_NOT_FOUND', 'Employee tidak ditemukan.')
     return employee;
   }
   static async getCurrentOutletEmployee(
@@ -43,15 +44,11 @@ export class EmployeeService {
     const existingEmployee = await EmployeeRepository.findByEmail(body.email);
     if (existingEmployee)
       throw new ResponseError("CONFLICT", "Email employee sudah ada.");
-    const outlet = await OutletRepository.findById(body.outletId);
-    if (!outlet)
-      throw new ResponseError("RESOURCE_NOT_FOUND", "Outlet tidak ditemukan.");
     const employeeData = {
       name: body.name,
       email: body.email,
       role: body.role,
-      accountStatus: AccountStatus.INVITED,
-      currentOutletId: body.outletId,
+      accountStatus: AccountStatus.INVITED
     };
     const employee = await EmployeeRepository.create(employeeData);
     await AuthTokenIssuer.issueEmployeInvitationToken(
@@ -109,7 +106,8 @@ export class EmployeeService {
   }
   static async assignEmployee(body: AssignEmployeeBody) {
     const { employeeId, outletId } = body;
-    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(employeeId);
+    const employee = await EmployeeRepository.findById(employeeId);
+    if(!employee) throw new ResponseError('RESOURCE_NOT_FOUND', 'Employee tidak ditemukan.')
     if (employee.accountStatus !== AccountStatus.ACTIVE)
       throw new ResponseError("CONFLICT", "Akun harus aktif.");
     if (employee.workStatus === WorkStatus.BUSY)

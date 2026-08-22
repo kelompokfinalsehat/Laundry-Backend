@@ -155,11 +155,11 @@ export class DashboardRepository {
     const revenueBills = await prisma.bill.findMany({
       where: revenueTrendWhere,
       select: {
-        createdAt: true,
+        paidAt: true,
         totalAmount: true,
       },
       orderBy: {
-        createdAt: "asc",
+        paidAt: "asc",
       },
     });
     const pendingReceive = {
@@ -186,7 +186,7 @@ export class DashboardRepository {
       totalOrders,
       activeOrders,
       completedOrders,
-      totalRevenue: Number(revenueAggregate._sum.totalAmount) ?? 0,
+      totalRevenue: Number(revenueAggregate._sum.totalAmount ?? 0),
     };
     const recentOrderData = recentOrders.map((order) => ({
       id: order.id,
@@ -208,7 +208,8 @@ export class DashboardRepository {
       return `${year}-${month}-${day}`;
     };
     for (const bill of revenueBills) {
-      const key = getDateKey(bill.createdAt);
+      if (!bill.paidAt) continue;
+      const key = getDateKey(bill.paidAt);
       revenueMap.set(
         key,
         (revenueMap.get(key) ?? 0) + Number(bill.totalAmount),

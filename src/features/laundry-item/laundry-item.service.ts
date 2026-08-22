@@ -13,14 +13,17 @@ export class LaundryItemService {
         return laundryItem
     }
     static async createLaundryItem(body: CreateLaundryItemBody){
+        const existingItem = await LaundryItemRepository.findByName(body.name)
+        if(existingItem) throw new ResponseError('CONFLICT', 'Laundry item dengan nama tersebut sudah ada.')
         return await LaundryItemRepository.create(body)
     }
     static async updateLaundryItem(id: string, body: UpdateLaundryItemBody){
-        const {name} = body
-        await LaundryItemHelper.findLaundryItemByIdOrThrow(id)
-        const updateData: Prisma.LaundryItemUpdateInput = {}
-        if(name) updateData.name = name
-        return await LaundryItemRepository.update(id, updateData)
+        const laundryItem = await LaundryItemHelper.findLaundryItemByIdOrThrow(id)
+        if(body.name && body.name.toLowerCase() !== laundryItem.name.toLowerCase()){
+            const existingItem = await LaundryItemRepository.findByName(body.name)
+            if(existingItem && existingItem.id !== id) throw new ResponseError('CONFLICT', "Laundry Item dengan nama tersebut sudah ada.")
+        }
+        return await LaundryItemRepository.update(id, body)
     }
     static async deactivateLaundryItem(id: string){
         await LaundryItemHelper.findLaundryItemByIdOrThrow(id)

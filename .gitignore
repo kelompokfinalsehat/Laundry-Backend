@@ -9,3 +9,4 @@ generated/prisma/
 
 *.zip
 dist/
+BE.md

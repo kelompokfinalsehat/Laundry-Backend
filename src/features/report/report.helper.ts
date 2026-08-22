@@ -9,7 +9,7 @@ import {
 export class ReportHelper {
   static readonly billSelect = Prisma.validator<Prisma.BillSelect>()({
     totalAmount: true,
-    createdAt: true,
+    paidAt: true,
     order: {
       select: {
         outletId: true,
@@ -64,7 +64,7 @@ export class ReportHelper {
     };
   }
   static buildTrend(
-    bills: { totalAmount: Prisma.Decimal | null; createdAt: Date }[],
+    bills: { totalAmount: Prisma.Decimal | null; paidAt: Date | null }[],
     period: SalesQuery["period"],
     startDate: Date,
     endDate: Date,
@@ -77,7 +77,8 @@ export class ReportHelper {
       this.moveToNextBucket(current, period);
     }
     for (const bill of bills) {
-      const label = this.getBucketLabel(bill.createdAt, period);
+    if(!bill.paidAt) continue
+      const label = this.getBucketLabel(bill.paidAt, period);
       const bucket = buckets.get(label);
       if (!bucket) continue;
       bucket.revenue += Number(bill.totalAmount ?? 0);
