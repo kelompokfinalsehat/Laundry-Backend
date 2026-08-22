@@ -6,5 +6,5 @@ import * as zod from "zod";
 // 50), cukup diubah di sini, tidak perlu ubah satu-satu di tiap module.
 export const paginationSchema = zod.object({
   page: zod.coerce.number().int().min(1).default(1),
-  limit: zod.coerce.number().int().min(1).max(100).default(10),
+  pageSize: zod.coerce.number().int().min(1).max(100).default(10),
 });

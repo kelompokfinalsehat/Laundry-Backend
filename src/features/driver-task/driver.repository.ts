@@ -1,4 +1,3 @@
-import { assign } from "nodemailer/lib/shared";
 import { CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
@@ -10,6 +9,7 @@ const ACTIVE_TASK_SELECT = {
   pickedUpAt: true,
   order: {
     select: {
+      id:true,
       orderCode: true,
       pickupScheduledAt: true,
       addressSnapshot: true,
@@ -127,7 +127,7 @@ export class DriverRepository {
         data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_OUTLET },
       });
       if (updateCustomerStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status gagal");
-      return { id: assignment.id, taskType: assignment.taskType, status: assignment.status, pickedUpat: assignment.pickedUpAt };
+      return { id: assignment.id, taskType: assignment.taskType, status: assignment.status, pickedUpAt: assignment.pickedUpAt };
     });
   }
 

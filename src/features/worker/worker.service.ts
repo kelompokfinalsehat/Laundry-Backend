@@ -25,10 +25,10 @@ export class WorkerService {
       workerId: null,
     };
     if (query.stationType) where.stationType = query.stationType;
-    const skip = countSkip({ page: query.page, limit: query.limit });
-    const take = query.limit;
+    const skip = countSkip({ page: query.page, pageSize: query.pageSize });
+    const take = query.pageSize;
     const [totalItems, availableAssignments] = await WorkerRepository.findAvailablePaginated({ where, skip, take, sortOrder: query.sortOrder });
-    const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
+    const meta = makePaginationMeta({ page: query.page, pageSize: take, totalItems });
     return { data: availableAssignments, meta };
   }
 
@@ -47,10 +47,10 @@ export class WorkerService {
       status: WorkerAssignmentStatus.COMPLETED,
     };
     if (query.stationType) where.stationType = query.stationType;
-    const skip = countSkip({ page: query.page, limit: query.limit });
-    const take = query.limit;
+    const skip = countSkip({ page: query.page, pageSize: query.pageSize });
+    const take = query.pageSize;
     const [totalItems, historyList] = await WorkerRepository.findHistoryPaginated({ where, skip, take, sortOrder: query.sortOrder });
-    const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
+    const meta = makePaginationMeta({ page: query.page, pageSize: take, totalItems });
     return { data: historyList, meta };
   }
 

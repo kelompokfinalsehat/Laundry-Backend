@@ -39,15 +39,15 @@ export class AttendanceService {
   }
 
   static async getHistory({ employeeId, query }: { employeeId: string; query: AttendanceHistoryInput["query"] }) {
-    const skip = countSkip({ page: query.page, limit: query.limit });
-    const take = query.limit;
+    const skip = countSkip({ page: query.page, pageSize: query.pageSize });
+    const take = query.pageSize;
     const where: Prisma.AttendanceWhereInput = { employeeId };
     // checker untuk filtering
     if (query.period === "THIS_WEEK") where.attendanceDate = AttendanceHelper.getThisWeek();
     if (query.period === "THIS_MONTH") where.attendanceDate = AttendanceHelper.getThisMonth();
     const totalItems = await prisma.attendance.count({ where });
     const attendanceHistory = await prisma.attendance.findMany({ where, skip, take, orderBy: { attendanceDate: query.sortOrder } });
-    const meta = makePaginationMeta({ page: query.page, limit: query.limit, totalItems });
+    const meta = makePaginationMeta({ page: query.page, pageSize: query.pageSize, totalItems });
     return { data: attendanceHistory, meta };
   }
 

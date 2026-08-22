@@ -45,7 +45,10 @@ export class DriverHelper {
       id: assignment.id,
       taskType: assignment.taskType,
       status: assignment.status,
-      orderCode: assignment.order.orderCode,
+      order: {
+        id: assignment.order.id,
+        orderCode: assignment.order.orderCode,
+      },
       state,
       action: this.getAssignmentAction(state),
     };
@@ -65,10 +68,10 @@ export class DriverHelper {
     const base = this.getBaseResponse(assignment, state);
     const customerDest = this.getCustomerDestination(assignment);
     const outletDest = {
-      outletName: assignment.outlet.name,
+      name: assignment.outlet.name,
       address: assignment.outlet.address,
-      latitude: assignment.outlet.latitude,
-      longitude: assignment.outlet.longitude,
+      latitude: Number(assignment.outlet.latitude),
+      longitude: Number(assignment.outlet.longitude),
     };
     // LOGIC untuk delivery
     if (assignment.taskType === PickupDeliveryType.DELIVERY) {

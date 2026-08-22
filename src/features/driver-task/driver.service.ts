@@ -25,15 +25,15 @@ export class DriverService {
       status: DriverAssignmentStatus.QUEUED,
     };
     if (query.taskType) where.taskType = query.taskType;
-    const skip = countSkip({ page: query.page, limit: query.limit });
-    const take = query.limit;
+    const skip = countSkip({ page: query.page, pageSize: query.pageSize });
+    const take = query.pageSize;
     const [totalItems, availableList] = await DriverRepository.findAvailablePaginated({
       where: where,
       skip: skip,
       take: take,
       sortOrder: query.sortOrder,
     });
-    const meta = makePaginationMeta({ page: query.page, limit: query.limit, totalItems });
+    const meta = makePaginationMeta({ page: query.page, pageSize: query.pageSize, totalItems });
     return { data: availableList, meta };
   }
   static async claimAssignment({ driverId, assignmentId }: { driverId: string; assignmentId: DriverClaimInput["params"]["assignmentId"] }) {
@@ -85,10 +85,10 @@ export class DriverService {
     DriverHelper.assertDriver(driver);
     const where: Prisma.DriverAssignmentWhereInput = { driverId: driver.id, status: DriverAssignmentStatus.COMPLETED };
     if (query.taskType) where.taskType = query.taskType;
-    const skip = countSkip({ page: query.page, limit: query.limit });
-    const take = query.limit;
+    const skip = countSkip({ page: query.page, pageSize: query.pageSize });
+    const take = query.pageSize;
     const [totalItems, historyList] = await DriverRepository.findHistoryPaginated({ where, skip, take, sortOrder: query.sortOrder });
-    const meta = makePaginationMeta({ page: query.page, limit: take, totalItems });
+    const meta = makePaginationMeta({ page: query.page, pageSize: take, totalItems });
 
     return { data: historyList, meta };
   }
