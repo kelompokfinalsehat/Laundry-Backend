@@ -6,10 +6,10 @@ export const AttendanceRoute = Router();
 
 AttendanceRoute.post("/clock-in", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER", "DRIVER"]), AttendanceController.clockIn);
 AttendanceRoute.post("/clock-out", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER", "DRIVER"]), AttendanceController.clockOut);
-AttendanceRoute.get("/me", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER", "DRIVER"]), AttendanceController.getHistory);
+AttendanceRoute.get("/history", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER", "DRIVER"]), AttendanceController.getHistory);
 AttendanceRoute.get(
-  "/me/status",
+  "/status",
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized(["WORKER", "DRIVER"]),
-  AttendanceController.getAttendanceStatus,
+  AttendanceController.getStatus,
 );

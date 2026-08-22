@@ -51,7 +51,7 @@ export class AttendanceService {
     return { data: attendanceHistory, meta };
   }
 
-  static async getAttendanceStatus(employeeId: string) {
+  static async getStatus(employeeId: string) {
     const employee = await EmployeeRepository.findById(employeeId);
     AttendanceHelper.assertEmployee(employee);
     const attendanceDate = AttendanceHelper.getAttendanceDateWIB();

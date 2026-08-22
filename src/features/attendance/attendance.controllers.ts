@@ -26,9 +26,9 @@ export class AttendanceController {
     res.status(StatusCodes.OK).json({ success: true, message: "History Absensi berhasil didapat!", data: result.data, meta: result.meta });
   }
 
-  static async getAttendanceStatus(_req: Request, res: Response) {
+  static async getStatus(_req: Request, res: Response) {
     const payload = res.locals.payload;
-    const result = await AttendanceService.getAttendanceStatus(payload.sub);
+    const result = await AttendanceService.getStatus(payload.sub);
     res.status(StatusCodes.OK).json({ success: true, message: "Status Absensi berhasil diterima!", data: result });
   }
 }
