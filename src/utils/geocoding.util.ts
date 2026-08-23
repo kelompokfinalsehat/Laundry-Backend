@@ -1,5 +1,6 @@
 import { OPENCAGE_API_KEY } from "../configs/env.config";
 import { ResponseError } from "./errors/response-error.utils";
+import haversine from "haversine-distance";
 
 const OPENCAGE_BASE_URL = "https://api.opencagedata.com/geocode/v1/json";
 
@@ -68,4 +69,12 @@ export class GeocodingUtil {
       longitude: firstResult.geometry.lng,
     };
   }
+  static haversineDistanceMeters(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  return haversine({ lat: lat1, lon: lng1 }, { lat: lat2, lon: lng2 });
+}
 }

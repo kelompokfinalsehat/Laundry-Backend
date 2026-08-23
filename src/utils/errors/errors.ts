@@ -150,6 +150,11 @@ export const AppErrors = {
     status: StatusCodes.UNPROCESSABLE_ENTITY,
     message: "Master harga belum tersedia.",
   },
+  INVALID_PICKUP_DATE: {
+    code: "INVALID_PICKUP_DATE",
+    status: StatusCodes.UNPROCESSABLE_ENTITY,
+    message: "Tanggal tidak dapat di proses",
+  },
 
   // ===== Payment & Bill (BR-PAY, BR-PRICE) =====
   PAYMENT_NOT_READY: {
@@ -223,6 +228,13 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "tidak dapat menyimpan alamat",
   },
+
+  LOCATION_PERMISSION_REQUIRED:{
+code: "LOCATION_PERMISSION_REQUIRED",
+    status: StatusCodes.UNPROCESSABLE_ENTITY,
+    message: "Izin lokasi browser diperlukan untuk request pickup.",
+  },
+
   ADDRESS_FORBIDDEN: {
     code: "ADDRESS_FORBIDDEN",
     status: StatusCodes.FORBIDDEN,

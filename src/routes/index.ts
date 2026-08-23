@@ -1,9 +1,10 @@
 import { Router } from "express";
 import authCustomerRoutes from "../features/authCustomer/authCustomer.routes";
 import authEmployeRoutes from "../features/authEmployee/authEmployee.routes";
-import profileCustomerRoutes from "../features/cutomerProfile/profile.routes"
+import profileCustomerRoutes from "../features/cutomerProfile/profile.routes";
 import { AuthMiddleware } from "../middlewares/auth.middlewares";
 import addressCustomerRoutes from "../features/addressCustomer/address.routes";
+import orderCustomerRoutes from "../features/orderCustomer/order.routes";
 import { Role } from "../../generated/prisma";
 
 const router = Router();
@@ -16,5 +17,11 @@ router.use(
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized([Role.CUSTOMER]),
   addressCustomerRoutes,
+);
+router.use(
+  "/order",
+  AuthMiddleware.authenticated(),
+  AuthMiddleware.authorized([Role.CUSTOMER]),
+  orderCustomerRoutes,
 );
 export default router;
