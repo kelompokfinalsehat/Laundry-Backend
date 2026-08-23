@@ -9,7 +9,7 @@ import { Role } from "../../generated/prisma";
 const router = Router();
 
 router.use("/auth", authCustomerRoutes);
-router.use("/auth/employe", authEmployeRoutes);
+router.use("/auth/employee", authEmployeRoutes);
 router.use("/profile",AuthMiddleware.authenticated(),profileCustomerRoutes)
 router.use(
   "/address",

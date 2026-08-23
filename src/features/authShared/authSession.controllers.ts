@@ -9,7 +9,6 @@ import { AuthCookieUtil } from "../../utils/Auth/cookie.utils";
 export class AuthSessionController {
   static async getMe(req: Request, res: Response) {
     const { sub, accountType } = res.locals.payload!;
-
     if (accountType === "customer") {
       const customer = await prisma.customer.findUnique({ where: { id: sub } });
 
