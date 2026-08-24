@@ -18,9 +18,9 @@ router.use("/internal/driver", DriverRoute);
 router.use("/internal/worker", WorkerRoute);
 
 router.use("/auth", authCustomerRoutes);
-router.use("/auth/employe", authEmployeeRoutes);
+router.use("/auth/employee", authEmployeeRoutes);
 
-router.use("/auth/employe", authEmployeRoutes);
+
 router.use("/profile", AuthMiddleware.authenticated(), profileCustomerRoutes);
 router.use("/address", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.CUSTOMER]), addressCustomerRoutes);
 export default router;

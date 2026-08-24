@@ -7,7 +7,8 @@ export class AttendanceHelper {
     if (!employee) throw new ResponseError("RESOURCE_NOT_FOUND", "Akun tidak ditemukan!");
     if (employee.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError("ACCOUNT_NOT_ACTIVE");
     if (employee.role !== Role.DRIVER && employee.role !== Role.WORKER) throw new ResponseError("FORBIDDEN");
-    if (employee.currentOutletId === null) throw new ResponseError("INVALID_STATE_TRANSITION", "Anda tidak terdaftar di outlet aktif manapun!");
+    if (employee.currentOutletId === null)
+      throw new ResponseError("INVALID_STATE_TRANSITION", "Anda tidak terdaftar di outlet aktif manapun!");
   }
 
   static assertWorkStatus(employee: Employee, expectedWorkStatus: (WorkStatus | null)[]) {
@@ -63,7 +64,13 @@ export class AttendanceHelper {
     openAttendance: Attendance | null;
     hasActiveAssignment: boolean;
   }) {
-    const canClockIn = !openAttendance && !todayAttendance && (workStatus === WorkStatus.OFF_DUTY || workStatus === null);
+    const isTodayComplete = !!todayAttendance?.clockInAt && !!todayAttendance?.clockOutAt;
+
+    const canClockIn =
+      !openAttendance &&
+      (!todayAttendance || isTodayComplete) && // ← allow kalau today sudah complete
+      (workStatus === WorkStatus.OFF_DUTY || workStatus === null);
+
     const canClockOut = !!openAttendance && !hasActiveAssignment && workStatus === WorkStatus.AVAILABLE;
 
     return { canClockIn, canClockOut };
