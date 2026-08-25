@@ -26,6 +26,8 @@ export class PricingService {
         return shippingRate
     }
     static async createShippingRate(body: CreateShippingRateBody){
+        const shippingRate = await PricingRepository.findShippingRateByDistanceMeter(body.maxDistanceMeters)
+        if(shippingRate) throw new ResponseError('CONFLICT', 'Harga untuk jarak sudah ada.')
         return await PricingRepository.createShippingRate(body)
     }
     static async updateShippingRate(id: string, body: UpdateShippingRateBody){

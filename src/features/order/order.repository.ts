@@ -1,6 +1,7 @@
 import { CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, Prisma, Role, StationType, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
+import { ResponseError } from "../../utils/errors/response-error.utils";
 import { CreateOrderTransactionData, OrderQuery } from "./order.type";
 
 export class OrderRepository {
@@ -91,6 +92,10 @@ export class OrderRepository {
   static async findAll(query: OrderQuery, outletId?: string) {
     const { page, pageSize, take, skip } = PaginationHelper.paginate(query);
     const where: Prisma.OrderWhereInput = {};
+    if(query.endDate){
+      query.endDate.setDate(query.endDate.getDate() + 1)
+      query.endDate.setHours(0, 0, 0, 0)
+    }
     if (outletId) where.outletId = outletId;
     else if (query.outletId) where.outletId = query.outletId;
     if (query.search) {
@@ -122,7 +127,7 @@ export class OrderRepository {
     if(query.customerStatus) where.customerStatus = query.customerStatus
     if(query.paymentStatus) where.bill = {paymentStatus: query.paymentStatus}
     if(query.startDate || query.endDate) {
-        where.pickupScheduledAt = {...(query.startDate && {gte: query.startDate}), ...(query.endDate && {lte: query.endDate})}
+        where.pickupScheduledAt = {...(query.startDate && {gte: query.startDate}), ...(query.endDate && {lt: query.endDate})}
     }
     const [orders, totalItems] = await prisma.$transaction([
         prisma.order.findMany({
@@ -151,7 +156,7 @@ export class OrderRepository {
     const now = new Date()
     return await prisma.$transaction(async (tx) => {
         const assignment = await tx.driverAssignment.updateMany({where: {id: assignmentId, orderId, driverId, status: DriverAssignmentStatus.IN_PROGRESS}, data: {status: DriverAssignmentStatus.COMPLETED, completedAt: now}})
-        if(assignment.count === 0) return null
+        if(assignment.count === 0) throw new ResponseError("INVALID_STATE_TRANSITION", 'Pesanan sudah tidak dapat diterima.')
         await tx.employee.update({where: {id: driverId, role: Role.DRIVER}, data: {workStatus: WorkStatus.AVAILABLE}})
         await tx.order.update({where: {id: orderId}, data: {receivedAt: now, receivedBy, customerStatus: CustomerStatus.ARRIVED_AT_OUTLET}})
         return tx.order.findFirst({where: {id: orderId}, include: this.orderDetailInclude})

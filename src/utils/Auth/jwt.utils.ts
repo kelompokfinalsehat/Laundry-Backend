@@ -20,7 +20,7 @@ export class JWTUtil {
     }
 
     return jwt.sign(payload, JWT_SECRET_KEY, {
-      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+      expiresIn: "7d",
     });
   }
 

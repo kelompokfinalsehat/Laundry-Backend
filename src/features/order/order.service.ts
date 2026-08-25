@@ -62,17 +62,12 @@ export class OrderService {
     const employee = await EmployeeHelper.findEmployeeByIdOrThrow(outletAdminId)
     if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
     const order = await OrderHelper.findOrderByIdOrThrow(orderId, employee.currentOutletId)
-    if (!order.receivedAt)
+    if (!order.receivedAt || order.customerStatus !== CustomerStatus.ARRIVED_AT_OUTLET)
       throw new ResponseError(
         "INVALID_STATE_TRANSITION",
         "Order belum diterima outlet.",
       );
     if (order.bill) return order;
-    if (order.customerStatus !== CustomerStatus.ARRIVED_AT_OUTLET)
-      throw new ResponseError(
-        "INVALID_STATE_TRANSITION",
-        "Order belum siap untuk dibuat.",
-      );
     const itemIds = body.items.map((item) => item.laundryItemId);
     const laundryItems = await LaundryItemRepository.findByIds(itemIds);
     const uniqueItemIds = new Set(itemIds);
