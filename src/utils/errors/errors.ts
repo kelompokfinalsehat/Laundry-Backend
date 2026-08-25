@@ -143,7 +143,7 @@ export const AppErrors = {
   OUTSIDE_SERVICE_RADIUS: {
     code: "OUTSIDE_SERVICE_RADIUS",
     status: StatusCodes.UNPROCESSABLE_ENTITY,
-    message: "Alamat berada di luar jangkauan layanan (maks. 10 km).",
+    message: "Alamat berada di luar  jangkauan layanan (maks. 10 km).",
   },
   PRICING_NOT_AVAILABLE: {
     code: "PRICING_NOT_AVAILABLE",
@@ -229,8 +229,8 @@ export const AppErrors = {
     message: "tidak dapat menyimpan alamat",
   },
 
-  LOCATION_PERMISSION_REQUIRED:{
-code: "LOCATION_PERMISSION_REQUIRED",
+  LOCATION_PERMISSION_REQUIRED: {
+    code: "LOCATION_PERMISSION_REQUIRED",
     status: StatusCodes.UNPROCESSABLE_ENTITY,
     message: "Izin lokasi browser diperlukan untuk request pickup.",
   },
