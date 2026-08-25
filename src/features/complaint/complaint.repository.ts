@@ -2,7 +2,7 @@ import { Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
 import { ComplaintHelper } from "./complaint.helper";
-import { ComplaintQuery } from "./complaint.type";
+import { ComplaintQuery, DecideDTOParams } from "./complaint.type";
 
 export class ComplaintRepository {
     static async findAll(query: ComplaintQuery, outletId?: string){
@@ -19,5 +19,13 @@ export class ComplaintRepository {
     }
     static async findById(id: string, outletId?: string){
         return prisma.complaint.findFirst({where: {id, ...(outletId && {order: {outletId}})}, include: ComplaintHelper.detailInclude})
+    }
+    static async decide({id, handledBy, decision, responseNote}:DecideDTOParams){
+        return prisma.complaint.update({where: {id}, data: {
+            status: decision,
+            handledBy,
+            responseNote,
+            decidedAt: new Date()
+        }})
     }
 }

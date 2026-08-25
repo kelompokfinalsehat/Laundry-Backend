@@ -6,16 +6,28 @@ import { ResponseHelper } from "../../helpers/response.helper";
 import { Message } from "../../constants/message.constant";
 
 export class ComplaintController {
-    static async getComplaints(req: Request, res: Response){
-        const query = validate(ComplaintValidation.QUERY.getComplaints, req.query)
-        const {sub} = res.locals.payload
-        const complaints = await ComplaintService.getComplaints(query, sub)
-        return ResponseHelper.paginated(res, Message.FETCHED, complaints.data, complaints.meta)
-    }
-    static async getComplaintById(req: Request, res: Response){
-        const {id} = validate(ComplaintValidation.PARAMS.complaintId, req.params)
-        const {sub} = res.locals.payload
-        const complaint = await ComplaintService.getComplaintById(id, sub)
-        return ResponseHelper.success(res, Message.FETCHED, complaint)
-    }
+  static async getComplaints(req: Request, res: Response) {
+    const query = validate(ComplaintValidation.QUERY.getComplaints, req.query);
+    const { sub } = res.locals.payload;
+    const complaints = await ComplaintService.getComplaints(query, sub);
+    return ResponseHelper.paginated(
+      res,
+      Message.FETCHED,
+      complaints.data,
+      complaints.meta,
+    );
+  }
+  static async getComplaintById(req: Request, res: Response) {
+    const { id } = validate(ComplaintValidation.PARAMS.complaintId, req.params);
+    const { sub } = res.locals.payload;
+    const complaint = await ComplaintService.getComplaintById(id, sub);
+    return ResponseHelper.success(res, Message.FETCHED, complaint);
+  }
+  static async decideComplaint(req: Request, res: Response) {
+    const {id} = validate(ComplaintValidation.PARAMS.complaintId, req.params)
+    const body = validate(ComplaintValidation.BODY.decide, req.body)
+    const {sub} = res.locals.payload
+    const complaint = await ComplaintService.decideComplaint(id, body, sub)
+    return ResponseHelper.success(res, Message.UPDATED, complaint)
+  }
 }

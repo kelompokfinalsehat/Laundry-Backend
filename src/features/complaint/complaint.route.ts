@@ -5,10 +5,9 @@ import { ComplaintController } from "./complaint.controller";
 
 const router = Router()
 
-router.use(AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.OUTLET_ADMIN, Role.SUPER_ADMIN]))
-router.get("/", ComplaintController.getComplaints)
-router.get("/:id", ComplaintController.getComplaintById)
-
-// TODO Decide complaint pending, butuh keputusan bersama
+router.use(AuthMiddleware.authenticated())
+router.get("/", AuthMiddleware.authorized([Role.OUTLET_ADMIN, Role.SUPER_ADMIN]), ComplaintController.getComplaints)
+router.get("/:id", AuthMiddleware.authorized([Role.OUTLET_ADMIN, Role.SUPER_ADMIN]), ComplaintController.getComplaintById)
+router.patch("/:id/decision", AuthMiddleware.authorized([Role.OUTLET_ADMIN]), ComplaintController.decideComplaint)
 
 export default router

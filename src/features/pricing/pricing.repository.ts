@@ -52,6 +52,9 @@ export class PricingRepository {
   static async findShippingRateById(id: string) {
     return prisma.shippingRate.findFirst({ where: { id, deletedAt: null } });
   }
+  static async findShippingRateByExactDistance(distance: number) {
+    return prisma.shippingRate.findFirst({where: {deletedAt: null, maxDistanceMeters: distance}})
+  }
   static async findShippingRateByDistanceMeter(distance: number) {
     return prisma.shippingRate.findFirst({
       where: {
