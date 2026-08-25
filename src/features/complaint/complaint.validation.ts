@@ -5,7 +5,7 @@ export class ComplaintValidation {
   static readonly QUERY = {
     getComplaints: z.object({
       page: z.coerce.number().int().min(1).positive().optional(),
-      pageSize: z.coerce.number().int().min(1).max(10).positive().optional(),
+      pageSize: z.coerce.number().int().min(1).max(100).positive().optional(),
       search: z.string().trim().optional(),
       status: z.enum(ComplaintStatus).optional(),
       category: z.enum(ComplaintCategory).optional(),
