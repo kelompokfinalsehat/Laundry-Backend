@@ -10,7 +10,7 @@ import {
 } from "./address.validation";
 
 const MAX_ADDRESSES_PER_CUSTOMER = 5;
-const MIN_GEOCODE_CONFIDENCE = 7; 
+
 
 export class AddressService {
   static async create(payload: userPayload, { body }: CreateAddressInput) {
@@ -25,8 +25,10 @@ export class AddressService {
       );
     }
 
+     const formattedAddress = `${body.streetDetail}, ${body.subDistrictName},${body.districtName}, ${body.cityName}, ${body.provinceName},${body.zipCode}`;
+
     const { latitude, longitude} = await GeocodingUtil.geocode(
-      body.formattedAddress,
+     formattedAddress,
     );
     const shouldBePrimary = existingCount === 0 || body.isPrimary === true;
 
@@ -41,7 +43,7 @@ export class AddressService {
         data: {
           customerId: payload.sub,
           label: body.label ?? null,
-          formattedAddress: body.formattedAddress,
+          formattedAddress: formattedAddress,
           phone: body.phone,
           latitude,
           longitude,
