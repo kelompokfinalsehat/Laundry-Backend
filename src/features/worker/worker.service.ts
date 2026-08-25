@@ -7,7 +7,6 @@ import type {
   WorkerClaimInput,
   WorkerCompleteInput,
   WorkerHistoryInput,
-  WorkerPreClaimInput,
   WorkerRequestBypassInput,
   WorkerValidateQuantitiesInput,
 } from "./worker.types";
@@ -19,11 +18,7 @@ export class WorkerService {
   static async getAvailableAssignments({ workerId, query }: { workerId: string; query: WorkerAvailableAssignmentInput["query"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const where: Prisma.WorkerAssignmentWhereInput = {
-      outletId: worker.currentOutletId!,
-      status: WorkerAssignmentStatus.QUEUED,
-      workerId: null,
-    };
+    const where: Prisma.WorkerAssignmentWhereInput = { outletId: worker.currentOutletId!, status: WorkerAssignmentStatus.QUEUED, workerId: null };
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
     const take = query.pageSize;
@@ -32,13 +27,6 @@ export class WorkerService {
     return { data: availableAssignments, meta };
   }
 
-  static async getPreClaimDetail({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerPreClaimInput["params"]["assignmentId"] }) {
-    const worker = await EmployeeRepository.findById(workerId);
-    WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findPreClaimDetail({ assignmentId, workerOutletId: worker.currentOutletId });
-    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND", "Tugas tidak ditemukan atau sudah tidak tersedia!");
-    return assignment;
-  }
   static async getHistoryList({ workerId, query }: { workerId: string; query: WorkerHistoryInput["query"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
@@ -49,7 +37,12 @@ export class WorkerService {
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
     const take = query.pageSize;
-    const [totalItems, historyList] = await WorkerRepository.findHistoryPaginated({ where, skip, take, sortOrder: query.sortOrder });
+    const [totalItems, historyList] = await WorkerRepository.findHistoryPaginated({
+      where,
+      skip,
+      take,
+      sortOrder: query.sortOrder,
+    });
     const meta = makePaginationMeta({ page: query.page, pageSize: take, totalItems });
     return { data: historyList, meta };
   }
@@ -63,7 +56,11 @@ export class WorkerService {
     if (!todayAttendance || todayAttendance.clockOutAt !== null) throw new ResponseError("ATTENDANCE_NOT_CLOCKED_IN");
     const isActive = await WorkerRepository.findActiveAssignmentDetail(worker.id);
     if (isActive) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
-    const result = await WorkerRepository.claimAssignment({ assignmentId, workerId: worker.id, workerOutletId: worker.currentOutletId });
+    const result = await WorkerRepository.claimAssignment({
+      assignmentId,
+      workerId: worker.id,
+      workerOutletId: worker.currentOutletId,
+    });
     return result;
   }
 
@@ -114,7 +111,7 @@ export class WorkerService {
   }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findValidatableAssignment({workerId, assignmentId});
+    const assignment = await WorkerRepository.findValidatableAssignment({ workerId, assignmentId });
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
     const orderItems = assignment.order.orderItems;
     const inputItems = items;
@@ -135,7 +132,7 @@ export class WorkerService {
   static async complete({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerCompleteInput["params"]["assignmentId"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
-    const assignment = await WorkerRepository.findCompletableAssignment({workerId, assignmentId});
+    const assignment = await WorkerRepository.findCompletableAssignment({ workerId, assignmentId });
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
     if (assignment.order.customerStatus === CustomerStatus.OVERDUE) throw new ResponseError("INVALID_STATE_TRANSITION");
     const nextStation = WorkerHelper.getNextStation(assignment.stationType);

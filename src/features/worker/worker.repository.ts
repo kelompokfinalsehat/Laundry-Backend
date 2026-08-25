@@ -31,13 +31,6 @@ export class WorkerRepository {
     ]);
   }
 
-  static async findPreClaimDetail({ assignmentId, workerOutletId }: { assignmentId: string; workerOutletId: string }) {
-    return prisma.workerAssignment.findFirst({
-      where: { id: assignmentId, outletId: workerOutletId, status: WorkerAssignmentStatus.QUEUED, workerId: null },
-      select: { id: true, stationType: true, status: true, createdAt: true, order: { select: { id: true, orderCode: true } } },
-    });
-  }
-
   static async findHistoryPaginated({ where, skip, take, sortOrder }: FindHistoryPaginated) {
     return prisma.$transaction([
       prisma.workerAssignment.count({ where }),

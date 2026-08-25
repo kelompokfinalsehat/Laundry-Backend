@@ -4,7 +4,7 @@ import { AuthMiddleware } from "../../middlewares/auth.middlewares";
 
 export const DriverRoute = Router();
 
-DriverRoute.get("/task/available", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getAvailableAssignment);
+DriverRoute.get("/task/available", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getAvailableAssignments);
 
 DriverRoute.post(
   "/task/:assignmentId/claim",

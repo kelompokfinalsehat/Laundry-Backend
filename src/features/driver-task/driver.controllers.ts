@@ -5,11 +5,11 @@ import { DriverService } from "./driver.service";
 import { StatusCodes } from "http-status-codes";
 
 export class DriverController {
-  static async getAvailableAssignment(req: Request, res: Response) {
+  static async getAvailableAssignments(req: Request, res: Response) {
     const { query } = validate(DriverValidation.AVAILABLE_ASSIGNMENT, { query: req.query });
 
     const payload = res.locals.payload;
-    const result = await DriverService.getAvailableAssignment({ driverId: payload.sub, query });
+    const result = await DriverService.getAvailableAssignments({ driverId: payload.sub, query });
     res.status(StatusCodes.OK).json({ success: true, message: "List Tugas Tersedia berhasil didapat!", data: result.data, meta: result.meta });
   }
 

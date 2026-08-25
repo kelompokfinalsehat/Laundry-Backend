@@ -7,12 +7,6 @@ export const WorkerRoute = Router();
 WorkerRoute.get("/jobs/available", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getAvailableAssignments);
 WorkerRoute.get("/jobs/active", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getActive);
 WorkerRoute.get("/jobs/history", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["WORKER"]), WorkerController.getHistoryList);
-WorkerRoute.get(
-  "/jobs/:assignmentId/pre-claim",
-  AuthMiddleware.authenticated(),
-  AuthMiddleware.authorized(["WORKER"]),
-  WorkerController.getPreClaimDetail,
-);
 WorkerRoute.post(
   "/jobs/:assignmentId/claim",
   AuthMiddleware.authenticated(),

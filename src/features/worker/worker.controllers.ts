@@ -14,13 +14,7 @@ export class WorkerController {
       .json({ success: true, message: "Berhasil mengambil daftar tugas yang tersedia", data: result.data, meta: result.meta });
   }
 
-  static async getPreClaimDetail(req: Request, res: Response) {
-    const { params } = validate(WorkerValidation.PRE_CLAIM, { params: req.params });
-    const payload = res.locals.payload;
 
-    const result = await WorkerService.getPreClaimDetail({ workerId: payload.sub, assignmentId: params.assignmentId });
-    res.status(StatusCodes.OK).json({ success: true, message: "Detail tugas berhasil diterima!", data: result });
-  }
 
   static async getHistoryList(req: Request, res: Response) {
     const { query } = validate(WorkerValidation.HISTORY_LIST, { query: req.query });

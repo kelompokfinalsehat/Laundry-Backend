@@ -71,7 +71,7 @@ export class DriverRepository {
       if (updateWorkStatus.count !== 1) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
       return await tx.driverAssignment.findFirst({
         where: { id: assignmentId, driverId: driverId, status: DriverAssignmentStatus.ASSIGNED },
-        select: { id: true, taskType: true, assignedAt: true, status: true },
+        select: { id: true, taskType: true, assignedAt: true, status: true, order:{select:{id:true,orderCode:true}} },
       });
     });
   }

@@ -17,7 +17,7 @@ import type {
 } from "./driver.types";
 
 export class DriverService {
-  static async getAvailableAssignment({ driverId, query }: { driverId: string; query: DriverAvailableListInput["query"] }) {
+  static async getAvailableAssignments({ driverId, query }: { driverId: string; query: DriverAvailableListInput["query"] }) {
     const driver = await EmployeeRepository.findById(driverId);
     DriverHelper.assertDriver(driver);
     const where: Prisma.DriverAssignmentWhereInput = {

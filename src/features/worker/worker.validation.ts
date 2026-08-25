@@ -5,13 +5,10 @@ import { StationType } from "../../../generated/prisma";
 export class WorkerValidation {
   static readonly AVAILABLE_ASSIGNMENT = zod.object({
     query: paginationSchema.extend({
-      stationType: zod.enum([StationType.WASHING, StationType.IRONING, StationType.PACKING], { message: "Pilihan tidak tersedia!" }).optional(),
+      stationType: zod
+        .enum([StationType.WASHING, StationType.IRONING, StationType.PACKING], { message: "Pilihan tidak tersedia!" })
+        .optional(),
       sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan tidak tersedia!" }).default("desc"),
-    }),
-  });
-  static readonly PRE_CLAIM = zod.object({
-    params: zod.object({
-      assignmentId: zod.uuid("ID tidak valid!"),
     }),
   });
 
@@ -42,7 +39,10 @@ export class WorkerValidation {
         .array(
           zod.object({
             orderItemId: zod.uuid("ID item tidak valid!"),
-            submittedQuantity: zod.number().int("Input harus berupa bilangan bulat!").nonnegative("Input tidak boleh negatif!"),
+            submittedQuantity: zod
+              .number()
+              .int("Input harus berupa bilangan bulat!")
+              .nonnegative("Input tidak boleh negatif!"),
           }),
         )
         .min(1, "Minimal input 1 items!")
