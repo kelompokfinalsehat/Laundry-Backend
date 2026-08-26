@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon src/app.ts",
     "build": "tsc && prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "seed:field-ops": "ts-node prisma/seed/field-ops.ts seed",
+    "reset:field-ops": "ts-node prisma/seed/field-ops.ts reset",
+    "unseed:field-ops": "ts-node prisma/seed/field-ops.ts clear"
   },
   "keywords": [],
   "author": "",
