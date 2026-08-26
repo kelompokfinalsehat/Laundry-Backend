@@ -16,7 +16,7 @@ export type WorkerValidateQuantitiesDetail = NonNullable<Awaited<ReturnType<type
 export type FindAvailablePaginated = { where: Prisma.WorkerAssignmentWhereInput; skip: number; take: number; sortOrder: "asc" | "desc" };
 export type FindHistoryPaginated = { where: Prisma.WorkerAssignmentWhereInput; skip: number; take: number; sortOrder: "asc" | "desc" };
 
-export type UpdateValidateTransactionTypes = { workerId: string; assignmentId: string; orderId: string; customerStatus: CustomerStatus };
+export type UpdateValidateTransactionTypes = { workerId: string; assignmentId: string; orderId: string; customerStatus: CustomerStatus, currentAttempt:number };
 export type CreateBypassTypes = {
   assignmentId: string;
   workerId: string;

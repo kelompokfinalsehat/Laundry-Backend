@@ -3,6 +3,7 @@ import { ResponseError } from "../../utils/errors/response-error.utils";
 import type { WorkerActiveAssignmentDetail, WorkerValidateQuantitiesDetail, WorkerValidateQuantitiesInput } from "./worker.types";
 
 export class WorkerHelper {
+  static readonly MAX_ATTEMPT = 2;
   static assertWorkerValidity(worker: Employee | null): asserts worker is Employee & { currentOutletId: string } {
     if (!worker) throw new ResponseError("RESOURCE_NOT_FOUND", "Data tidak ditemukan!");
     if (worker.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError("ACCOUNT_NOT_ACTIVE");
@@ -35,6 +36,11 @@ export class WorkerHelper {
       case WorkerAssignmentStatus.ASSIGNED:
         return {
           ...baseResponse,
+          attempt: assignment.attempt,
+          maxAttempt: this.MAX_ATTEMPT,
+          canValidate: assignment.attempt <= 2,
+          canRequestBypass: assignment.attempt > 0,
+
           order: {
             ...baseResponse.order,
             items: assignment.order.orderItems.map((orderItem) => ({
@@ -57,13 +63,8 @@ export class WorkerHelper {
   2. ID yg dikirim sama ? 
   3. Cek perbedaan quantity ?
   */
-  static compareQuantity({
-    orderItems,
-    inputItems,
-  }: {
-    orderItems: WorkerValidateQuantitiesDetail["order"]["orderItems"];
-    inputItems: WorkerValidateQuantitiesInput["body"]["items"];
-  }) {
+
+  static compareQuantity({ orderItems, inputItems }: { orderItems: WorkerValidateQuantitiesDetail["order"]["orderItems"]; inputItems: WorkerValidateQuantitiesInput["body"]["items"] }) {
     if (orderItems.length !== inputItems.length) throw new ResponseError("VALIDATION_ERROR"); // [{a},{b},{c}] vs [{a},{b}]
     const inputMap = new Map(inputItems.map((input) => [input.orderItemId, input.submittedQuantity])); // ^ menjadi [[a,1],[b,2] new Map -> {a:1,b:2} jadi objek!
     const differences = orderItems

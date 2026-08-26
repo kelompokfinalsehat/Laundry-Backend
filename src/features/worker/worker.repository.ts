@@ -1,21 +1,7 @@
-import {
-  BillPaymentStatus,
-  BypassStatus,
-  CustomerStatus,
-  DriverAssignmentStatus,
-  PickupDeliveryType,
-  WorkerAssignmentStatus,
-  WorkStatus,
-} from "../../../generated/prisma";
+import { BillPaymentStatus, BypassStatus, CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type {
-  CompleteTransactionTypes,
-  CreateBypassTypes,
-  FindAvailablePaginated,
-  FindHistoryPaginated,
-  UpdateValidateTransactionTypes,
-} from "./worker.types";
+import type { CompleteTransactionTypes, CreateBypassTypes, FindAvailablePaginated, FindHistoryPaginated, UpdateValidateTransactionTypes } from "./worker.types";
 
 export class WorkerRepository {
   static async findAvailablePaginated({ where, skip, take, sortOrder }: FindAvailablePaginated) {
@@ -75,6 +61,7 @@ export class WorkerRepository {
         status: true,
         assignedAt: true,
         startedAt: true,
+        attempt: true,
         order: {
           select: { id: true, orderCode: true, orderItems: { select: { id: true, laundryItem: { select: { id: true, name: true } } } } },
         },
@@ -87,6 +74,7 @@ export class WorkerRepository {
       select: {
         id: true,
         stationType: true,
+        attempt: true,
         order: {
           select: {
             id: true,
@@ -97,11 +85,16 @@ export class WorkerRepository {
       },
     });
   }
-  static async updateValidateTransaction({ workerId, assignmentId, orderId, customerStatus }: UpdateValidateTransactionTypes) {
+  static async addValidateAttempt({ workerId, assignmentId, currentAttempt }: { workerId: string; assignmentId: string; currentAttempt: number }) {
+    const attempt = await prisma.workerAssignment.updateMany({ where: { id: assignmentId, workerId: workerId, attempt: currentAttempt }, data: { attempt: { increment: 1 } } });
+    if (attempt.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Data percobaan gagal diubah!");
+    return attempt;
+  }
+  static async updateValidateTransaction({ workerId, assignmentId, orderId, customerStatus, currentAttempt }: UpdateValidateTransactionTypes) {
     return prisma.$transaction(async (tx) => {
       const updatedAssignment = await tx.workerAssignment.updateMany({
-        where: { id: assignmentId, workerId: workerId, status: WorkerAssignmentStatus.ASSIGNED },
-        data: { startedAt: new Date(), status: WorkerAssignmentStatus.IN_PROGRESS },
+        where: { id: assignmentId, workerId: workerId, status: WorkerAssignmentStatus.ASSIGNED, attempt: currentAttempt },
+        data: { startedAt: new Date(), status: WorkerAssignmentStatus.IN_PROGRESS, attempt: { increment: 1 } },
       });
       if (updatedAssignment.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
       await tx.order.update({ where: { id: orderId }, data: { customerStatus: customerStatus } });
@@ -154,8 +147,7 @@ export class WorkerRepository {
         data: { workStatus: WorkStatus.AVAILABLE },
       });
       if (updateWorker.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
-      if (nextStation)
-        await tx.workerAssignment.create({ data: { orderId, outletId, stationType: nextStation, status: WorkerAssignmentStatus.QUEUED } });
+      if (nextStation) await tx.workerAssignment.create({ data: { orderId, outletId, stationType: nextStation, status: WorkerAssignmentStatus.QUEUED } });
       else {
         //Bill ada di sini karena payment bisa saja berubah ketika awal pengecekan mutation.
         const bill = await tx.bill.findUnique({ where: { orderId }, select: { paymentStatus: true } });

@@ -2,14 +2,7 @@ import { CustomerStatus, WorkerAssignmentStatus, WorkStatus, type Prisma } from 
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { WorkerHelper } from "./worker.helper";
-import type {
-  WorkerAvailableAssignmentInput,
-  WorkerClaimInput,
-  WorkerCompleteInput,
-  WorkerHistoryInput,
-  WorkerRequestBypassInput,
-  WorkerValidateQuantitiesInput,
-} from "./worker.types";
+import type { WorkerAvailableAssignmentInput, WorkerClaimInput, WorkerCompleteInput, WorkerHistoryInput, WorkerRequestBypassInput, WorkerValidateQuantitiesInput } from "./worker.types";
 import { WorkerRepository } from "./worker.repository";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { AttendanceRepository } from "../attendance/attendance.repository";
@@ -85,10 +78,12 @@ export class WorkerService {
     WorkerHelper.assertWorkerValidity(worker);
     const assignment = await WorkerRepository.findValidatableAssignment({ workerId, assignmentId }); // pengecekan ownership tugas, status tugas digabungkan dalam query prisma where
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    if (assignment.attempt >= WorkerHelper.MAX_ATTEMPT) throw new ResponseError("INVALID_STATE_TRANSITION", "Batas Validasi Quantity anda telah habis!");
     const orderItems = assignment.order.orderItems;
     const inputItems = items;
     const compare = WorkerHelper.compareQuantity({ orderItems, inputItems });
     if (compare.matched === false) {
+      await WorkerRepository.addValidateAttempt({ workerId: worker.id, assignmentId: assignment.id, currentAttempt: assignment.attempt });
       throw new ResponseError("QUANTITY_MISMATCH");
     }
     const customerStatus = WorkerHelper.getCustomerStatusByStation(assignment.stationType);
@@ -97,6 +92,7 @@ export class WorkerService {
       assignmentId: assignment.id,
       orderId: assignment.order.id,
       customerStatus: customerStatus,
+      currentAttempt: assignment.attempt,
     });
   }
 
