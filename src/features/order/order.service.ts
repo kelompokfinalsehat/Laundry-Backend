@@ -17,10 +17,32 @@ export class OrderService {
     return OrderRepository.findAll(query, employee.currentOutletId ?? undefined);
   }
   static async getOrderById(id: string, sub: string) {
-    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(sub)
-    const order = await OrderHelper.findOrderByIdOrThrow(id, employee.currentOutletId ?? undefined)
+  const employee = await EmployeeHelper.findEmployeeByIdOrThrow(sub);
+  const order = await OrderHelper.findOrderByIdOrThrow(id, employee.currentOutletId ?? undefined);
+
+  if (!order.bill || !order.bill.weightKg) {
     return order;
   }
+
+  const laundryPricing = await PricingRepository.findCurrentLaundryPricing();
+  const shippingRate = await PricingRepository.findShippingRateByDistanceMeter(
+    Number(order.distanceMeters)
+  );
+
+  const weightKg = Number(order.bill.weightKg);
+  const pricePerKg = laundryPricing ? Number(laundryPricing.pricePerKg) : 0;
+  const shippingCost = shippingRate ? Number(shippingRate.price) : 0;
+  const laundryCost = weightKg * pricePerKg;
+
+  return {
+    ...order,
+    bill: {
+      ...order.bill,
+      laundryCost,
+      shippingCost,
+    },
+  };
+}
   static async receiveOrder(
     orderId: string,
     outletAdminId: string,

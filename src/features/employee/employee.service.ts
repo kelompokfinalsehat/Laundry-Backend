@@ -48,7 +48,8 @@ export class EmployeeService {
       name: body.name,
       email: body.email,
       role: body.role,
-      accountStatus: AccountStatus.INVITED
+      accountStatus: AccountStatus.INVITED,
+      workStatus: WorkStatus.OFF_DUTY
     };
     const employee = await EmployeeRepository.create(employeeData);
     await AuthTokenIssuer.issueEmployeInvitationToken(
@@ -64,8 +65,8 @@ export class EmployeeService {
     const updateData: Prisma.EmployeeUpdateInput = {};
     if (name) updateData.name = name;
     if (role) {
-      if (employee.workStatus === WorkStatus.BUSY)
-        throw new ResponseError("CONFLICT", "Employee sedang sibuk.");
+      if (employee.workStatus !== WorkStatus.OFF_DUTY && employee.workStatus !== null)
+        throw new ResponseError("CONFLICT", "Employee masih bekerja.");
       updateData.role = role;
     }
     return await EmployeeRepository.update(id, updateData);
@@ -110,8 +111,8 @@ export class EmployeeService {
     if(!employee) throw new ResponseError('RESOURCE_NOT_FOUND', 'Employee tidak ditemukan.')
     if (employee.accountStatus !== AccountStatus.ACTIVE)
       throw new ResponseError("CONFLICT", "Akun harus aktif.");
-    if (employee.workStatus === WorkStatus.BUSY)
-      throw new ResponseError("CONFLICT", "Employee sedang sibuk.");
+    if (employee.workStatus !== WorkStatus.OFF_DUTY && employee.workStatus !== null)
+      throw new ResponseError("CONFLICT", "Employee masih bekerja.");
     const outlet = await OutletRepository.findById(outletId);
     if (!outlet)
       throw new ResponseError("RESOURCE_NOT_FOUND", "Outlet tidak ditemukan.");
