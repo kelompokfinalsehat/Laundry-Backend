@@ -6,15 +6,7 @@ import { EmployeeRepository } from "../employee/employee.repository";
 
 import { DriverHelper } from "./driver.helper";
 import { DriverRepository } from "./driver.repository";
-import type {
-  DriverAvailableListInput,
-  DriverClaimInput,
-  DriverCompleteDeliveryInput,
-  DriverHistoryDetailInput,
-  DriverHistoryListInput,
-  DriverPickupInput,
-  DriverStartInput,
-} from "./driver.types";
+import type { DriverAvailableListInput, DriverClaimInput, DriverCompleteDeliveryInput, DriverHistoryDetailInput, DriverHistoryListInput, DriverPickupInput, DriverStartInput } from "./driver.types";
 
 export class DriverService {
   static async getAvailableAssignments({ driverId, query }: { driverId: string; query: DriverAvailableListInput["query"] }) {
@@ -68,13 +60,7 @@ export class DriverService {
     return await DriverRepository.pickupTransaction({ assignmentId: assignmentId, driverId: driver.id });
   }
 
-  static async completeDelivery({
-    driverId,
-    assignmentId,
-  }: {
-    driverId: string;
-    assignmentId: DriverCompleteDeliveryInput["params"]["assignmentId"];
-  }) {
+  static async completeDelivery({ driverId, assignmentId }: { driverId: string; assignmentId: DriverCompleteDeliveryInput["params"]["assignmentId"] }) {
     const driver = await EmployeeRepository.findById(driverId);
     DriverHelper.assertDriver(driver);
     return await DriverRepository.completeDeliveryTransaction({ assignmentId: assignmentId, driverId: driver.id });
@@ -83,14 +69,16 @@ export class DriverService {
   static async getHistoryList({ driverId, query }: { driverId: string; query: DriverHistoryListInput["query"] }) {
     const driver = await EmployeeRepository.findById(driverId);
     DriverHelper.assertDriver(driver);
-    const where: Prisma.DriverAssignmentWhereInput = { driverId: driver.id, status: DriverAssignmentStatus.COMPLETED };
+    const { startDate, endDate } = DriverHelper.getMonthRange(query.period);
+    const where: Prisma.DriverAssignmentWhereInput = { driverId: driver.id, status: DriverAssignmentStatus.COMPLETED, completedAt: { gte: startDate, lt: endDate } };
     if (query.taskType) where.taskType = query.taskType;
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
     const take = query.pageSize;
     const [totalItems, historyList] = await DriverRepository.findHistoryPaginated({ where, skip, take, sortOrder: query.sortOrder });
     const meta = makePaginationMeta({ page: query.page, pageSize: take, totalItems });
+    const summary = { totalCompleted: totalItems };
 
-    return { data: historyList, meta };
+    return { data: { historyList, summary }, meta };
   }
 
   static async getHistoryDetail({ driverId, assignmentId }: { driverId: string; assignmentId: DriverHistoryDetailInput["params"]["assignmentId"] }) {

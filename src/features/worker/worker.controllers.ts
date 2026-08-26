@@ -63,13 +63,5 @@ export class WorkerController {
       data: result,
     });
   }
-  static async getHistoryCount(_req: Request, res: Response) {
-    const payload = res.locals.payload;
-    const result = await WorkerService.getHistoryCount(payload.sub);
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Jumlah riwayat tugas selesai berhasil diterima!",
-      data: result,
-    });
-  }
+  
 }

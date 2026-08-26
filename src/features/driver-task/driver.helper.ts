@@ -86,4 +86,13 @@ export class DriverHelper {
     }
     return { ...base, destination: customerDest };
   }
+
+  static getMonthRange(period: string) {
+    const year = Number(period.slice(0, 4));
+    const month = Number(period.slice(5, 7));
+    const WIB_OFFSET = 7 * 60 * 60 * 1000;
+    const startDate = new Date(Date.UTC(year, month - 1, 1) - WIB_OFFSET);
+    const endDate = new Date(Date.UTC(year, month, 1) - WIB_OFFSET);
+    return { startDate, endDate };
+  }
 }

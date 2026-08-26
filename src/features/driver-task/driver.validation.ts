@@ -11,9 +11,7 @@ const emptyBodySchema = zod.object({}).strict();
 export class DriverValidation {
   static readonly AVAILABLE_ASSIGNMENT = zod.object({
     query: paginationSchema.extend({
-      taskType: zod
-        .enum([PickupDeliveryType.PICKUP, PickupDeliveryType.DELIVERY], { message: "Tipe tugas hanya boleh PICKUP atau DELIVERY!" })
-        .optional(),
+      taskType: zod.enum([PickupDeliveryType.PICKUP, PickupDeliveryType.DELIVERY], { message: "Tipe tugas hanya boleh PICKUP atau DELIVERY!" }).optional(),
       sortOrder: zod.enum(["asc", "desc"], { message: "Urutan hanya boleh ASCENDING atau DESCENDING" }).default("desc"),
     }),
   });
@@ -47,6 +45,7 @@ export class DriverValidation {
           message: "Tipe tugas hanya PICKUP atau DELIVERY!",
         })
         .optional(),
+      period: zod.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Format bulan harus YYYY-MM!"),
       sortOrder: zod.enum(["asc", "desc"], { message: "Urutan hanya boleh ASC atau DESC!" }).default("desc"),
     }),
   });
