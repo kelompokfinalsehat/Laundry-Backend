@@ -9,3 +9,5 @@ generated/prisma/
 
 *.zip
 dist/
+
+prisma/seed
