@@ -22,10 +22,12 @@ export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY as string;
 export const CLOUDINARY_API_SECRET = process.env
   .CLOUDINARY_API_SECRET as string;
 
-export const ACCESS_TOKEN_EXPIRES_IN = "15m"; 
+export const ACCESS_TOKEN_EXPIRES_IN = "15m";
 export const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 30 hari
 export const EMAIL_VERIFICATION_EXPIRY_HOURS = 1;
 export const PASSWORD_RESET_EXPIRY_HOURS = 1;
 
 export const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
-export const OPENCAGE_BASE_URL = process.env.OPENCAGE_BASE_URL
+export const OPENCAGE_BASE_URL = process.env.OPENCAGE_BASE_URL;
+
+export const RAJAONGKIR_API_KEY = process.env.RAJAONGKIR_API_KEY;

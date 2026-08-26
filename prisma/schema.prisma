@@ -291,6 +291,16 @@ model CustomerAddress {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   customerId       String    @map("customer_id") @db.Uuid
   label            String?
+  provinceId       String    @map("province_id")
+  provinceName     String    @map("province_name")
+  cityId           String    @map("city_id")
+  cityName         String    @map("city_name")
+  districtId       String    @map("district_id")
+  districtName     String    @map("district_name")
+  subDistrictId    String    @map("sub_district_id")
+  subDistrictName  String    @map("sub_district_name")
+  zipCode          String    @map("zip_code")
+  streetDetail     String    @map("street_detail")
   formattedAddress String    @map("formatted_address")
   latitude         Decimal   @db.Decimal(10, 7)
   longitude        Decimal   @db.Decimal(10, 7)
