@@ -9,7 +9,7 @@ const ACTIVE_TASK_SELECT = {
   pickedUpAt: true,
   order: {
     select: {
-      id:true,
+      id: true,
       orderCode: true,
       pickupScheduledAt: true,
       addressSnapshot: true,
@@ -59,20 +59,20 @@ export class DriverRepository {
 
   static async claimTransaction({ assignmentId, driverId, outletId }: { assignmentId: string; driverId: string; outletId: string }) {
     return await prisma.$transaction(async (tx) => {
-      const claim = await tx.driverAssignment.updateMany({
+      const claim = await tx.driverAssignment.updateManyAndReturn({
         where: { id: assignmentId, driverId: null, outletId: outletId, status: DriverAssignmentStatus.QUEUED, assignedAt: null },
         data: { driverId: driverId, assignedAt: new Date(), status: DriverAssignmentStatus.ASSIGNED },
+        select: { id: true, taskType: true, assignedAt: true, status: true, order: { select: { id: true, orderCode: true } } },
       });
-      if (claim.count !== 1) throw new ResponseError("ASSIGNMENT_ALREADY_CLAIMED");
+      const assignment = claim[0];
+      if (!assignment) throw new ResponseError("ASSIGNMENT_ALREADY_CLAIMED");
       const updateWorkStatus = await tx.employee.updateMany({
         where: { id: driverId, workStatus: WorkStatus.AVAILABLE },
         data: { workStatus: WorkStatus.BUSY },
       });
       if (updateWorkStatus.count !== 1) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
-      return await tx.driverAssignment.findFirst({
-        where: { id: assignmentId, driverId: driverId, status: DriverAssignmentStatus.ASSIGNED },
-        select: { id: true, taskType: true, assignedAt: true, status: true, order:{select:{id:true,orderCode:true}} },
-      });
+      await tx.order.update({ where: { id: assignment.order.id }, data: { customerStatus: CustomerStatus.WAITING_DRIVER_PICKUP } });
+      return assignment;
     });
   }
 
@@ -95,7 +95,7 @@ export class DriverRepository {
         select: { id: true, taskType: true, status: true, order: { select: { id: true, orderCode: true } } },
       });
       const assignment = updateAssignment[0];
-      if (!assignment) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status gagal");
+      if (!assignment) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status gagal!");
       const expectedOrderStatus =
         assignment.taskType === PickupDeliveryType.PICKUP ? CustomerStatus.WAITING_DRIVER_PICKUP : CustomerStatus.READY_FOR_DELIVERY;
       const updateCustomerStatus = await tx.order.updateMany({
