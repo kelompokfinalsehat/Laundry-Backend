@@ -1,7 +1,7 @@
 import { DriverAssignmentStatus, Role, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type { ClockInInput } from "./attendance.types";
+import type { AttendanceHistoryPaginated, ClockInInput } from "./attendance.types";
 
 export class AttendanceRepository {
   static async findOpenAttendance(employeeId: string) {
@@ -64,5 +64,9 @@ export class AttendanceRepository {
       if (updateWorkStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
       return closeAttendance;
     });
+  }
+
+  static async findAttendancePaginated({ where, skip, take, sortOrder }: AttendanceHistoryPaginated) {
+    return prisma.$transaction([prisma.attendance.count({ where }), prisma.attendance.findMany({ where, skip, take, orderBy: { attendanceDate: sortOrder } })]);
   }
 }

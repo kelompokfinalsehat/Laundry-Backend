@@ -1,4 +1,3 @@
-import { prisma } from "../../configs/prisma-client.config";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { AttendanceRepository } from "./attendance.repository";
 import { WorkStatus, type Prisma } from "../../../generated/prisma";
@@ -41,19 +40,21 @@ export class AttendanceService {
   static async getHistory({ employeeId, query }: { employeeId: string; query: AttendanceHistoryInput["query"] }) {
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
     const take = query.pageSize;
-    const where: Prisma.AttendanceWhereInput = { employeeId };
-    // checker untuk filtering
-    if (query.period === "THIS_WEEK") where.attendanceDate = AttendanceHelper.getThisWeek();
-    if (query.period === "THIS_MONTH") where.attendanceDate = AttendanceHelper.getThisMonth();
-    const totalItems = await prisma.attendance.count({ where });
-    const attendanceHistory = await prisma.attendance.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { attendanceDate: query.sortOrder },
-    });
+    const { startDate, endDate } = AttendanceHelper.getMonthRange(query.period);
+    const where: Prisma.AttendanceWhereInput = { employeeId, attendanceDate: { gte: startDate, lte: endDate } };
+    const [totalItems, attendanceHistory] = await AttendanceRepository.findAttendancePaginated({ where, skip, take, sortOrder: query.sortOrder });
     const meta = makePaginationMeta({ page: query.page, pageSize: query.pageSize, totalItems });
-    return { data: attendanceHistory, meta };
+    const daysInMonth = AttendanceHelper.getDaysInMonth(query.period);
+    const presentDay = totalItems;
+    let absentDay = daysInMonth - presentDay;
+    if (absentDay < 0) absentDay = 0;
+    const summary = {
+      period: query.period,
+      daysInMonth: daysInMonth,
+      presentDays: presentDay,
+      absentDays: absentDay,
+    };
+    return { data: { attendanceHistory, summary }, meta };
   }
 
   static async getStatus(employeeId: string) {

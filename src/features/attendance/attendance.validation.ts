@@ -10,14 +10,8 @@ export class AttendanceValidation {
   });
   static readonly HISTORY = zod.object({
     query: paginationSchema.extend({
-      period: zod
-        .enum(["THIS_WEEK", "THIS_MONTH"], { message: "Pilihan Period hanya berdasarkan minggu dan bulan!" })
-        .optional(),
-      sortOrder: zod
-        .enum(["asc", "desc"], { message: "Pilihan urutan hanya boleh ASCENDING atau DESCENDING!" })
-        .default("desc"),
+      period: zod.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Format bulan harus YYYY-MM!"),
+      sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan urutan hanya boleh ASCENDING atau DESCENDING!" }).default("desc"),
     }),
   });
 }
-
-

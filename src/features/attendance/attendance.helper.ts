@@ -7,8 +7,7 @@ export class AttendanceHelper {
     if (!employee) throw new ResponseError("RESOURCE_NOT_FOUND", "Akun tidak ditemukan!");
     if (employee.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError("ACCOUNT_NOT_ACTIVE");
     if (employee.role !== Role.DRIVER && employee.role !== Role.WORKER) throw new ResponseError("FORBIDDEN");
-    if (employee.currentOutletId === null)
-      throw new ResponseError("INVALID_STATE_TRANSITION", "Anda tidak terdaftar di outlet aktif manapun!");
+    if (employee.currentOutletId === null) throw new ResponseError("INVALID_STATE_TRANSITION", "Anda tidak terdaftar di outlet aktif manapun!");
   }
 
   static assertWorkStatus(employee: Employee, expectedWorkStatus: (WorkStatus | null)[]) {
@@ -22,37 +21,18 @@ export class AttendanceHelper {
     return new Date(`${dateWIB}T00:00:00.000Z`);
   } // Mendapat Tanggal YYYY-MM-DD
 
-  static getThisWeek() {
-    const today = this.getAttendanceDateWIB();
-    const dayIndex = today.getUTCDay();
-    let daysToMonday: number;
-    if (dayIndex === 0) {
-      daysToMonday = 6;
-    } else {
-      daysToMonday = dayIndex - 1;
-    }
-
-    const monday = new Date(today);
-    monday.setUTCDate(today.getUTCDate() - daysToMonday);
-
-    const sunday = new Date(monday);
-    sunday.setUTCDate(monday.getUTCDate() + 6);
-
-    return { gte: monday, lte: sunday };
+  static getMonthRange(period: string) {
+    const year = Number(period.slice(0, 4)); // YYYY
+    const month = Number(period.slice(5, 7)); // MM pasti! bukan 3 / 5 doang
+    const startDate = new Date(Date.UTC(year, month - 1, 1)); // index month!
+    const endDate = new Date(Date.UTC(year, month, 1));
+    return { startDate, endDate };
   }
-
-  static getThisMonth() {
-    const today = this.getAttendanceDateWIB();
-
-    const currentYear = today.getUTCFullYear();
-    const currentMonth = today.getUTCMonth();
-
-    const firstDayOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
-    const lastDayOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
-
-    return { gte: firstDayOfMonth, lte: lastDayOfMonth };
+  static getDaysInMonth(period: string) {
+    const year = Number(period.slice(0, 4));
+    const month = Number(period.slice(5, 7));
+    return new Date(Date.UTC(year, month, 0)).getUTCDate();
   }
-
   static buildAttendanceActions({
     workStatus,
     todayAttendance,
