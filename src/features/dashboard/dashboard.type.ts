@@ -12,6 +12,7 @@ export interface DashboardSummary {
   activeOrders: number;
   completedOrders: number;
   totalRevenue: number;
+  outletName?: string
 }
 
 export interface RevenueTrendItem {
