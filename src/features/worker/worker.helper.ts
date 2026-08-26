@@ -38,7 +38,7 @@ export class WorkerHelper {
           ...baseResponse,
           attempt: assignment.attempt,
           maxAttempt: this.MAX_ATTEMPT,
-          canValidate: assignment.attempt <= 2,
+          canValidate: assignment.attempt < this.MAX_ATTEMPT,
           canRequestBypass: assignment.attempt > 0,
 
           order: {
@@ -107,7 +107,7 @@ export class WorkerHelper {
     // Format period hasil validasi YYYY-MM
     const year = Number(period.slice(0, 4));
     const month = Number(period.slice(5, 7));
-    const WIB_OFFSET = (7 * 60 * 60) & 1000; // Kurangi 7 jam
+    const WIB_OFFSET = 7 * 60 * 60 * 1000; // Kurangi 7 jam
     const startDate = new Date(Date.UTC(year, month - 1, 1) - WIB_OFFSET); // JS index bulan januari = 0
     const endDate = new Date(Date.UTC(year, month, 1) - WIB_OFFSET);
     return { startDate, endDate };

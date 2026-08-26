@@ -27,7 +27,7 @@ export class WorkerService {
     const where: Prisma.WorkerAssignmentWhereInput = {
       workerId: worker.id,
       status: WorkerAssignmentStatus.COMPLETED,
-      completedAt: { lte: startDate, gte: endDate },
+      completedAt: { gte: startDate, lte: endDate },
     };
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
@@ -39,8 +39,8 @@ export class WorkerService {
       sortOrder: query.sortOrder,
     });
     const meta = makePaginationMeta({ page: query.page, pageSize: take, totalItems });
-    const summary = { period: query.period, totalCompleted: totalItems };
-    return { data: { historyList, summary }, meta };
+
+    return { data: historyList, meta };
   }
 
   static async claimAssignment({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerClaimInput["params"]["assignmentId"] }) {
@@ -162,5 +162,12 @@ export class WorkerService {
         quantity: item.quantity,
       })),
     };
+  }
+
+  static async getHistoryCount(workerId: string) {
+    const worker = await EmployeeRepository.findById(workerId);
+    WorkerHelper.assertWorkerValidity(worker);
+    const totalCompleted = await WorkerRepository.countCompleted(worker.id);
+    return totalCompleted;
   }
 }

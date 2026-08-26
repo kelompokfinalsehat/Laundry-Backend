@@ -170,6 +170,11 @@ export class WorkerRepository {
       });
     });
   }
+
+  static async countCompleted(workerId: string) {
+    return prisma.workerAssignment.count({ where: { workerId: workerId, status: WorkerAssignmentStatus.COMPLETED } });
+  }
+
   static async findHistoryDetail({ workerId, assignmentId }: { workerId: string; assignmentId: string }) {
     return prisma.workerAssignment.findFirst({
       where: { id: assignmentId, workerId: workerId, status: WorkerAssignmentStatus.COMPLETED },
