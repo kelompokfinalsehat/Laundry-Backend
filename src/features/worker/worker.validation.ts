@@ -2,12 +2,16 @@ import * as zod from "zod";
 import { paginationSchema } from "../../validations/pagination.validation";
 import { StationType } from "../../../generated/prisma";
 
+const assignmentIdParamsSchema = zod.object({
+  assignmentId: zod.uuid("ID tidak valid!"),
+});
+
+const emptyBodySchema = zod.object({}).strict();
+
 export class WorkerValidation {
   static readonly AVAILABLE_ASSIGNMENT = zod.object({
     query: paginationSchema.extend({
-      stationType: zod
-        .enum([StationType.WASHING, StationType.IRONING, StationType.PACKING], { message: "Pilihan tidak tersedia!" })
-        .optional(),
+      stationType: zod.enum([StationType.WASHING, StationType.IRONING, StationType.PACKING], { message: "Pilihan tidak tersedia!" }).optional(),
       sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan tidak tersedia!" }).default("desc"),
     }),
   });
@@ -19,15 +23,14 @@ export class WorkerValidation {
           message: "Pilihan tidak tersedia!",
         })
         .optional(),
+      period: zod.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Format bulan harus YYYY-MM!"),
       sortOrder: zod.enum(["asc", "desc"], { message: "Pilihan tidak tersedia!" }).default("desc"),
     }),
   });
 
   static readonly CLAIM_ASSIGNMENT = zod.object({
-    params: zod.object({
-      assignmentId: zod.uuid("ID tidak valid!"),
-    }),
-    body: zod.object({}).strict(),
+    params: assignmentIdParamsSchema,
+    body: emptyBodySchema,
   });
 
   static readonly VALIDATE_QUANTITIES = zod.object({
@@ -39,10 +42,7 @@ export class WorkerValidation {
         .array(
           zod.object({
             orderItemId: zod.uuid("ID item tidak valid!"),
-            submittedQuantity: zod
-              .number()
-              .int("Input harus berupa bilangan bulat!")
-              .nonnegative("Input tidak boleh negatif!"),
+            submittedQuantity: zod.number().int("Input harus berupa bilangan bulat!").nonnegative("Input tidak boleh negatif!"),
           }),
         )
         .min(1, "Minimal input 1 items!")
@@ -55,9 +55,11 @@ export class WorkerValidation {
   static readonly REQUEST_BYPASS = this.VALIDATE_QUANTITIES;
 
   static readonly COMPLETE = zod.object({
-    params: zod.object({
-      assignmentId: zod.uuid("ID tidak valid!"),
-    }),
-    body: zod.object({}).strict(),
+    params: assignmentIdParamsSchema,
+    body: emptyBodySchema,
+  });
+
+  static readonly HISTORY_DETAIL = zod.object({
+    params: assignmentIdParamsSchema,
   });
 }

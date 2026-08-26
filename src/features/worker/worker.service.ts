@@ -23,9 +23,11 @@ export class WorkerService {
   static async getHistoryList({ workerId, query }: { workerId: string; query: WorkerHistoryInput["query"] }) {
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
+    const { startDate, endDate } = WorkerHelper.getMonthRange(query.period);
     const where: Prisma.WorkerAssignmentWhereInput = {
       workerId: worker.id,
       status: WorkerAssignmentStatus.COMPLETED,
+      completedAt: { lte: startDate, gte: endDate },
     };
     if (query.stationType) where.stationType = query.stationType;
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
@@ -37,7 +39,8 @@ export class WorkerService {
       sortOrder: query.sortOrder,
     });
     const meta = makePaginationMeta({ page: query.page, pageSize: take, totalItems });
-    return { data: historyList, meta };
+    const summary = { period: query.period, totalCompleted: totalItems };
+    return { data: { historyList, summary }, meta };
   }
 
   static async claimAssignment({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerClaimInput["params"]["assignmentId"] }) {
@@ -139,5 +142,25 @@ export class WorkerService {
       orderId: assignment.order.id,
       outletId: assignment.outletId,
     });
+  }
+
+  static async getHistoryDetail({ workerId, assignmentId }: { workerId: string; assignmentId: string }) {
+    const worker = await EmployeeRepository.findById(workerId);
+    WorkerHelper.assertWorkerValidity(worker);
+    const assignment = await WorkerRepository.findHistoryDetail({ workerId: worker.id, assignmentId: assignmentId });
+    if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
+    return {
+      id: assignment.id,
+      stationType: assignment.stationType,
+      orderCode: assignment.order.orderCode,
+      assignedAt: assignment.assignedAt,
+      startedAt: assignment.startedAt,
+      completedAt: assignment.completedAt,
+      items: assignment.order.orderItems.map((item) => ({
+        id: item.id,
+        name: item.laundryItem.name,
+        quantity: item.quantity,
+      })),
+    };
   }
 }

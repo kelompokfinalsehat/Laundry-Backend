@@ -170,4 +170,35 @@ export class WorkerRepository {
       });
     });
   }
+  static async findHistoryDetail({ workerId, assignmentId }: { workerId: string; assignmentId: string }) {
+    return prisma.workerAssignment.findFirst({
+      where: { id: assignmentId, workerId: workerId, status: WorkerAssignmentStatus.COMPLETED },
+      select: {
+        id: true,
+        stationType: true,
+        assignedAt: true,
+        startedAt: true,
+        completedAt: true,
+
+        order: {
+          select: {
+            orderCode: true,
+
+            orderItems: {
+              select: {
+                id: true,
+                quantity: true,
+
+                laundryItem: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }

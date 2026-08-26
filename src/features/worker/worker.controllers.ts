@@ -9,12 +9,8 @@ export class WorkerController {
     const { query } = validate(WorkerValidation.AVAILABLE_ASSIGNMENT, { query: req.query });
     const payload = res.locals.payload;
     const result = await WorkerService.getAvailableAssignments({ workerId: payload.sub, query });
-    res
-      .status(StatusCodes.OK)
-      .json({ success: true, message: "Berhasil mengambil daftar tugas yang tersedia", data: result.data, meta: result.meta });
+    res.status(StatusCodes.OK).json({ success: true, message: "Berhasil mengambil daftar tugas yang tersedia", data: result.data, meta: result.meta });
   }
-
-
 
   static async getHistoryList(req: Request, res: Response) {
     const { query } = validate(WorkerValidation.HISTORY_LIST, { query: req.query });
@@ -56,5 +52,15 @@ export class WorkerController {
     const payload = res.locals.payload;
     const result = await WorkerService.complete({ workerId: payload.sub, assignmentId: params.assignmentId });
     res.status(StatusCodes.OK).json({ success: true, message: "Complete Berhasil!", data: result });
+  }
+  static async getHistoryDetail(req: Request, res: Response) {
+    const { params } = validate(WorkerValidation.HISTORY_DETAIL, { params: req.params });
+    const payload = res.locals.payload;
+    const result = await WorkerService.getHistoryDetail({ workerId: payload.sub, assignmentId: params.assignmentId });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Detail Riwayat dari tugas berhasil diterima!",
+      data: result,
+    });
   }
 }
