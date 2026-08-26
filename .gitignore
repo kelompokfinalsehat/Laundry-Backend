@@ -10,3 +10,5 @@ generated/prisma/
 *.zip
 dist/
 BE.md
+
+prisma/seed

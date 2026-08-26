@@ -508,6 +508,7 @@ model WorkerAssignment {
   workerId    String?                @map("worker_id") @db.Uuid
   outletId    String                 @map("outlet_id") @db.Uuid
   stationType StationType            @map("station_type")
+  attempt     Int                    @default(0)
   assignedAt  DateTime?              @map("assigned_at")
   startedAt   DateTime?              @map("started_at")
   completedAt DateTime?              @map("completed_at")
