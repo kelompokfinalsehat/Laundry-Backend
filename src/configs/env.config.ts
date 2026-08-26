@@ -28,3 +28,5 @@ export const EMAIL_VERIFICATION_EXPIRY_HOURS = 1;
 export const PASSWORD_RESET_EXPIRY_HOURS = 1;
 
 export const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
+
+export const RAJAONGKIR_API_KEY = process.env.RAJAONGKIR_API_KEY;

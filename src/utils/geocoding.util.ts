@@ -1,7 +1,7 @@
-import { OPENCAGE_API_KEY } from "../configs/env.config";
+import { isAxiosError } from "axios";
+import { opencageClient } from "../configs/axios.config";
 import { ResponseError } from "./errors/response-error.utils";
-
-const OPENCAGE_BASE_URL = "https://api.opencagedata.com/geocode/v1/json";
+import haversine from "haversine-distance";
 
 type GeocodeResult = {
   latitude: number;
@@ -10,62 +10,68 @@ type GeocodeResult = {
 
 export class GeocodingUtil {
   static async geocode(formattedAddress: string): Promise<GeocodeResult> {
-    if (!OPENCAGE_API_KEY) {
-      throw new Error("OPENCAGE_API_KEY belum dikonfigurasi");
-    }
+    let res;
 
-    const params = new URLSearchParams({
-      q: formattedAddress,
-      key: OPENCAGE_API_KEY,
-      countrycode: "id",
-      limit: "1",
-      no_annotations: "1",
-    });
-
-    let res: Response;
     try {
-      res = await fetch(`${OPENCAGE_BASE_URL}?${params.toString()}`);
+      res = await opencageClient.get("/json", {
+        params: {
+          q: formattedAddress,
+          countrycode: "id",
+          language: "id",
+          limit: 5,
+          no_annotations: 1,
+        },
+      });
+      console.log(
+        "OpenCage results:",
+        JSON.stringify(res.data.results, null, 2),
+      );
     } catch (error) {
-      console.error("OpenCage request error:", error);
+      if (isAxiosError(error)) {
+        console.error(
+          "OpenCage HTTP error:",
+          error.response?.status,
+          error.response?.data,
+        );
+      } else {
+        console.error("OpenCage request error:", error);
+      }
+
       throw new ResponseError(
         "GEOCODING_FAILED",
         "Gagal memproses alamat. Coba tulis alamat lebih lengkap.",
       );
     }
 
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("OpenCage HTTP error:", res.status, body);
-      throw new ResponseError(
-        "GEOCODING_FAILED",
-        "Gagal memproses alamat. Coba tulis alamat lebih lengkap.",
-      );
-    }
+    const results = res.data?.results ?? [];
 
-    const json = await res.json();
-    const firstResult = json?.results?.[0];
-
-    if (!firstResult) {
+    if (!results.length) {
       throw new ResponseError(
         "GEOCODING_FAILED",
         "Alamat tidak ditemukan. Coba tulis alamat lebih lengkap.",
       );
     }
 
-    if (firstResult.confidence < 5) {
-      console.warn(
-        "Geocode confidence rendah:",
-        formattedAddress,
-        "confidence:",
-        firstResult.confidence,
-        "formatted:",
-        firstResult.formatted,
-      );
-    }
+    const result =
+      results.find(
+        (item: any) =>
+          item.components?._type === "house" ||
+          item.components?._type === "building",
+      ) ??
+      results.find((item: any) => item.components?._type === "road") ??
+      results[0];
 
     return {
-      latitude: firstResult.geometry.lat,
-      longitude: firstResult.geometry.lng,
+      latitude: result.geometry.lat,
+      longitude: result.geometry.lng,
     };
+  }
+  static haversineDistanceMeters(
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number,
+  ): number {
+    return haversine({ lat: lat1, lon: lng1 }, { lat: lat2, lon: lng2 });
   }
 }
