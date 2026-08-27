@@ -32,6 +32,9 @@ export class EmployeeRepository {
                 include: this.employeeInclude,
                 orderBy: {
                     [query.sortBy]: query.sortOrder
+                },
+                omit: {
+                    passwordHash: true
                 }
             }),
             prisma.employee.count({where})
