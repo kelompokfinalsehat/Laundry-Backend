@@ -225,7 +225,7 @@ export class OrderService {
       complaint: order.complaint,
       timeline: OrderHelper.buildTimeline(order),
       allowedActions: {
-        canPay: order.customerStatus === "WAITING_PAYMENT",
+        canPay: order.bill !== null && order.bill.paymentStatus !== "PAID",
         canConfirmReceived:
           order.customerStatus === "WAITING_CUSTOMER_CONFIRMATION",
         canFileComplaint:
