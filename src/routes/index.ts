@@ -6,6 +6,7 @@ import { AuthMiddleware } from "../middlewares/auth.middlewares";
 import addressCustomerRoutes from "../features/addressCustomer/address.routes";
 import orderCustomerRoutes from "../features/orderCustomer/order.routes";
 import regionAddressRoutes from "../features/region/region.routes";
+import payementRoutes from "../features/paymentCustomer/payments.routes";
 import { Role } from "../../generated/prisma";
 
 const router = Router();
@@ -21,9 +22,8 @@ router.use(
 );
 router.use(
   "/order",
-  AuthMiddleware.authenticated(),
-  AuthMiddleware.authorized([Role.CUSTOMER]),
   orderCustomerRoutes,
+  payementRoutes,
 );
 router.use("/regions", AuthMiddleware.authenticated(), regionAddressRoutes);
 export default router;
