@@ -572,6 +572,7 @@ model Payment {
   billId                String                   @map("bill_id") @db.Uuid
   gatewayOrderId        String                   @unique @map("gateway_order_id")
   midtransTransactionId String?                  @unique @map("midtrans_transaction_id")
+  redirectUrl           String?
   amount                Decimal                  @db.Decimal(12, 2)
   status                PaymentTransactionStatus
   isFinal               Boolean                  @default(false) @map("is_final")

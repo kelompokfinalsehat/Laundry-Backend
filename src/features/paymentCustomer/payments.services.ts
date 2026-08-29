@@ -1,3 +1,4 @@
+import { date } from "zod";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { MidtransClient } from "../../utils/midtrans.utils";
@@ -40,7 +41,7 @@ export class PaymentService {
     const attemptCount = await prisma.payment.count({
       where: { billId: bill.id },
     });
-    const gatewayOrderId = `${order.orderCode}-${attemptCount + 1}`;
+    const gatewayOrderId = `PAY-${order.orderCode}-${bill.id.slice(0, 4)}-${attemptCount + 1}`;
 
     const { token, redirectUrl } = await MidtransClient.createTransaction({
       gatewayOrderId,
@@ -54,6 +55,7 @@ export class PaymentService {
         billId: bill.id,
         gatewayOrderId,
         amount: bill.totalAmount ?? 0,
+        redirectUrl,
         status: "PENDING",
         isFinal: false,
       },
@@ -91,14 +93,13 @@ export class PaymentService {
       id: latest.id,
       status: latest.status,
       amount: latest.amount,
+      redirectUrl: latest.redirectUrl,
       isFinal: latest.isFinal,
       paidAt: latest.paidAt,
       billPaymentStatus: order.bill!.paymentStatus,
     };
   }
-  static async MidtransWebhook(
-    { payload }: MidtransWebhookInput,
-  ) {
+  static async MidtransWebhook({ payload }: MidtransWebhookInput) {
     const isValidSignature = MidtransClient.verifySignature({
       order_id: payload.order_id,
       status_code: payload.status_code,
@@ -151,9 +152,14 @@ export class PaymentService {
         // Re-cek UNPAID di dalam transaction — mencegah dua webhook/attempt
         // beda nyalain PAID dua kali kalau race condition (BR-PAY-01: "Satu
         // Bill hanya berubah PAID sekali").
-        const updated = await tx.bill.updateMany({
+        await tx.bill.updateMany({
           where: { id: payment.bill.id, paymentStatus: "UNPAID" },
           data: { paymentStatus: "PAID" },
+        });
+
+        await tx.order.update({
+          where: { id: order.id },
+          data: { paidAt: new Date() },
         });
 
         await tx.payment.update({
