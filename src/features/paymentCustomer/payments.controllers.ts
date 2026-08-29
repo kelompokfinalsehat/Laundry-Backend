@@ -41,9 +41,7 @@ export class PaymentController {
     const { payload } = validate(PaymentValidation.MIDTRANS_WEEBHOOK, {
       payload: req.body,
     });
-    console.log("MIDTRANS WEBHOOK PAYLOAD:");
-    console.log(JSON.stringify(req.body, null, 2));
-
+   
     const result = await PaymentService.MidtransWebhook({ payload });
 
     return res.status(StatusCodes.OK).json({
