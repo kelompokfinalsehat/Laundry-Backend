@@ -58,7 +58,7 @@ export class AttendanceHelper {
     tommorow.setUTCDate(tommorow.getUTCDate() + 1); // +1 adalah tanggal besok.
 
     const startDate = new Date(Math.max(monthStart.getTime(), employeeStart.getTime()));
-    const endDate = new Date(Math.max(monthEnd.getTime(), tommorow.getTime()));
+    const endDate = new Date(Math.min(monthEnd.getTime(), tommorow.getTime()));
 
     const DAY = 1000 * 60 * 60 * 24;
     let totalDays = 0;
@@ -84,7 +84,7 @@ export class AttendanceHelper {
       (workStatus === WorkStatus.OFF_DUTY || workStatus === null);
 
     const canClockOut =
-      !!openAttendance && !hasActiveAssignment && workStatus === WorkStatus.AVAILABLE;
+      !!openAttendance && !hasActiveAssignment && workStatus !== WorkStatus.BUSY;
 
     return { canClockIn, canClockOut };
   }

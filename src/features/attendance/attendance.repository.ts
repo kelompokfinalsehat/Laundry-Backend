@@ -19,7 +19,7 @@ export class AttendanceRepository {
     return prisma.$transaction(async (tx) => {
       const createAttendance = await tx.attendance.create({
         data: { employeeId, outletId, attendanceDate: attendanceDate, clockInAt: clockInAt },
-        select: { id: true, employeeId: true, outletId: true, attendanceDate: true, clockInAt: true },
+        select: { id: true, employeeId: true, attendanceDate: true, clockInAt: true },
       });
       const updateWorkStatus = await tx.employee.updateMany({
         where: { id: employeeId, OR: [{ workStatus: WorkStatus.OFF_DUTY }, { workStatus: null }] },
@@ -55,10 +55,10 @@ export class AttendanceRepository {
       const closeAttendance = await tx.attendance.update({
         where: { id: attendanceId, employeeId: employeeId, clockOutAt: null },
         data: { clockOutAt: new Date() },
-        select: { id: true, employeeId: true, outletId: true, attendanceDate: true, clockOutAt: true },
+        select: { id: true, employeeId: true, attendanceDate: true, clockOutAt: true },
       });
       const updateWorkStatus = await tx.employee.updateMany({
-        where: { id: employeeId, workStatus: WorkStatus.AVAILABLE },
+        where: { id: employeeId, OR: [{ workStatus: WorkStatus.AVAILABLE }, { workStatus: WorkStatus.OFF_DUTY }] },
         data: { workStatus: WorkStatus.OFF_DUTY },
       });
       if (updateWorkStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
@@ -67,6 +67,9 @@ export class AttendanceRepository {
   }
 
   static async findAttendancePaginated({ where, skip, take, sortOrder }: AttendanceHistoryPaginated) {
-    return prisma.$transaction([prisma.attendance.count({ where }), prisma.attendance.findMany({ where, skip, take, orderBy: { attendanceDate: sortOrder } })]);
+    return prisma.$transaction([
+      prisma.attendance.count({ where }),
+      prisma.attendance.findMany({ where, skip, take, orderBy: { attendanceDate: sortOrder } }),
+    ]);
   }
 }
