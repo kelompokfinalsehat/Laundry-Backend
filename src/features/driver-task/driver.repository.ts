@@ -25,17 +25,7 @@ const ACTIVE_TASK_SELECT = {
 } satisfies Prisma.DriverAssignmentSelect;
 
 export class DriverRepository {
-  static async findAvailablePaginated({
-    where,
-    skip,
-    take,
-    sortOrder,
-  }: {
-    where: Prisma.DriverAssignmentWhereInput;
-    skip: number;
-    take: number;
-    sortOrder: "asc" | "desc";
-  }) {
+  static async findAvailablePaginated({ where, skip, take, sortOrder }: { where: Prisma.DriverAssignmentWhereInput; skip: number; take: number; sortOrder: "asc" | "desc" }) {
     return prisma.$transaction([
       prisma.driverAssignment.count({ where }),
       prisma.driverAssignment.findMany({
@@ -55,6 +45,9 @@ export class DriverRepository {
       select: { id: true },
     });
     return activeAssignment;
+  }
+  static async findOrderScheduledAt({ assignmentId }: { assignmentId: string }) {
+    return prisma.driverAssignment.findFirst({ where: { id: assignmentId }, select: { order: { select: { pickupScheduledAt: true } } } });
   }
 
   static async claimTransaction({ assignmentId, driverId, outletId }: { assignmentId: string; driverId: string; outletId: string }) {
@@ -96,8 +89,7 @@ export class DriverRepository {
       });
       const assignment = updateAssignment[0];
       if (!assignment) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status gagal!");
-      const expectedOrderStatus =
-        assignment.taskType === PickupDeliveryType.PICKUP ? CustomerStatus.WAITING_DRIVER_PICKUP : CustomerStatus.READY_FOR_DELIVERY;
+      const expectedOrderStatus = assignment.taskType === PickupDeliveryType.PICKUP ? CustomerStatus.WAITING_DRIVER_PICKUP : CustomerStatus.READY_FOR_DELIVERY;
       const updateCustomerStatus = await tx.order.updateMany({
         where: { id: assignment.order.id, customerStatus: expectedOrderStatus },
         data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
@@ -156,17 +148,7 @@ export class DriverRepository {
     });
   }
 
-  static async findHistoryPaginated({
-    where,
-    skip,
-    take,
-    sortOrder,
-  }: {
-    where: Prisma.DriverAssignmentWhereInput;
-    skip: number;
-    take: number;
-    sortOrder: "asc" | "desc";
-  }) {
+  static async findHistoryPaginated({ where, skip, take, sortOrder }: { where: Prisma.DriverAssignmentWhereInput; skip: number; take: number; sortOrder: "asc" | "desc" }) {
     return prisma.$transaction([
       prisma.driverAssignment.count({ where }),
       prisma.driverAssignment.findMany({

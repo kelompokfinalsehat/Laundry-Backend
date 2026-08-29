@@ -38,19 +38,20 @@ export class AttendanceService {
   }
 
   static async getHistory({ employeeId, query }: { employeeId: string; query: AttendanceHistoryInput["query"] }) {
+    const employee = await EmployeeRepository.findById(employeeId)
+    AttendanceHelper.assertEmployee(employee)
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
     const take = query.pageSize;
-    const { startDate, endDate } = AttendanceHelper.getMonthRange(query.period);
-    const where: Prisma.AttendanceWhereInput = { employeeId, attendanceDate: { gte: startDate, lte: endDate } };
+    const { startDate, endDate,totalDays } = AttendanceHelper.getEffectiveAttendanceRange(query.period,employee.createdAt);
+    const where: Prisma.AttendanceWhereInput = { employeeId, attendanceDate: { gte: startDate, lt: endDate } };
     const [totalItems, attendanceHistory] = await AttendanceRepository.findAttendancePaginated({ where, skip, take, sortOrder: query.sortOrder });
     const meta = makePaginationMeta({ page: query.page, pageSize: query.pageSize, totalItems });
-    const daysInMonth = AttendanceHelper.getDaysInMonth(query.period);
     const presentDay = totalItems;
-    let absentDay = daysInMonth - presentDay;
+    let absentDay = totalDays - presentDay;
     if (absentDay < 0) absentDay = 0;
     const summary = {
       period: query.period,
-      daysInMonth: daysInMonth,
+      totalDays:totalDays,
       presentDays: presentDay,
       absentDays: absentDay,
     };

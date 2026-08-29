@@ -3,6 +3,7 @@ import { ResponseError } from "../../utils/errors/response-error.utils";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { AttendanceRepository } from "../attendance/attendance.repository";
 import { EmployeeRepository } from "../employee/employee.repository";
+import { WorkerRepository } from "../worker/worker.repository";
 
 import { DriverHelper } from "./driver.helper";
 import { DriverRepository } from "./driver.repository";
@@ -37,6 +38,8 @@ export class DriverService {
     if (driver.workStatus !== WorkStatus.AVAILABLE) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
     const activeAssignment = await DriverRepository.findActiveByDriverId(driver.id);
     if (activeAssignment) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
+    const claimableAssignment = await DriverRepository.findOrderScheduledAt({ assignmentId: assignmentId });
+    if (claimableAssignment?.order.pickupScheduledAt! > new Date()) throw new ResponseError("INVALID_STATE_TRANSITION", "Pesanan belum dapat diambil!");
     return await DriverRepository.claimTransaction({ assignmentId: assignmentId, driverId: driver.id, outletId: driver.currentOutletId });
   }
   static async getActiveAssignment(driverId: string) {
