@@ -26,8 +26,6 @@ export class AddressService {
 
     const formattedAddress = `${body.streetDetail}, ${body.subDistrictName},${body.districtName}, ${body.cityName}, ${body.provinceName},${body.zipCode}`;
 
-    const { latitude, longitude } =
-      await GeocodingUtil.geocode(formattedAddress);
     const shouldBePrimary = existingCount === 0 || body.isPrimary === true;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -53,8 +51,8 @@ export class AddressService {
           zipCode: body.zipCode,
           formattedAddress: formattedAddress,
           phone: body.phone,
-          latitude,
-          longitude,
+          latitude: body.latitude,
+          longitude: body.longitude,
           isPrimary: shouldBePrimary,
         },
       });

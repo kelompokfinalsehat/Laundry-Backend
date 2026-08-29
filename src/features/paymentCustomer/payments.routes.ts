@@ -1,27 +1,22 @@
 import { Router } from "express";
-import { OrderController } from "./order.controllers";
+import { PaymentController } from "./payments.controllers";
 import { AuthMiddleware } from "../../middlewares/auth.middlewares";
 import { Role } from "../../../generated/prisma";
 
 const router = Router();
 
 router.post(
-  "/",
+  "/:id/payment",
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized([Role.CUSTOMER]),
-  OrderController.create,
+  PaymentController.createPaymentAttempt,
 );
 router.get(
-  "/",
+  "/:id/payment",
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized([Role.CUSTOMER]),
-  OrderController.getListOrder,
+  PaymentController.getLatestPaymentAttempt,
 );
-router.get(
-  "/:id",
-  AuthMiddleware.authenticated(),
-  AuthMiddleware.authorized([Role.CUSTOMER]),
-  OrderController.getDetailOrder,
-);
+router.post("/payment/webhook", PaymentController.MidtransWebhook);
 
 export default router;

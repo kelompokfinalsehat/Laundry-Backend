@@ -387,6 +387,7 @@ model Order {
   paidAt         DateTime?      @map("paid_at")
   receivedAt     DateTime?      @map("received_at")
   receivedBy     String?        @map("received_by") @db.Uuid
+  completedAt    DateTime?      @map("completed_at")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @default(now()) @map("updated_at")
 
