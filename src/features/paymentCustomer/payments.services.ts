@@ -2,7 +2,7 @@ import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { MidtransClient } from "../../utils/midtrans.utils";
 import { userPayload } from "../../validations/validate";
-import { DriverQueueService } from "../shared /driverQueue.service";
+import { DriverQueueService } from "../shared/driverQueue.service";
 import { PaymentRepository } from "./payments.repositories";
 import { MidtransWebhookInput, OrderIdInput } from "./payments.validations";
 

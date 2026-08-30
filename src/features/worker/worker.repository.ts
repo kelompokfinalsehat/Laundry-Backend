@@ -151,8 +151,7 @@ export class WorkerRepository {
       else {
         //Bill ada di sini karena payment bisa saja berubah ketika awal pengecekan mutation.
         const bill = await tx.bill.findUnique({ where: { orderId }, select: { paymentStatus: true } });
-        if (!bill) throw new ResponseError("RESOURCE_NOT_FOUND", "Tagihan dan Pembayaran tidak ditemukan!");
-        const paid = bill.paymentStatus === BillPaymentStatus.PAID;
+        const paid = bill?.paymentStatus === BillPaymentStatus.PAID;
         await tx.order.update({
           where: { id: orderId },
           data: { customerStatus: paid ? CustomerStatus.READY_FOR_DELIVERY : CustomerStatus.WAITING_PAYMENT },
