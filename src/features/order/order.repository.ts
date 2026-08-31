@@ -52,6 +52,7 @@ export class OrderRepository {
           weightKg: true,
           totalAmount: true,
           paymentStatus: true,
+          paidAt: true
         },
       },
       orderItems: {

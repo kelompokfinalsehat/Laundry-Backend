@@ -1,13 +1,17 @@
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { QuantityDifference } from "./bypass.type";
 
+type differenceType = {
+  items: QuantityDifference[]
+}
+
 export class BypassHelper {
   static parseQuantityDifferences(value: string | null): QuantityDifference[] {
     if (!value) return [];
     try {
-      const parsed = JSON.parse(value);
-      if (!Array.isArray(parsed)) throw new Error();
-      return parsed;
+      const parsed: differenceType = JSON.parse(value);
+      if (!Array.isArray(parsed.items)) throw new Error();
+      return parsed.items;
     } catch {
       throw new ResponseError(
         "INTERNAL_SERVER_ERROR",

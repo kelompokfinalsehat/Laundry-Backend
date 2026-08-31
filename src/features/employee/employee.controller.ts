@@ -17,6 +17,12 @@ export class EmployeeController {
        const employees = await EmployeeService.getCurrentOutletEmployee(sub, query)
        return ResponseHelper.paginated(res, Message.FETCHED, employees.data, employees.meta)
     }
+    static async getCurrentOutletAttendance(req: Request, res: Response){
+        const query = validate(EmployeeValidation.Query.getCurrentOutletAttendance, req.query)
+        const {sub} = res.locals.payload
+        const attendance = await EmployeeService.getCurrentOutletAttendance(query, sub)
+        return ResponseHelper.paginated(res, Message.FETCHED, attendance.data, attendance.meta)
+    }
     static async getEmployeeById(req: Request, res: Response){
         const {id} = validate(EmployeeValidation.Params.employeeId, req.params)
         const employee = await EmployeeService.getEmployeeById(id)

@@ -13,6 +13,7 @@ import {
   AssignEmployeeBody,
   EmployeeQuery,
   InviteEmployeeBody,
+  OutletAttendanceQuery,
   OutletTeamQuery,
   UpdateEmployeeBody,
 } from "./employee.type";
@@ -32,13 +33,13 @@ export class EmployeeService {
   ) {
     const employee =
       await EmployeeHelper.findEmployeeByIdOrThrow(adminOutletId);
-    if (employee.role !== Role.OUTLET_ADMIN)
-      throw new ResponseError(
-        "FORBIDDEN",
-        "Hanya outlet admin yang boleh mengakses endpoint ini.",
-      );
     if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
     return EmployeeRepository.findOutletTeam(query, employee.currentOutletId);
+  }
+  static async getCurrentOutletAttendance(query: OutletAttendanceQuery, adminOutletId: string){
+    const employee = await EmployeeHelper.findEmployeeByIdOrThrow(adminOutletId)
+    if(!employee.currentOutletId) throw new ResponseError('INVALID_CREDENTIALS', 'Data akun belum lengkap.')
+    return EmployeeRepository.findCurrentOutletAttendance(query, employee.currentOutletId)
   }
   static async inviteEmployee(body: InviteEmployeeBody) {
     const existingEmployee = await EmployeeRepository.findByEmail(body.email);
