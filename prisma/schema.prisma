@@ -387,6 +387,7 @@ model Order {
   paidAt         DateTime?      @map("paid_at")
   receivedAt     DateTime?      @map("received_at")
   receivedBy     String?        @map("received_by") @db.Uuid
+  completedAt    DateTime?      @map("completed_at")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @default(now()) @map("updated_at")
 
@@ -571,6 +572,7 @@ model Payment {
   billId                String                   @map("bill_id") @db.Uuid
   gatewayOrderId        String                   @unique @map("gateway_order_id")
   midtransTransactionId String?                  @unique @map("midtrans_transaction_id")
+  redirectUrl           String?
   amount                Decimal                  @db.Decimal(12, 2)
   status                PaymentTransactionStatus
   isFinal               Boolean                  @default(false) @map("is_final")

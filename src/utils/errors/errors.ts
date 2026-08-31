@@ -167,10 +167,31 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "Order belum dapat dibayar. Menunggu proses outlet selesai.",
   },
+  ORDER_FORBIDDEN: {
+    code: "ORDER_FORBIDDEN",
+    status: StatusCodes.FORBIDDEN,
+    message: "Order tidak ditemukan atau bukan milik kamu.",
+  },
+  BILL_NOT_FOUND: {
+    code: "BILL_NOT_FOUND",
+    status: StatusCodes.NOT_FOUND,
+    message: "Invoice untuk order ini belum tersedia.",
+  },
   PAYMENT_ALREADY_PAID: {
     code: "PAYMENT_ALREADY_PAID",
     status: StatusCodes.CONFLICT,
     message: "Tagihan ini sudah lunas.",
+  },
+  PAYMENT_ALREADY_PENDING: {
+    code: "PAYMENT_ALREADY_PENDING",
+    status: StatusCodes.CONFLICT,
+    message:
+      "Masih ada percobaan pembayaran yang berjalan. Cek status atau tunggu sampai kedaluwarsa.",
+  },
+  ORDER_OVERDUE: {
+    code: "ORDER_OVERDUE",
+    status: StatusCodes.CONFLICT,
+    message: "Order ini sudah melewati batas waktu pembayaran.",
   },
 
   // ===== Driver / Worker Assignment (BR-DRV, BR-WRK) =====

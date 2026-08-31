@@ -6,6 +6,7 @@ import { AuthMiddleware } from "../middlewares/auth.middlewares";
 import addressCustomerRoutes from "../features/addressCustomer/address.routes";
 import orderCustomerRoutes from "../features/orderCustomer/order.routes";
 import regionAddressRoutes from "../features/region/region.routes";
+import payementRoutes from "../features/paymentCustomer/payments.routes";
 import { Role } from "../../generated/prisma";
 import employeeRoutes from "../features/employee/employee.route";
 import outletRoutes from "../features/outlet/outlet.route";
@@ -42,9 +43,8 @@ router.use("/internal/dashboard", dashboardRoutes)
 
 router.use(
   "/order",
-  AuthMiddleware.authenticated(),
-  AuthMiddleware.authorized([Role.CUSTOMER]),
   orderCustomerRoutes,
+  payementRoutes,
 );
 router.use("/regions", AuthMiddleware.authenticated(), regionAddressRoutes);
 export default router;

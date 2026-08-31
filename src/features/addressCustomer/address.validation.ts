@@ -16,6 +16,8 @@ export class AddressValidation {
         .string()
         .min(5, "Detail alamat terlalu pendek, tulis lebih lengkap"),
       zipCode: z.string().regex(/^\d{5}$/, "Kode pos harus 5 digit angka"),
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
       phone: z.string().min(8, "Nomor telepon tidak valid").max(20),
       isPrimary: z.boolean().optional(),
     }),
