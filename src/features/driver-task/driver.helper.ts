@@ -1,7 +1,7 @@
 import { AccountStatus, DriverAssignmentStatus, Role } from "../../../generated/prisma";
 import { Employee, PickupDeliveryType } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type { DriverActiveAssignmentDetail } from "./driver.types";
+import type { DriverActiveAssignmentDetail, DriverActiveState } from "./driver.types";
 
 export class DriverHelper {
   // CHECKER UMUM untuk beberapa function
@@ -19,7 +19,7 @@ export class DriverHelper {
   }
 
   // TASK STATE dan ACTION -> Method /active
-  private static getAssignmentState(assignment: DriverActiveAssignmentDetail) {
+  private static getAssignmentState(assignment: DriverActiveAssignmentDetail): DriverActiveState {
     // PICKUP
     if (assignment.taskType === PickupDeliveryType.PICKUP) {
       if (assignment.status === DriverAssignmentStatus.ASSIGNED) return "PICKUP_ASSIGNED";
@@ -31,7 +31,7 @@ export class DriverHelper {
     return "DELIVERY_TO_CUSTOMER";
   }
 
-  private static getAssignmentAction(state: string) {
+  private static getAssignmentAction(state: DriverActiveState) {
     if (state === "PICKUP_ASSIGNED") return "START_PICKUP";
     if (state === "PICKUP_TO_CUSTOMER") return "CONFIRM_PICKUP";
     if (state === "PICKUP_TO_OUTLET") return null;
@@ -40,7 +40,7 @@ export class DriverHelper {
     return null;
   }
 
-  private static getBaseResponse(assignment: DriverActiveAssignmentDetail, state: string) {
+  private static getBaseResponse(assignment: DriverActiveAssignmentDetail, state: DriverActiveState) {
     return {
       id: assignment.id,
       taskType: assignment.taskType,
@@ -73,18 +73,31 @@ export class DriverHelper {
       latitude: Number(assignment.outlet.latitude),
       longitude: Number(assignment.outlet.longitude),
     };
-    // LOGIC untuk delivery
-    if (assignment.taskType === PickupDeliveryType.DELIVERY) {
-      return { ...base, destination: customerDest };
+
+    switch (state) {
+      case "PICKUP_ASSIGNED":
+        return {
+          ...base,
+          destination: customerDest,
+          pickupScheduledAt: assignment.order.pickupScheduledAt,
+        };
+
+      case "PICKUP_TO_CUSTOMER":
+        return { ...base, destination: customerDest, pickupScheduledAt: assignment.order.pickupScheduledAt };
+
+      case "PICKUP_TO_OUTLET":
+        return {
+          ...base,
+          destination: outletDest,
+          pickedUpAt: assignment.pickedUpAt,
+        };
+
+      case "DELIVERY_ASSIGNED":
+        return { ...base, destination: customerDest };
+
+      case "DELIVERY_TO_CUSTOMER":
+        return { ...base, destination: customerDest };
     }
-    // LOGIC untuk pickup
-    if (state === "PICKUP_TO_OUTLET") {
-      return { ...base, destination: outletDest, message: "Menunggu konfirmasi dari Outlet Admin" };
-    }
-    if (state === "PICKUP_ASSIGNED") {
-      return { ...base, destination: customerDest, pickupScheduledAt: assignment.order.pickupScheduledAt };
-    }
-    return { ...base, destination: customerDest };
   }
 
   static getMonthRange(period: string) {

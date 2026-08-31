@@ -1,7 +1,21 @@
-import { BillPaymentStatus, BypassStatus, CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
+import {
+  BillPaymentStatus,
+  BypassStatus,
+  CustomerStatus,
+  DriverAssignmentStatus,
+  PickupDeliveryType,
+  WorkerAssignmentStatus,
+  WorkStatus,
+} from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type { CompleteTransactionTypes, CreateBypassTypes, FindAvailablePaginated, FindHistoryPaginated, UpdateValidateTransactionTypes } from "./worker.types";
+import type {
+  CompleteTransactionTypes,
+  CreateBypassTypes,
+  FindAvailablePaginated,
+  FindHistoryPaginated,
+  UpdateValidateTransactionTypes,
+} from "./worker.types";
 
 export class WorkerRepository {
   static async findAvailablePaginated({ where, skip, take, sortOrder }: FindAvailablePaginated) {
@@ -86,7 +100,10 @@ export class WorkerRepository {
     });
   }
   static async addValidateAttempt({ workerId, assignmentId, currentAttempt }: { workerId: string; assignmentId: string; currentAttempt: number }) {
-    const attempt = await prisma.workerAssignment.updateMany({ where: { id: assignmentId, workerId: workerId, attempt: currentAttempt }, data: { attempt: { increment: 1 } } });
+    const attempt = await prisma.workerAssignment.updateMany({
+      where: { id: assignmentId, workerId: workerId, attempt: currentAttempt },
+      data: { attempt: { increment: 1 } },
+    });
     if (attempt.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Data percobaan gagal diubah!");
     return attempt;
   }
@@ -122,8 +139,9 @@ export class WorkerRepository {
           status: BypassStatus.PENDING,
         },
       });
-      return tx.workerAssignment.findFirst({
+      return tx.workerAssignment.update({
         where: { id: assignmentId, status: WorkerAssignmentStatus.ON_HOLD_BYPASS },
+        data: { attempt: 0 },
         select: { id: true, status: true, stationType: true, startedAt: true, order: { select: { id: true, orderCode: true } } },
       });
     });
@@ -147,7 +165,8 @@ export class WorkerRepository {
         data: { workStatus: WorkStatus.AVAILABLE },
       });
       if (updateWorker.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
-      if (nextStation) await tx.workerAssignment.create({ data: { orderId, outletId, stationType: nextStation, status: WorkerAssignmentStatus.QUEUED } });
+      if (nextStation)
+        await tx.workerAssignment.create({ data: { orderId, outletId, stationType: nextStation, status: WorkerAssignmentStatus.QUEUED } });
       else {
         //Bill ada di sini karena payment bisa saja berubah ketika awal pengecekan mutation.
         const bill = await tx.bill.findUnique({ where: { orderId }, select: { paymentStatus: true } });

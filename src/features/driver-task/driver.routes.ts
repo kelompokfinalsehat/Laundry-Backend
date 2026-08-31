@@ -6,13 +6,13 @@ export const DriverRoute = Router();
 
 DriverRoute.get("/task/available", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getAvailableAssignments);
 
+DriverRoute.get("/task/active", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getActiveAssignment);
 DriverRoute.post(
   "/task/:assignmentId/claim",
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized(["DRIVER"]),
   DriverController.claimAssignment,
 );
-DriverRoute.get("/task/active", AuthMiddleware.authenticated(), AuthMiddleware.authorized(["DRIVER"]), DriverController.getActiveAssignment);
 DriverRoute.post(
   "/task/:assignmentId/start",
   AuthMiddleware.authenticated(),

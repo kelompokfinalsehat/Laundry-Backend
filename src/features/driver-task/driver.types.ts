@@ -10,3 +10,5 @@ export type DriverCompleteDeliveryInput = zod.infer<typeof DriverValidation.COMP
 export type DriverHistoryListInput = zod.infer<typeof DriverValidation.HISTORY_LIST>;
 export type DriverHistoryDetailInput = zod.infer<typeof DriverValidation.HISTORY_DETAIL>;
 export type DriverActiveAssignmentDetail = NonNullable<Awaited<ReturnType<typeof DriverRepository.findActiveAssignmentDetail>>>;
+
+export type DriverActiveState = "PICKUP_ASSIGNED" | "PICKUP_TO_CUSTOMER" | "PICKUP_TO_OUTLET" | "DELIVERY_ASSIGNED" | "DELIVERY_TO_CUSTOMER";

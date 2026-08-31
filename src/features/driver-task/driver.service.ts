@@ -7,7 +7,15 @@ import { WorkerRepository } from "../worker/worker.repository";
 
 import { DriverHelper } from "./driver.helper";
 import { DriverRepository } from "./driver.repository";
-import type { DriverAvailableListInput, DriverClaimInput, DriverCompleteDeliveryInput, DriverHistoryDetailInput, DriverHistoryListInput, DriverPickupInput, DriverStartInput } from "./driver.types";
+import type {
+  DriverAvailableListInput,
+  DriverClaimInput,
+  DriverCompleteDeliveryInput,
+  DriverHistoryDetailInput,
+  DriverHistoryListInput,
+  DriverPickupInput,
+  DriverStartInput,
+} from "./driver.types";
 
 export class DriverService {
   static async getAvailableAssignments({ driverId, query }: { driverId: string; query: DriverAvailableListInput["query"] }) {
@@ -39,7 +47,9 @@ export class DriverService {
     const activeAssignment = await DriverRepository.findActiveByDriverId(driver.id);
     if (activeAssignment) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
     const claimableAssignment = await DriverRepository.findOrderScheduledAt({ assignmentId: assignmentId });
-    if (claimableAssignment?.order.pickupScheduledAt! > new Date()) throw new ResponseError("INVALID_STATE_TRANSITION", "Pesanan belum dapat diambil!");
+    if (new Date(claimableAssignment?.order.pickupScheduledAt!).getTime() > Date.now() + 30 * 60 * 1000) {
+      throw new ResponseError("INVALID_STATE_TRANSITION", "Pesanan belum dapat diambil!");
+    }
     return await DriverRepository.claimTransaction({ assignmentId: assignmentId, driverId: driver.id, outletId: driver.currentOutletId });
   }
   static async getActiveAssignment(driverId: string) {
@@ -63,7 +73,13 @@ export class DriverService {
     return await DriverRepository.pickupTransaction({ assignmentId: assignmentId, driverId: driver.id });
   }
 
-  static async completeDelivery({ driverId, assignmentId }: { driverId: string; assignmentId: DriverCompleteDeliveryInput["params"]["assignmentId"] }) {
+  static async completeDelivery({
+    driverId,
+    assignmentId,
+  }: {
+    driverId: string;
+    assignmentId: DriverCompleteDeliveryInput["params"]["assignmentId"];
+  }) {
     const driver = await EmployeeRepository.findById(driverId);
     DriverHelper.assertDriver(driver);
     return await DriverRepository.completeDeliveryTransaction({ assignmentId: assignmentId, driverId: driver.id });
@@ -73,7 +89,11 @@ export class DriverService {
     const driver = await EmployeeRepository.findById(driverId);
     DriverHelper.assertDriver(driver);
     const { startDate, endDate } = DriverHelper.getMonthRange(query.period);
-    const where: Prisma.DriverAssignmentWhereInput = { driverId: driver.id, status: DriverAssignmentStatus.COMPLETED, completedAt: { gte: startDate, lt: endDate } };
+    const where: Prisma.DriverAssignmentWhereInput = {
+      driverId: driver.id,
+      status: DriverAssignmentStatus.COMPLETED,
+      completedAt: { gte: startDate, lt: endDate },
+    };
     if (query.taskType) where.taskType = query.taskType;
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
     const take = query.pageSize;

@@ -20,7 +20,7 @@ const ACTIVE_TASK_SELECT = {
     },
   },
   outlet: {
-    select: { name: true, address: true, latitude: true, longitude: true },
+    select: { name: true, address: true,  latitude: true, longitude: true },
   },
 } satisfies Prisma.DriverAssignmentSelect;
 
