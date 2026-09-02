@@ -1,18 +1,21 @@
 import cron from "node-cron";
 import { runAutoConfirmJob } from "./autoConfirm.services";
+import { logger } from "../../configs/logger.config"; // sesuaikan path
 
 export function startAutoConfirmJob() {
   cron.schedule("*/15 * * * *", async () => {
     try {
       const result = await runAutoConfirmJob();
 
-      console.log(
+      logger.info(
         `[AUTO-CONFIRM] ${result.confirmedCount} order berhasil di-confirm`,
       );
     } catch (error) {
-      console.error("[AUTO-CONFIRM] Job gagal:", error);
+      logger.error("[AUTO-CONFIRM] Job gagal", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   });
 
-  console.log("[AUTO-CONFIRM] Scheduler started");
+  logger.info("[AUTO-CONFIRM] Scheduler started");
 }

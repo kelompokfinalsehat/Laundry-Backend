@@ -1,5 +1,6 @@
 // services/region.service.ts
 import { rajaOngkirClient } from "../../configs/axios.config";
+import { logger } from "../../configs/logger.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { GeocodingUtil } from "../../utils/geocoding.util";
 import {
@@ -17,7 +18,9 @@ export class RegionService {
       const res = await rajaOngkirClient.get("/destination/province");
       return res.data.data as { id: number; name: string }[];
     } catch (error) {
-      console.error("RajaOngkir getProvinces error:", error);
+      logger.error("RajaOngkir getProvinces error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw new ResponseError(
         "GEOCODING_FAILED",
         "Gagal memuat daftar provinsi.",
@@ -32,7 +35,9 @@ export class RegionService {
       );
       return res.data.data as { id: number; name: string }[];
     } catch (error) {
-      console.error("RajaOngkir getCities error:", error);
+      logger.error("RajaOngkir getProvinces error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw new ResponseError(
         "GEOCODING_FAILED",
         "Gagal memuat daftar kota/kabupaten.",
@@ -47,7 +52,9 @@ export class RegionService {
       );
       return res.data.data as { id: number; name: string }[];
     } catch (error) {
-      console.error("RajaOngkir getDistricts error:", error);
+      logger.error("RajaOngkir getProvinces error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw new ResponseError(
         "GEOCODING_FAILED",
         "Gagal memuat daftar kecamatan.",
@@ -62,7 +69,9 @@ export class RegionService {
       );
       return res.data.data as { id: number; name: string }[];
     } catch (error) {
-      console.error("RajaOngkir getSubDistricts error:", error);
+      logger.error("RajaOngkir getProvinces error", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw new ResponseError("GEOCODING_FAILED", "Gagal memuat Kelurahan");
     }
   }
