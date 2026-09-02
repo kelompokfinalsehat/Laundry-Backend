@@ -122,6 +122,11 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "Status saat ini tidak mengizinkan aksi tersebut.",
   },
+  CORS_NOT_ALLOWED: {
+    code: "CORS_NOT_ALLOWED",
+    status: StatusCodes.CONFLICT,
+    message: "Cors tidak memiliki akses untuk api ini.",
+  },
 
   // ===== File Upload =====
   FILE_TYPE_NOT_ALLOWED: {

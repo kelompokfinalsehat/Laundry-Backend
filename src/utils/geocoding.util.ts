@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios";
 import { opencageClient } from "../configs/axios.config";
 import { ResponseError } from "./errors/response-error.utils";
+import { logger } from "../configs/logger.config";
 import haversine from "haversine-distance";
 
 type GeocodeResult = {
@@ -22,19 +23,20 @@ export class GeocodingUtil {
           no_annotations: 1,
         },
       });
-      console.log(
-        "OpenCage results:",
-        JSON.stringify(res.data.results, null, 2),
-      );
+      logger.debug("OpenCage results", {
+        formattedAddress,
+        results: res.data.results,
+      });
     } catch (error) {
       if (isAxiosError(error)) {
-        console.error(
-          "OpenCage HTTP error:",
-          error.response?.status,
-          error.response?.data,
-        );
+        logger.error("OpenCage HTTP error", {
+          status: error.response?.status,
+          data: error.response?.data,
+        });
       } else {
-        console.error("OpenCage request error:", error);
+        logger.error("OpenCage request error", {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
 
       throw new ResponseError(
@@ -66,6 +68,7 @@ export class GeocodingUtil {
       longitude: result.geometry.lng,
     };
   }
+
   static haversineDistanceMeters(
     lat1: number,
     lng1: number,

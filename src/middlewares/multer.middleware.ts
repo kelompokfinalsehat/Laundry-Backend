@@ -1,6 +1,7 @@
 import { Request } from "express";
 import multer, { FileFilterCallback, Multer, StorageEngine } from "multer";
 import path from "path";
+import { ResponseError } from "../utils/errors/response-error.utils";
 
 export class MulterMiddleware {
   private acceptedFiles: string[] = [];
@@ -41,15 +42,20 @@ export class MulterMiddleware {
     return multer.memoryStorage();
   }
 
-  private fileFilter(
-    req: Request,
-    file: Express.Multer.File,
-    cb: FileFilterCallback,
-  ) {
-    if (this.acceptedFiles.includes(file?.mimetype)) return cb(null, true);
+ private fileFilter(
+  req: Request,
+  file: Express.Multer.File,
+  cb: FileFilterCallback,
+) {
+  if (this.acceptedFiles.includes(file?.mimetype)) return cb(null, true);
 
-    return cb(new Error(`File format for ${file.originalname} not accepted`));
-  }
+  return cb(
+    new ResponseError(
+      "FILE_TYPE_NOT_ALLOWED",
+      `Format file ${file.originalname} tidak didukung.`,
+    ),
+  );
+}
 
   public upload(limitsFileSize: number): Multer {
     return multer({
