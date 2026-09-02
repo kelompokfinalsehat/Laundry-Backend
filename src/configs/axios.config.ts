@@ -10,5 +10,8 @@ import { OPENCAGE_BASE_URL } from "./env.config";
 
 export const opencageClient = axios.create({
     baseURL: OPENCAGE_BASE_URL,
-    timeout: 10000
+    timeout: 10000,
+    params: {
+      key: OPENCAGE_API_KEY
+    }
 })
