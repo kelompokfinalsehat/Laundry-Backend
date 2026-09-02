@@ -19,7 +19,6 @@ export class OrderService {
       where: { id: payload.sub },
     });
 
-    // BR-AUTH-01: user belum terverifikasi tidak dapat membuat request pickup.
     if (!customer.isEmailVerified) {
       throw new ResponseError(
         "EMAIL_NOT_VERIFIED",
@@ -27,12 +26,7 @@ export class OrderService {
       );
     }
 
-    if (!body.locationPermissionGranted) {
-      throw new ResponseError("LOCATION_PERMISSION_REQUIRED");
-    }
-
-    // ini di comment supaya bisa di tes kapanpun
-    // const now = new Date();
+    // const now = new Date(body.pickupDate);
     // OrderHelper.assertWithinRequestWindow(now);
 
     const pickupScheduledAt = OrderHelper.buildPickupScheduledAt(
@@ -48,6 +42,43 @@ export class OrderService {
       throw new ResponseError(
         "ADDRESS_FORBIDDEN",
         "Alamat tidak ditemukan atau bukan milik kamu.",
+      );
+    }
+    const startOfDay = new Date(pickupScheduledAt);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(pickupScheduledAt);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingOrder = await prisma.order.findFirst({
+      where: {
+        customerId: customer.id,
+        addressSnapshot: address.formattedAddress,
+        pickupScheduledAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    });
+
+    if (existingOrder) {
+      throw new ResponseError(
+        "DUPLICATE_REQUEST",
+        "Alamat ini sudah memiliki request pickup pada tanggal tersebut.",
+      );
+    }
+    const order = await prisma.order.findFirst({
+      where: {
+        customerId: customer.id,
+        addressSnapshot: address.formattedAddress,
+        pickupScheduledAt: pickupScheduledAt,
+      },
+    });
+
+    if (order) {
+      throw new ResponseError(
+        "DUPLICATE_REQUEST",
+        "Kamu masih memiliki pesanan aktif untuk alamat ini pada tanggal pickup tersebut. Silakan selesaikan atau batalkan pesanan sebelumnya terlebih dahulu.",
       );
     }
 

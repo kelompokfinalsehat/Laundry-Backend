@@ -188,6 +188,16 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "Order ini sudah melewati batas waktu pembayaran.",
   },
+  COMPLAINT_ALREADY_EXISTS: {
+    code: "COMPLAINT_ALREADY_EXISTS",
+    status: StatusCodes.CONFLICT,
+    message: "Order ini sudah memiliki komplain.",
+  },
+  COMPLAINT_WINDOW_CLOSED: {
+    code: "COMPLAINT_WINDOW_CLOSED",
+    status: StatusCodes.CONFLICT,
+    message: "Jendela pengajuan komplain sudah tertutup.",
+  },
 
   // ===== Driver / Worker Assignment (BR-DRV, BR-WRK) =====
   ACTIVE_ASSIGNMENT_EXISTS: {
