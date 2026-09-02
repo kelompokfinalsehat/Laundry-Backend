@@ -4,6 +4,7 @@ import cors from "cors";
 import { API_PREFIX, NODE_ENV, PORT, WHITE_LIST } from './configs/env.config';
 import { errorHandler } from './middlewares/error-handler.middleware';
 import cookieParser from 'cookie-parser';
+import { startAutoConfirmJob } from './features/orderActionCustomer/autoConfirm.job';
 
 
 
@@ -36,6 +37,7 @@ app.use(errorHandler);
 if (NODE_ENV === "development") {
   app.listen(PORT, () => {
     console.log(`[🔌LaundryApp] Application is running on port: ${PORT}`);
+     startAutoConfirmJob();
   });
 }
 
