@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { runAutoConfirmJob } from "./autoconfirm.services";
+import { runAutoConfirmJob } from "./autoConfirm.services";
 
 export function startAutoConfirmJob() {
   cron.schedule("*/15 * * * *", async () => {
