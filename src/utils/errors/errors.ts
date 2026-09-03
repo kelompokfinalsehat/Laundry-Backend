@@ -122,6 +122,11 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "Status saat ini tidak mengizinkan aksi tersebut.",
   },
+  CORS_NOT_ALLOWED: {
+    code: "CORS_NOT_ALLOWED",
+    status: StatusCodes.CONFLICT,
+    message: "Cors tidak memiliki akses untuk api ini.",
+  },
 
   // ===== File Upload =====
   FILE_TYPE_NOT_ALLOWED: {
@@ -187,6 +192,16 @@ export const AppErrors = {
     code: "ORDER_OVERDUE",
     status: StatusCodes.CONFLICT,
     message: "Order ini sudah melewati batas waktu pembayaran.",
+  },
+  COMPLAINT_ALREADY_EXISTS: {
+    code: "COMPLAINT_ALREADY_EXISTS",
+    status: StatusCodes.CONFLICT,
+    message: "Order ini sudah memiliki komplain.",
+  },
+  COMPLAINT_WINDOW_CLOSED: {
+    code: "COMPLAINT_WINDOW_CLOSED",
+    status: StatusCodes.CONFLICT,
+    message: "Jendela pengajuan komplain sudah tertutup.",
   },
 
   // ===== Driver / Worker Assignment (BR-DRV, BR-WRK) =====

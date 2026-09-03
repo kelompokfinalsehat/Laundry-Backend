@@ -21,10 +21,8 @@ import { StatusCodes } from "http-status-codes";
 import { ZodError } from "zod";
 import { Prisma } from "../../generated/prisma"; // sesuaikan path output prisma client di project kalian
 import { ResponseError } from "../utils/errors/response-error.utils";
+import { logger } from "../configs/logger.config"; // sesuaikan path file logger kamu
 
-// Belum pakai logger library (mis. winston/pino). Sementara pakai console.
-// Kalau nanti tim pasang logger, tinggal ganti 2 baris console.* di bawah ini
-// jadi logger.warn(...) / logger.error(...) -- struktur pesan tetap sama.
 export function errorHandler(
   err: unknown,
   req: Request,
@@ -32,33 +30,29 @@ export function errorHandler(
   _next: NextFunction,
 ) {
   const message = err instanceof Error ? err.message : String(err);
-  const stack = err instanceof Error ? err.stack : undefined;
 
   // ResponseError adalah error yang sengaja dilempar (expected), jadi cukup warn.
   // Selain itu dianggap bug tak terduga, jadi di-log sebagai error.
   if (err instanceof ResponseError) {
-    console.warn(`[WARN] ${message}`, {
+    logger.warn(message, {
       path: req.originalUrl,
       code: err.code,
     });
   } else {
-    console.error(`[ERROR] ${message}`, { path: req.originalUrl, stack });
+    logger.error(message, {
+      path: req.originalUrl,
+      ...(err instanceof Error ? { stack: err.stack } : {}),
+    });
   }
 
   // 1. Error validasi Zod (biasanya dari validate() di validation.ts)
   if (err instanceof ZodError) {
-    const fields: Record<string, string[]> = {};
-    for (const issue of err.issues) {
-      const key = issue.path.join(".") || "_";
-      fields[key] = [...(fields[key] ?? []), issue.message];
-    }
-
     return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
       success: false,
       error: {
         code: "VALIDATION_ERROR",
         message: "Data yang dikirim tidak valid.",
-        fields,
+        data: null,
       },
     });
   }

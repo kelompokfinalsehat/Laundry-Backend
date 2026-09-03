@@ -22,9 +22,6 @@ router.use("/internal/worker", WorkerRoute);
 router.use("/internal/profile", EmployeeProfileRoute);
 
 router.use("/auth", authCustomerRoutes);
-
-router.use("/profile", AuthMiddleware.authenticated(), profileCustomerRoutes);
-router.use("/address", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.CUSTOMER]), addressCustomerRoutes);
 router.use("/auth/employee", authEmployeRoutes);
 router.use("/profile", AuthMiddleware.authenticated(), profileCustomerRoutes);
 router.use("/address", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.CUSTOMER]), addressCustomerRoutes);
