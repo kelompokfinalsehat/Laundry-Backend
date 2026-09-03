@@ -62,7 +62,10 @@ export class DriverRepository {
     return activeAssignment;
   }
   static async findOrderScheduledAt({ assignmentId }: { assignmentId: string }) {
-    return prisma.driverAssignment.findFirst({ where: { id: assignmentId }, select: { order: { select: { pickupScheduledAt: true } } } });
+    return prisma.driverAssignment.findFirst({
+      where: { id: assignmentId },
+      select: { taskType: true, order: { select: { pickupScheduledAt: true } } },
+    });
   }
 
   static async claimTransaction({ assignmentId, driverId, outletId }: { assignmentId: string; driverId: string; outletId: string }) {
