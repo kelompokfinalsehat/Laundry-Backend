@@ -18,6 +18,11 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "6.19.3",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/nodemailer": "^8.0.1",
     "axios": "^1.19.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.10.0",
@@ -30,8 +35,11 @@
     "haversine-distance": "^1.2.4",
     "http-status-codes": "^2.3.0",
     "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.12.0",
+    "node-cron": "^4.6.0",
     "nodemailer": "^9.0.4",
     "pg": "^8.22.0",
+    "winston": "^3.19.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

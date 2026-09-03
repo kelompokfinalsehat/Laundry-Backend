@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AttendanceRoute } from "../features/attendance/attendance.routes";
 import { DriverRoute } from "../features/driver-task/driver.routes";
 
-import authCustomerRoutes from "../features/authCustomer/authCustomer.routes";
+import authCustomerRoute from "../features/authCustomer/authCustomer.routes";
 import { WorkerRoute } from "../features/worker/worker.routes";
 import authEmployeRoutes from "../features/authEmployee/authEmployee.routes";
 import profileCustomerRoutes from "../features/cutomerProfile/profile.routes";
@@ -31,7 +31,7 @@ router.use("/internal/driver", DriverRoute);
 router.use("/internal/worker", WorkerRoute);
 router.use("/internal/profile", EmployeeProfileRoute);
 
-router.use("/auth", authCustomerRoutes);
+router.use("/auth", authCustomerRoute);
 
 router.use("/profile", AuthMiddleware.authenticated(), profileCustomerRoutes);
 router.use("/address", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.CUSTOMER]), addressCustomerRoutes);
@@ -54,11 +54,7 @@ router.use("/internal/complaints", complaintRoutes)
 router.use("/internal/reports", reportRoutes)
 router.use("/internal/dashboard", dashboardRoutes)
 
-router.use(
-  "/order",
-  orderCustomerRoutes,
-  payementRoutes,
-);
+router.use("/order", orderCustomerRoutes, payementRoutes);
 router.use("/address", AuthMiddleware.authenticated(), AuthMiddleware.authorized([Role.CUSTOMER]), addressCustomerRoutes);
 router.use("/order", orderCustomerRoutes, payementRoutes);
 router.use("/regions", AuthMiddleware.authenticated(), regionAddressRoutes);
