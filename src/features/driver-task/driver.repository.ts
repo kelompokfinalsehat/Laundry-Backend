@@ -20,7 +20,7 @@ const ACTIVE_TASK_SELECT = {
     },
   },
   outlet: {
-    select: { name: true, address: true,  latitude: true, longitude: true },
+    select: { name: true, address: true, latitude: true, longitude: true },
   },
 } satisfies Prisma.DriverAssignmentSelect;
 
@@ -43,7 +43,12 @@ export class DriverRepository {
         skip,
         take,
         orderBy: { createdAt: sortOrder },
-        select: { id: true, taskType: true, createdAt: true, order: { select: { id: true, orderCode: true } } },
+        select: {
+          id: true,
+          taskType: true,
+          createdAt: true,
+          order: { select: { id: true, orderCode: true, addressSnapshot: true, pickupScheduledAt: true } },
+        },
       }),
     ]);
   }

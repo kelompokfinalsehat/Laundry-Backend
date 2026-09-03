@@ -1,6 +1,6 @@
 import { AccountStatus, Role } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type { EmployeeProfileEntity, EmployeeProfileResponse } from "./employeeProfile.types";
+import type { EmployeeProfileEntity } from "./employeeProfile.types";
 
 export class EmployeeProfileHelper {
   static assertEmployee(employee: EmployeeProfileEntity | null): asserts employee is EmployeeProfileEntity {
