@@ -2,13 +2,10 @@ import { ZodType } from "zod";
 
 export type userPayload = {
   sub: string;
+  role: string
 };
 
-export function validate<T>(
-  schema: ZodType<T>,
-  data: unknown,
-  useSafeParse: boolean = false,
-): T {
+export function validate<T>(schema: ZodType<T>, data: unknown, useSafeParse: boolean = false): T {
   if (useSafeParse) {
     const result = schema.safeParse(data);
     if (!result.success) {
@@ -18,5 +15,3 @@ export function validate<T>(
   }
   return schema.parse(data);
 }
-
-

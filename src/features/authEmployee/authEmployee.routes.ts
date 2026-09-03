@@ -9,5 +9,6 @@ router.post("/login", AuthEmployeeController.login);
 router.post("/accept-invitation", AuthEmployeeController.acceptInvitation);
 router.post("/forgot-password",AuthEmployeeController.forgotPassword)
 router.post("/reset-password",AuthEmployeeController.resetPasword)
-
+router.get("/me", AuthMiddleware.authenticated(), AuthSessionController.getMe);
+router.post("/logout", AuthSessionController.logout);
 export default router;

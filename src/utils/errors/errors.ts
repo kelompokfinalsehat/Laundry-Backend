@@ -6,7 +6,7 @@
  *   (lihat contoh pemakaian di response-error.util.ts).
  */
 
-import { INTERNAL_SERVER_ERROR, StatusCodes } from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 
 export const AppErrors = {
   // ===== Authentication & Token =====
@@ -210,6 +210,17 @@ export const AppErrors = {
     status: StatusCodes.CONFLICT,
     message: "Request bypass ini sudah diputuskan sebelumnya.",
   },
+  WORK_STATUS_NOT_AVAILABLE: {
+    code: "WORK_STATUS_NOT_AVAILABLE",
+    status: StatusCodes.CONFLICT,
+    message: "Status kerja saat ini tidak mengizinkan Anda mengambil tugas.",
+  },
+
+  ASSIGNMENT_ALREADY_CLAIMED: {
+    code: "ASSIGNMENT_ALREADY_CLAIMED",
+    status: StatusCodes.CONFLICT,
+    message: "Tugas ini sudah diambil atau tidak lagi tersedia.",
+  },
 
   // ===== Attendance (BR-ATT) =====
   ATTENDANCE_ALREADY_CLOCKED_IN: {
@@ -226,6 +237,11 @@ export const AppErrors = {
     code: "CLOCK_OUT_BLOCKED",
     status: StatusCodes.CONFLICT,
     message: "Tidak dapat absen pulang karena masih ada tugas aktif.",
+  },
+  ATTENDANCE_STILL_OPEN: {
+    code: "ATTENDANCE_STILL_OPEN",
+    status: StatusCodes.CONFLICT,
+    message: "Anda masih memiliki sesi absen yang belum ditutup. Harap absen pulang terlebih dahulu.",
   },
 
   // ===== Komplain (BR-CMP) =====

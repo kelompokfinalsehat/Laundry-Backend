@@ -1,4 +1,4 @@
-import { DriverAssignmentStatus, Prisma, Role, WorkerAssignmentStatus } from "../../../generated/prisma";
+import { DriverAssignmentStatus, Prisma, Role, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
 import { AttendanceStatus, EmployeeQuery, OutletAttendanceQuery, OutletTeamQuery } from "./employee.type";
@@ -237,5 +237,11 @@ export class EmployeeRepository {
   }
   static async update(id: string, data: Prisma.EmployeeUpdateInput) {
     return await prisma.employee.update({ where: { id }, data, include: this.employeeInclude });
+  }
+  static async updateWorkStatus(employeeId: string, workStatus: WorkStatus, tx: Prisma.TransactionClient) {
+    return await tx.employee.update({
+      where: { id: employeeId },
+      data: { workStatus },
+    });
   }
 }
