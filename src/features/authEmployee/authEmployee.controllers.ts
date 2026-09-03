@@ -12,9 +12,7 @@ export class AuthEmployeeController {
     const { body } = validate(AuthEmployeeValidation.LOGIN_EMPLOYEE, {
       body: req.body,
     });
-
-    const employee = await AuthEmployeeService.login({ body });
-
+     const employee = await AuthEmployeeService.login({ body });
     const accessToken = JWTUtil.signAccessToken({
       sub: employee.id,
       accountType: "employee",

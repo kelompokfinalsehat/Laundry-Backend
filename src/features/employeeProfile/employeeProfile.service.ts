@@ -1,3 +1,4 @@
+import { BcryptUtil } from "../../utils/Auth/bcrypt.utils";
 import { CloudinaryUtil } from "../../utils/cloudinary.utils";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { EmployeeProfileHelper } from "./employeeProfile.helper";
@@ -15,16 +16,16 @@ export class EmployeeProfileService {
   static async updateProfile({ employeeId, body }: { employeeId: string; body: UpdateEmployeeProfileInput["body"] }) {
     const employee = await EmployeeProfileRepository.findById(employeeId);
     EmployeeProfileHelper.assertEmployee(employee);
-    if (body.email !== undefined && body.email !== employee.email) {
-      const existingEmployee = await EmployeeProfileRepository.findByEmail(body.email);
-      if (existingEmployee && existingEmployee.id !== employee.id) {
-        throw new ResponseError("EMAIL_ALREADY_REGISTERED");
-      }
+    let hashedPassword: string | undefined
+    if(body.newPassword){
+      const isCurrentPasswordValid = await BcryptUtil.compare(body.currentPassword!, employee.passwordHash!)
+      if(!isCurrentPasswordValid) throw new ResponseError('CURRENT_PASSWORD_INVALID')
+      hashedPassword = await BcryptUtil.hash(body.newPassword)
     }
     const updateData: UpdateEmployeeProfileData = {
       ...(body.name !== undefined && { name: body.name }),
-      ...(body.email !== undefined && { email: body.email }),
       ...(body.phone !== undefined && { phone: body.phone }),
+      ...(hashedPassword && {passwordHash: hashedPassword} )
     };
     const updatedEmployee = await EmployeeProfileRepository.updateProfile({ employeeId: employee.id, data: updateData });
     return EmployeeProfileHelper.buildProfileResponse(updatedEmployee);

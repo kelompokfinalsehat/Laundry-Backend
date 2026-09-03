@@ -35,6 +35,6 @@ export type EmployeeProfileResponse = {
 
 export type UpdateEmployeeProfileData = {
   name?: string;
-  email?: string;
   phone?: string;
+  passwordHash?: string
 };

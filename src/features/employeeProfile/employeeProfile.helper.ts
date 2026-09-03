@@ -12,7 +12,7 @@ export class EmployeeProfileHelper {
       throw new ResponseError("ACCOUNT_NOT_ACTIVE");
     }
 
-    if (employee.role !== Role.WORKER && employee.role !== Role.DRIVER) {
+    if (employee.role === Role.CUSTOMER) {
       throw new ResponseError("FORBIDDEN");
     }
   }

@@ -10,6 +10,11 @@ import { StatusCodes } from "http-status-codes";
 
 export const AppErrors = {
   // ===== Authentication & Token =====
+  GEOCODING_SERVICE_ERROR: {
+    code: "GEOCODING_SERVICE_ERROR",
+    status: StatusCodes.BAD_GATEWAY,
+    message: "Geocoding service error."
+  },
   AUTHENTICATION_REQUIRED: {
     code: "AUTHENTICATION_REQUIRED",
     status: StatusCodes.UNAUTHORIZED,

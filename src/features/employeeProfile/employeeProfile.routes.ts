@@ -15,21 +15,21 @@ const multerUploads = new MulterMiddleware(
 EmployeeProfileRoute.get(
   "/me",
   AuthMiddleware.authenticated(),
-  AuthMiddleware.authorized(["WORKER", "DRIVER"]),
+  AuthMiddleware.authorized(["WORKER", "DRIVER", "OUTLET_ADMIN", "SUPER_ADMIN"]),
   EmployeeProfileController.getProfile,
 );
 
 EmployeeProfileRoute.patch(
   "/me",
   AuthMiddleware.authenticated(),
-  AuthMiddleware.authorized(["WORKER", "DRIVER"]),
+  AuthMiddleware.authorized(["WORKER", "DRIVER", "OUTLET_ADMIN", "SUPER_ADMIN"]),
   EmployeeProfileController.updateProfile,
 );
 
 EmployeeProfileRoute.patch(
   "/photo",
   AuthMiddleware.authenticated(),
-  AuthMiddleware.authorized(["WORKER", "DRIVER"]),
+  AuthMiddleware.authorized(["WORKER", "DRIVER", "OUTLET_ADMIN", "SUPER_ADMIN"]),
   multerUploads.single("PROFILE_PHOTO"),
   EmployeeProfileController.updateProfilePhoto,
 );
