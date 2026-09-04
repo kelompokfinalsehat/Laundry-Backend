@@ -1,4 +1,11 @@
 {
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    }
+  ],
   "crons": [
     {
       "path": "/api/v1/internal/auto-confirm",
