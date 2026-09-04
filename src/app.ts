@@ -23,15 +23,29 @@ const app = express();
 app.use(
   cors({
     origin(origin, callback) {
+      logger.info("[CORS CHECK]", {
+        origin,
+        whiteList: WHITE_LIST,
+        allowed: !origin || WHITE_LIST.includes(origin),
+      });
+
       if (!origin || WHITE_LIST.includes(origin)) {
         callback(null, true);
         return;
       }
 
+      logger.warn("[CORS BLOCKED]", {
+        origin,
+        whiteList: WHITE_LIST,
+      });
+
       callback(new Error(`Origin ${origin} is not allowed by CORS`));
     },
+
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+
     allowedHeaders: ["Content-Type", "Authorization"],
+
     credentials: true,
   }),
 );
