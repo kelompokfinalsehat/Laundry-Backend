@@ -21,9 +21,10 @@ export async function executeAutoConfirmJob() {
 }
 
 export function startAutoConfirmJob() {
-  cron.schedule("0 * * * *", async () => {
+  // Jalan 1x sehari pada pukul 00:00 UTC
+  cron.schedule("0 0 * * *", async () => {
     await executeAutoConfirmJob();
   });
 
-  logger.info("[AUTO-CONFIRM] Scheduler started");
+  logger.info("[AUTO-CONFIRM] Scheduler started - daily");
 }
