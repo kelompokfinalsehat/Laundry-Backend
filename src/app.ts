@@ -39,11 +39,11 @@ app.use(`${API_PREFIX}/v1`, routes);
 
 app.use(errorHandler);
 
-if (NODE_ENV === "development") {
-  app.listen(PORT, () => {
-    logger.info(`[🔌LaundryApp] Application is running on port: ${PORT}`);
-    startAutoConfirmJob();
-  });
-}
+// if (NODE_ENV === "development") {
+//   app.listen(PORT, () => {
+//     logger.info(`[🔌LaundryApp] Application is running on port: ${PORT}`);
+//     startAutoConfirmJob();
+//   });
+// }
 
 export default app;
