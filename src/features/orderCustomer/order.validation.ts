@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { ORDER_STATUS_GROUPS } from "./order.constans";
+import { ORDER_STATUS_GROUPS } from "./order.constants";
 import { OrderHelper } from "./order.helpers";
 
 const SORTABLE_FIELDS = ["createdAt", "pickupDate"] as const;
@@ -23,15 +23,15 @@ export class OrderCustomerValidation {
           ),
       })
       .refine(
-  (data) => {
-    const today = OrderHelper.getTodayInJakarta();
-    return data.pickupDate === today;
-  },
-  {
-    message: "Tanggal pickup harus hari ini",
-    path: ["pickupDate"],
-  },
-)
+        (data) => {
+          const today = OrderHelper.getTodayInJakarta();
+          return data.pickupDate === today;
+        },
+        {
+          message: "Tanggal pickup harus hari ini",
+          path: ["pickupDate"],
+        },
+      )
       .refine(
         (data) => {
           const pickupDateTime = new Date(
