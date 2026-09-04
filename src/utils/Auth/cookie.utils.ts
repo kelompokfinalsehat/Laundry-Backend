@@ -12,7 +12,7 @@ export class AuthCookieUtil {
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: this.isProd,
-      sameSite: "strict",
+      sameSite: this.isProd ? "none" : "strict",
       path: "/",
       maxAge: TOKEN_MAX_AGE_MS,
     });
@@ -20,8 +20,8 @@ export class AuthCookieUtil {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: this.isProd,
-      sameSite: "strict",
-      path: "/api/v1/auth",
+      sameSite: this.isProd ? "none" : "strict",
+      path: "/",
       maxAge: TOKEN_MAX_AGE_MS,
     });
   }
@@ -30,15 +30,15 @@ export class AuthCookieUtil {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: this.isProd,
+      sameSite: this.isProd ? "none" : "strict",
       path: "/",
-      sameSite: "strict",
     });
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: this.isProd,
-      sameSite: "strict",
-      path: "/api/v1/auth",
+      sameSite: this.isProd ? "none" : "strict",
+      path: "/",
     });
   }
 }
