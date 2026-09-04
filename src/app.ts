@@ -11,24 +11,11 @@ import { errorHandler } from "./middlewares/error-handler.middleware";
 import cookieParser from "cookie-parser";
 import { startAutoConfirmJob } from "./features/orderActionCustomer/autoConfirm.job";
 import { logger } from "./configs/logger.config";
-import { ResponseError } from "./utils/errors/response-error.utils";
+
+import { MorganMiddleware } from "./middlewares/morgan.middleware";
 
 const app = express();
 
-/**
- * Request logger
- * Harus diletakkan paling awal supaya semua request
- * termasuk OPTIONS/preflight tercatat.
- */
-app.use((req, _res, next) => {
-  logger.info(
-    `[REQUEST] ${req.method} ${req.originalUrl} | Origin: ${
-      req.headers.origin ?? "-"
-    }`,
-  );
-
-  next();
-});
 
 /**
  * CORS
@@ -41,35 +28,19 @@ app.use(
         return;
       }
 
-      callback(
-        new ResponseError(
-          "CORS_NOT_ALLOWED",
-          `Origin ${origin} tidak diizinkan mengakses API ini.`,
-        ),
-      );
+      callback(new Error(`Origin ${origin} is not allowed by CORS`));
     },
-
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-    ],
-
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-    ],
-
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
 
+
 app.use(express.json());
 app.use(cookieParser());
 
+app.use(MorganMiddleware.handler());
 /**
  * API routes
  */
@@ -80,6 +51,11 @@ app.use(`${API_PREFIX}/v1`, routes);
  */
 app.use(errorHandler);
 
+if (
+  (NODE_ENV === "development" || NODE_ENV === "production") 
+) {
+  startAutoConfirmJob();
+}
 /**
  * Development server
  *
@@ -88,13 +64,7 @@ app.use(errorHandler);
  */
 // if (NODE_ENV === "development") {
 //   app.listen(PORT, () => {
-//     logger.info(
-//       `[🔌LaundryApp] Application is running on port: ${PORT}`,
-//     );
-
-//     logger.info(
-//       "[⏰AutoConfirm] Starting auto confirmation job...",
-//     );
+//     logger.info(`[🔌LaundryApp] Application is running on port: ${PORT}`);
 
 //     startAutoConfirmJob();
 //   });
