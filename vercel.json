@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/internal/auto-confirm",
+      "schedule": "0 17 * * *"
+    }
+  ]
+}

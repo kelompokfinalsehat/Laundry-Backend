@@ -24,6 +24,7 @@ import customerRoutes from "../features/customer/customer.route";
 import complaintRoutes from "../features/complaint/complaint.route";
 import reportRoutes from "../features/report/report.route";
 import dashboardRoutes from "../features/dashboard/dashboard.route";
+import internalRoutes from "../features/orderActionCustomer/autoConfirm.routes"
 
 import { AuthMiddleware } from "../middlewares/auth.middlewares";
 
@@ -59,5 +60,8 @@ router.use("/internal/customers", customerRoutes);
 router.use("/internal/complaints", complaintRoutes);
 router.use("/internal/reports", reportRoutes);
 router.use("/internal/dashboard", dashboardRoutes);
+
+// jobs
+router.use("/job", internalRoutes);
 
 export default router;
