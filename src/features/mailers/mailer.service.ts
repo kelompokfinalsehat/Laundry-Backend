@@ -1,9 +1,9 @@
 
-import { EMAIL_VERIFICATION_EXPIRY_HOURS, PASSWORD_RESET_EXPIRY_HOURS} from "../../configs/env.config";
+import { APP_BASE_URL, EMAIL_VERIFICATION_EXPIRY_HOURS, PASSWORD_RESET_EXPIRY_HOURS} from "../../configs/env.config";
 import { MailerUtil } from "../../utils/mailer/mailer.utils";
 import { TemplateUtil } from "../../utils/mailer/template/tamplate.util";
  
-const APP_BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:3000";
+
 
  
 type SendEmailVerificationParams = {

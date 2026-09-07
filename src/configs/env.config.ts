@@ -3,6 +3,7 @@ import "dotenv/config";
 export const NODE_ENV = process.env.NODE_ENV;
 export const PORT = parseInt(process.env.PORT as string) || 8001;
 export const API_PREFIX = process.env.API_PREFIX;
+export const APP_BASE_URL = process.env.APP_BASE_URL ;
 
 // ===== cors ===== //
 export const WHITE_LIST = (process.env.WHITE_LIST ?? "http://localhost:3000")
@@ -50,3 +51,4 @@ export const MIDTRANS_IS_PRODUCTION =
 export const MIDTRANS_SNAP_BASE_URL = MIDTRANS_IS_PRODUCTION
   ? "https://app.midtrans.com/snap/v1/transactions"
   : "https://app.sandbox.midtrans.com/snap/v1/transactions";
+

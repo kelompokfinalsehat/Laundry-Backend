@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { RegionService } from "./region.services";
 import { validate } from "../../validations/validate";
 import { RegionValidation } from "./region.validations";
-import { GeocodingUtil } from "../../utils/geocoding.util";
+
 
 export class RegionController {
   static async getProvinces(req: Request, res: Response) {
@@ -39,6 +39,7 @@ export class RegionController {
     const { body } = validate(RegionValidation.PREVIEW_LOCATION, {
       body: req.body,
     });
+    
 
     const data = await RegionService.previewLocation({ body });
     res.json({ success: true, data });
