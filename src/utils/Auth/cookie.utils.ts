@@ -21,7 +21,7 @@ export class AuthCookieUtil {
       httpOnly: true,
       secure: this.isProd,
       sameSite: this.isProd ? "none" : "strict",
-      path: "/api/v1/auth",
+      path: "/api/v1/auth/refresh",
       maxAge: TOKEN_MAX_AGE_MS,
     });
   }
@@ -38,7 +38,7 @@ export class AuthCookieUtil {
       httpOnly: true,
       secure: this.isProd,
       sameSite: this.isProd ? "none" : "strict",
-      path: "/api/v1/auth",
+      path: "/api/v1/auth/refresh",
     });
   }
 }
