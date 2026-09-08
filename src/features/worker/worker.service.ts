@@ -2,10 +2,18 @@ import { CustomerStatus, WorkerAssignmentStatus, WorkStatus, type Prisma } from 
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { EmployeeRepository } from "../employee/employee.repository";
 import { WorkerHelper } from "./worker.helper";
-import type { WorkerAvailableAssignmentInput, WorkerClaimInput, WorkerCompleteInput, WorkerHistoryInput, WorkerRequestBypassInput, WorkerValidateQuantitiesInput } from "./worker.types";
+import type {
+  WorkerAvailableAssignmentInput,
+  WorkerClaimInput,
+  WorkerCompleteInput,
+  WorkerHistoryInput,
+  WorkerRequestBypassInput,
+  WorkerValidateQuantitiesInput,
+} from "./worker.types";
 import { WorkerRepository } from "./worker.repository";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { AttendanceRepository } from "../attendance/attendance.repository";
+import { OperatingHoursUtil } from "../../utils/operating-hours.util";
 
 export class WorkerService {
   static async getAvailableAssignments({ workerId, query }: { workerId: string; query: WorkerAvailableAssignmentInput["query"] }) {
@@ -45,6 +53,7 @@ export class WorkerService {
   }
 
   static async claimAssignment({ workerId, assignmentId }: { workerId: string; assignmentId: WorkerClaimInput["params"]["assignmentId"] }) {
+    OperatingHoursUtil.assertOperatingHour();
     const worker = await EmployeeRepository.findById(workerId);
     WorkerHelper.assertWorkerValidity(worker);
     if (worker.workStatus !== WorkStatus.AVAILABLE) throw new ResponseError("WORK_STATUS_NOT_AVAILABLE");
@@ -82,7 +91,8 @@ export class WorkerService {
     WorkerHelper.assertWorkerValidity(worker);
     const assignment = await WorkerRepository.findValidatableAssignment({ workerId, assignmentId }); // pengecekan ownership tugas, status tugas digabungkan dalam query prisma where
     if (!assignment) throw new ResponseError("RESOURCE_NOT_FOUND");
-    if (assignment.attempt >= WorkerHelper.MAX_ATTEMPT) throw new ResponseError("INVALID_STATE_TRANSITION", "Batas Validasi Quantity anda telah habis!");
+    if (assignment.attempt >= WorkerHelper.MAX_ATTEMPT)
+      throw new ResponseError("INVALID_STATE_TRANSITION", "Batas Validasi Quantity anda telah habis!");
     const orderItems = assignment.order.orderItems;
     const inputItems = items;
     const compare = WorkerHelper.compareQuantity({ orderItems, inputItems });
