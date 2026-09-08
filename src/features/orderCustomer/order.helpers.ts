@@ -32,34 +32,39 @@ export class OrderHelper {
   }
 
   static buildPickupScheduledAt(pickupDate: string, pickupTime: string): Date {
-    // NOTE: konstruksi naive, asumsi server jalan di timezone yang sama
-    // dengan operasional outlet (WIB/Asia-Jakarta). Kalau server di-deploy
-    // di timezone lain, ini perlu di-convert eksplisit.
-    const scheduledAt = new Date(`${pickupDate}T${pickupTime}:00`);
-
+    // Eksplisit +07:00 (WIB) — regardless timezone server yang menjalankan
+    // kode ini. Sebelumnya `new Date(\`${pickupDate}T${pickupTime}:00\`)`
+    // tanpa offset di-parse pakai timezone LOKAL SERVER: benar secara
+    // kebetulan kalau server WIB, tapi salah 7 jam kalau server UTC
+    // (mis. banyak platform hosting default ke UTC).
+    const scheduledAt = new Date(`${pickupDate}T${pickupTime}:00+07:00`);
+ 
     if (Number.isNaN(scheduledAt.getTime())) {
       throw new ResponseError(
         "INVALID_PICKUP_DATE",
         "Tanggal atau jam pickup tidak valid.",
       );
     }
-
-    const day = scheduledAt.getDay();
-    if (day === 0) {
+ 
+    // Pakai representasi Jakarta yang sama seperti assertWithinRequestWindow
+    // (toJakartaTime + getUTC*), bukan getDay() lokal-server — supaya hari
+    // yang dicek konsisten dan tidak ikut bergantung timezone environment.
+    const jakartaDay = toJakartaTime(scheduledAt).getUTCDay();
+    if (jakartaDay === 0) {
       // BR-PICKUP-02: tanggal pickup hanya boleh Senin-Sabtu.
       throw new ResponseError(
         "INVALID_PICKUP_DATE",
         "Tanggal pickup tidak boleh hari Minggu.",
       );
     }
-
+ 
     if (scheduledAt.getTime() <= Date.now()) {
       throw new ResponseError(
         "INVALID_PICKUP_DATE",
         "Tanggal/jam pickup harus di masa depan.",
       );
     }
-
+ 
     return scheduledAt;
   }
 
