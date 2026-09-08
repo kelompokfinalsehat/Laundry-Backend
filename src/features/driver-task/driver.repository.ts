@@ -109,13 +109,14 @@ export class DriverRepository {
       });
       const assignment = updateAssignment[0];
       if (!assignment) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status tugas gagal!");
-      const expectedOrderStatus =
-        assignment.taskType === PickupDeliveryType.PICKUP ? CustomerStatus.WAITING_DRIVER_PICKUP : CustomerStatus.READY_FOR_DELIVERY;
-      const updateCustomerStatus = await tx.order.updateMany({
-        where: { id: assignment.order.id, customerStatus: expectedOrderStatus },
-        data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
-      });
-      if (updateCustomerStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status order gagal!");
+      if (assignment.taskType === PickupDeliveryType.DELIVERY) {
+        const updateCustomerStatus = await tx.order.updateMany({
+          where: { id: assignment.order.id, customerStatus: CustomerStatus.READY_FOR_DELIVERY },
+          data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
+        });
+        if (updateCustomerStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status order gagal!");
+      }
+
       return { id: assignment.id, taskType: assignment.taskType, status: assignment.status };
     });
   }
@@ -136,7 +137,7 @@ export class DriverRepository {
       const assignment = updateAssignment[0];
       if (!assignment) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status tugas gagal!");
       const updateCustomerStatus = await tx.order.updateMany({
-        where: { id: assignment.order.id, customerStatus: CustomerStatus.ON_THE_WAY_TO_CUSTOMER },
+        where: { id: assignment.order.id, customerStatus: CustomerStatus.WAITING_DRIVER_PICKUP },
         data: { customerStatus: CustomerStatus.ON_THE_WAY_TO_OUTLET },
       });
       if (updateCustomerStatus.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION", "Perubahan status order gagal");

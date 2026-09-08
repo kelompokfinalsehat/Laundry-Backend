@@ -1,4 +1,4 @@
-import { DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
+import { DriverAssignmentStatus, PickupDeliveryType, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { OperatingHoursUtil } from "../../utils/operating-hours.util";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
@@ -48,8 +48,10 @@ export class DriverService {
     const activeAssignment = await DriverRepository.findActiveByDriverId(driver.id);
     if (activeAssignment) throw new ResponseError("ACTIVE_ASSIGNMENT_EXISTS");
     const claimableAssignment = await DriverRepository.findOrderScheduledAt({ assignmentId: assignmentId });
-    if (new Date(claimableAssignment?.order.pickupScheduledAt!).getTime() > Date.now() + 30 * 60 * 1000) {
-      throw new ResponseError("INVALID_STATE_TRANSITION", "Pesanan belum dapat diambil!");
+    if (claimableAssignment?.taskType === PickupDeliveryType.PICKUP) {
+      if (new Date(claimableAssignment?.order.pickupScheduledAt!).getTime() > Date.now() + 60 * 60 * 1000) { // baru bisa diambil 1 jam sebelum jadwal
+        throw new ResponseError("INVALID_STATE_TRANSITION", "Pesanan belum dapat diambil!");
+      }
     }
     return await DriverRepository.claimTransaction({ assignmentId: assignmentId, driverId: driver.id, outletId: driver.currentOutletId });
   }
