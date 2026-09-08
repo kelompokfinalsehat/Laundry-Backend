@@ -146,7 +146,7 @@ export class ReportHelper {
     for (const bill of bills) {
       if (!bill.paidAt) continue;
 
-      const label = this.getBucketLabel(new Date(bill.paidAt), period);
+      const label = this.getBucketLabel(new Date(bill.paidAt.getTime() + 7 * 60 * 60 * 1000), period);
       const bucket = buckets.get(label);
 
       if (!bucket) continue;
