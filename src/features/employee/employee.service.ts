@@ -99,7 +99,7 @@ export class EmployeeService {
     const employee = await EmployeeHelper.findEmployeeByIdOrThrow(id);
     if (employee.accountStatus !== AccountStatus.ACTIVE)
       throw new ResponseError("CONFLICT", "Akun sudah tidak aktif.");
-    if (employee.workStatus === WorkStatus.BUSY)
+    if (employee.workStatus !== WorkStatus.OFF_DUTY && employee.workStatus !== null)
       throw new ResponseError("CONFLICT", "Employee sedang sibuk.");
     const updateData: Prisma.EmployeeUpdateInput = {
       accountStatus: AccountStatus.INACTIVE,

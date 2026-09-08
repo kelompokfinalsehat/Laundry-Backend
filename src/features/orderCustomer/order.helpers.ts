@@ -2,7 +2,7 @@ import { ResponseError } from "../../utils/errors/response-error.utils";
 import {
   CUSTOMER_STATUS_LABELS,
   CUSTOMER_STATUS_ORDER,
-} from "./order.constans";
+} from "./order.constants";
 
 const OPERATIONAL_START_HOUR = 8; // BR-OUTLET-01
 const OPERATIONAL_END_HOUR = 19; // BR-PICKUP-01 (jendela request, bukan jam tutup outlet 20.00)

@@ -3,6 +3,7 @@ import "dotenv/config";
 export const NODE_ENV = process.env.NODE_ENV;
 export const PORT = parseInt(process.env.PORT as string) || 8001;
 export const API_PREFIX = process.env.API_PREFIX;
+export const APP_BASE_URL = process.env.APP_BASE_URL ;
 
 // ===== cors ===== //
 export const WHITE_LIST = (process.env.WHITE_LIST ?? "http://localhost:3000")
@@ -29,7 +30,7 @@ export const CLOUDINARY_API_SECRET = process.env
 
 // ===== jwt & token ===== //
 export const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
-export const ACCESS_TOKEN_EXPIRES_IN = "7d";
+export const ACCESS_TOKEN_EXPIRES_IN = "15m";
 export const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 30 hari
 export const EMAIL_VERIFICATION_EXPIRY_HOURS = 1;
 export const PASSWORD_RESET_EXPIRY_HOURS = 1;
@@ -50,3 +51,4 @@ export const MIDTRANS_IS_PRODUCTION =
 export const MIDTRANS_SNAP_BASE_URL = MIDTRANS_IS_PRODUCTION
   ? "https://app.midtrans.com/snap/v1/transactions"
   : "https://app.sandbox.midtrans.com/snap/v1/transactions";
+
