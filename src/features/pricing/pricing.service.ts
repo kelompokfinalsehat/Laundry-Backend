@@ -5,7 +5,7 @@ import { CreateShippingRateBody, LaundryPricingBody, ShippingRateQuery, UpdateSh
 
 export class PricingService {
     static async getLaundryPricing(){
-        const laundryPricing = await PricingHelper.findLaundryPricingOrThrow()
+        const laundryPricing = await PricingRepository.findCurrentLaundryPricing()
         return laundryPricing
     }
     static async createLaundryPricing(body: LaundryPricingBody){
