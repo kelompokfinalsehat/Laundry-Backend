@@ -1,5 +1,6 @@
 import { DriverAssignmentStatus, WorkStatus, type Prisma } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
+import { OperatingHoursUtil } from "../../utils/operating-hours.util";
 import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { AttendanceRepository } from "../attendance/attendance.repository";
 import { EmployeeRepository } from "../employee/employee.repository";
@@ -37,6 +38,7 @@ export class DriverService {
     return { data: availableList, meta };
   }
   static async claimAssignment({ driverId, assignmentId }: { driverId: string; assignmentId: DriverClaimInput["params"]["assignmentId"] }) {
+    OperatingHoursUtil.assertOperatingHour();
     const driver = await EmployeeRepository.findById(driverId);
     DriverHelper.assertDriver(driver);
     const attendanceDate = DriverHelper.getAttendanceDateWIB(); // Rules menjaga driver lupa CLOCK-OUT, Driver harus punya attendance hari ini agar bisa claim job!
@@ -51,6 +53,7 @@ export class DriverService {
     }
     return await DriverRepository.claimTransaction({ assignmentId: assignmentId, driverId: driver.id, outletId: driver.currentOutletId });
   }
+
   static async getActiveAssignment(driverId: string) {
     const driver = await EmployeeRepository.findById(driverId);
     DriverHelper.assertDriver(driver);

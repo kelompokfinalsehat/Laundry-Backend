@@ -5,9 +5,11 @@ import { countSkip, makePaginationMeta } from "../../utils/pagination.util";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 import { AttendanceHelper } from "./attendance.helper";
 import type { AttendanceHistoryInput } from "./attendance.types";
+import { OperatingHoursUtil } from "../../utils/operating-hours.util";
 
 export class AttendanceService {
   static async clockIn(employeeId: string) {
+    OperatingHoursUtil.assertOperatingHour();
     const employee = await EmployeeRepository.findById(employeeId);
     AttendanceHelper.assertEmployee(employee);
     const openAttendance = await AttendanceRepository.findOpenAttendance(employee.id);
@@ -38,11 +40,11 @@ export class AttendanceService {
   }
 
   static async getHistory({ employeeId, query }: { employeeId: string; query: AttendanceHistoryInput["query"] }) {
-    const employee = await EmployeeRepository.findById(employeeId)
-    AttendanceHelper.assertEmployee(employee)
+    const employee = await EmployeeRepository.findById(employeeId);
+    AttendanceHelper.assertEmployee(employee);
     const skip = countSkip({ page: query.page, pageSize: query.pageSize });
     const take = query.pageSize;
-    const { startDate, endDate,totalDays } = AttendanceHelper.getEffectiveAttendanceRange(query.period,employee.createdAt);
+    const { startDate, endDate, totalDays } = AttendanceHelper.getEffectiveAttendanceRange(query.period, employee.createdAt);
     const where: Prisma.AttendanceWhereInput = { employeeId, attendanceDate: { gte: startDate, lt: endDate } };
     const [totalItems, attendanceHistory] = await AttendanceRepository.findAttendancePaginated({ where, skip, take, sortOrder: query.sortOrder });
     const meta = makePaginationMeta({ page: query.page, pageSize: query.pageSize, totalItems });
@@ -51,7 +53,7 @@ export class AttendanceService {
     if (absentDay < 0) absentDay = 0;
     const summary = {
       period: query.period,
-      totalDays:totalDays,
+      totalDays: totalDays,
       presentDays: presentDay,
       absentDays: absentDay,
     };
