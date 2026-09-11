@@ -76,12 +76,12 @@ if (
  * startAutoConfirmJob hanya dijalankan sekali
  * ketika server development benar-benar start.
  */
-// if (NODE_ENV === "development") {
-//   app.listen(PORT, () => {
-//     logger.info(`[🔌LaundryApp] Application is running on port: ${PORT}`);
+if (NODE_ENV === "development") {
+  app.listen(PORT, () => {
+    logger.info(`[🔌LaundryApp] Application is running on port: ${PORT}`);
 
-//     startAutoConfirmJob();
-//   });
-// }
+    startAutoConfirmJob();
+  });
+}
 
 export default app;
