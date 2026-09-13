@@ -1,5 +1,6 @@
 import { runOverdueCheckJob } from "./overdueCheck.services";
 import { logger } from "../../configs/logger.config";
+import cron from "node-cron";
 
 export async function executeOverdueCheckJob() {
   try {
@@ -17,4 +18,13 @@ export async function executeOverdueCheckJob() {
 
     throw error;
   }
+}
+
+export function startOverdueCheckJob() {
+  // Jalan 1x sehari pada pukul 00:00 UTC
+  cron.schedule("0 0 * * *", async () => {
+    await executeOverdueCheckJob();
+  });
+
+  logger.info("[OVERDUE-CHECK] Scheduler started - daily");
 }
