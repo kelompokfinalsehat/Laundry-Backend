@@ -1,4 +1,4 @@
-import { Prisma } from "../../../generated/prisma";
+import { ComplaintStatus, Prisma } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { PaginationHelper } from "../../helpers/pagination.helper";
 import { ComplaintHelper } from "./complaint.helper";
@@ -20,9 +20,9 @@ export class ComplaintRepository {
     static async findById(id: string, outletId?: string){
         return prisma.complaint.findFirst({where: {id, ...(outletId && {order: {outletId}})}, include: ComplaintHelper.detailInclude})
     }
-    static async decide({id, handledBy, decision, responseNote}:DecideDTOParams){
+    static async decide({id, handledBy, responseNote}:DecideDTOParams){
         return prisma.complaint.update({where: {id}, data: {
-            status: decision,
+            status: ComplaintStatus.APPROVED,
             handledBy,
             responseNote,
             decidedAt: new Date()

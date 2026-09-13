@@ -30,7 +30,6 @@ export class ComplaintValidation {
   };
   static readonly BODY = {
     decide: z.object({
-        decision: z.enum([ComplaintStatus.APPROVED, ComplaintStatus.REJECTED]),
         responseNote: z.string().trim().min(1)
     })
   };

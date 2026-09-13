@@ -16,12 +16,12 @@ export class ComplaintService {
         return complaint
     }
     static async decideComplaint(id: string, body: DecideComplaintBody, outletAdminId: string){
-        const {decision, responseNote} = body
+        const {responseNote} = body
         const employee = await EmployeeHelper.findEmployeeByIdOrThrow(outletAdminId)
         if(!employee.currentOutletId) throw new ResponseError('FORBIDDEN', 'Outlet admin belum memiliki outlet akitf.')
         const complaint = await ComplaintRepository.findById(id, employee.currentOutletId)
         if(!complaint) throw new ResponseError('RESOURCE_NOT_FOUND', 'Complaint tidak ditemukan.')
         if(complaint.status !== ComplaintStatus.OPEN) throw new ResponseError('CONFLICT', 'Complaint ini sudah diputuskan.')
-        return ComplaintRepository.decide({id, handledBy: employee.id, decision, responseNote})
+        return ComplaintRepository.decide({id, handledBy: employee.id, responseNote})
     }
 }
