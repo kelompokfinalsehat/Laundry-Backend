@@ -92,6 +92,7 @@ export class PaymentService {
     return {
       id: latest.id,
       status: latest.status,
+      gatewayOrderId: latest.gatewayOrderId,
       amount: latest.amount,
       redirectUrl: latest.redirectUrl,
       isFinal: latest.isFinal,
