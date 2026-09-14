@@ -1,21 +1,7 @@
-import {
-  BillPaymentStatus,
-  BypassStatus,
-  CustomerStatus,
-  DriverAssignmentStatus,
-  PickupDeliveryType,
-  WorkerAssignmentStatus,
-  WorkStatus,
-} from "../../../generated/prisma";
+import { BillPaymentStatus, BypassStatus, CustomerStatus, DriverAssignmentStatus, PickupDeliveryType, WorkerAssignmentStatus, WorkStatus } from "../../../generated/prisma";
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import type {
-  CompleteTransactionTypes,
-  CreateBypassTypes,
-  FindAvailablePaginated,
-  FindHistoryPaginated,
-  UpdateValidateTransactionTypes,
-} from "./worker.types";
+import type { CompleteTransactionTypes, CreateBypassTypes, FindAvailablePaginated, FindHistoryPaginated, UpdateValidateTransactionTypes } from "./worker.types";
 
 export class WorkerRepository {
   static async findAvailablePaginated({ where, skip, take, sortOrder }: FindAvailablePaginated) {
@@ -165,8 +151,7 @@ export class WorkerRepository {
         data: { workStatus: WorkStatus.AVAILABLE },
       });
       if (updateWorker.count !== 1) throw new ResponseError("INVALID_STATE_TRANSITION");
-      if (nextStation)
-        await tx.workerAssignment.create({ data: { orderId, outletId, stationType: nextStation, status: WorkerAssignmentStatus.QUEUED } });
+      if (nextStation) await tx.workerAssignment.create({ data: { orderId, outletId, stationType: nextStation, status: WorkerAssignmentStatus.QUEUED } });
       else {
         //Bill ada di sini karena payment bisa saja berubah ketika awal pengecekan mutation.
         const bill = await tx.bill.findUnique({ where: { orderId }, select: { paymentStatus: true } });
@@ -175,7 +160,7 @@ export class WorkerRepository {
           where: { id: orderId },
           data: { customerStatus: paid ? CustomerStatus.READY_FOR_DELIVERY : CustomerStatus.WAITING_PAYMENT },
         });
-        await tx.bill.update({where:{orderId},data:{expiresAt:new Date()}})
+        await tx.bill.update({ where: { orderId }, data: { expiresAt: new Date(Date.now() + 24 * 7 * 60 * 60 * 1000) } });
         if (paid)
           await tx.driverAssignment.upsert({
             where: { orderId_taskType: { orderId, taskType: PickupDeliveryType.DELIVERY } },

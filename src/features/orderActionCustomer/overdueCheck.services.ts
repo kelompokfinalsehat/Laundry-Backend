@@ -1,41 +1,29 @@
 import { prisma } from "../../configs/prisma-client.config";
 
-const OVERDUE_WINDOW_DAYS = 7;
-
 export async function runOverdueCheckJob(): Promise<{ overdueCount: number }> {
-  const deadline = new Date(Date.now() - OVERDUE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const deadline = new Date();
 
-  const candidates = await prisma.bill.findMany({
+  const overdueBills = await prisma.bill.findMany({
     where: {
       expiresAt: { lte: deadline },
       paymentStatus: "UNPAID",
       order: { customerStatus: { not: "OVERDUE" } },
     },
-    select: { id: true, orderId: true },
+    select: { orderId: true },
+    distinct: ["orderId"],
   });
 
-  let overdueCount = 0;
-
-  for (const bill of candidates) {
-    const updated = await prisma.$transaction(async (tx) => {
-      const stillEligible = await tx.bill.findFirst({
-        where: {
-          id: bill.id,
-          paymentStatus: "UNPAID",
-          order: { customerStatus: { not: "OVERDUE" } },
-        },
-      });
-      if (!stillEligible) return false;
-
-      await tx.order.update({
-        where: { id: bill.orderId },
-        data: { customerStatus: "OVERDUE" },
-      });
-      return true;
-    });
-
-    if (updated) overdueCount += 1;
+  if (overdueBills.length === 0) {
+    return { overdueCount: 0 };
   }
 
-  return { overdueCount };
+  const result = await prisma.order.updateMany({
+    where: {
+      id: { in: overdueBills.map((b) => b.orderId) },
+      customerStatus: { not: "OVERDUE" },
+    },
+    data: { customerStatus: "OVERDUE" },
+  });
+
+  return { overdueCount: result.count };
 }

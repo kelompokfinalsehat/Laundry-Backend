@@ -45,6 +45,8 @@ export class AuthSessionController {
         name: employee.name,
         email: employee.email,
         role: employee.role,
+        phone: employee.phone,
+        profilePhotoUrl: employee.profilePhotoUrl,
         accountType: "employee",
         isEmailVerified: true,
       },
