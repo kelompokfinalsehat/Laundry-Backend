@@ -7,7 +7,7 @@ export async function runOverdueCheckJob(): Promise<{ overdueCount: number }> {
 
   const candidates = await prisma.bill.findMany({
     where: {
-      expiredAt: { lte: deadline },
+      expiresAt: { lte: deadline },
       paymentStatus: "UNPAID",
       order: { customerStatus: { not: "OVERDUE" } },
     },
