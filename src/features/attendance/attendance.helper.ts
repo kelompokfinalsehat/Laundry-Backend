@@ -1,33 +1,18 @@
-import {
-  AccountStatus,
-  Role,
-  WorkStatus,
-  type Attendance,
-  type Employee,
-} from "../../../generated/prisma";
+import { AccountStatus, Role, WorkStatus, type Attendance, type Employee } from "../../../generated/prisma";
 import { ResponseError } from "../../utils/errors/response-error.utils";
 
 export class AttendanceHelper {
   // CHECKER UMUM dipakai untuk beberapa Function
-  static assertEmployee(
-    employee: Employee | null,
-  ): asserts employee is Employee & { currentOutletId: string } {
+  static assertEmployee(employee: Employee | null): asserts employee is Employee & { currentOutletId: string } {
     if (!employee) throw new ResponseError("RESOURCE_NOT_FOUND", "Akun tidak ditemukan!");
-    if (employee.accountStatus !== AccountStatus.ACTIVE)
-      throw new ResponseError("ACCOUNT_NOT_ACTIVE");
-    if (employee.role !== Role.DRIVER && employee.role !== Role.WORKER)
-      throw new ResponseError("FORBIDDEN");
-    if (employee.currentOutletId === null)
-      throw new ResponseError(
-        "INVALID_STATE_TRANSITION",
-        "Anda tidak terdaftar di outlet aktif manapun!",
-      );
+    if (employee.accountStatus !== AccountStatus.ACTIVE) throw new ResponseError("ACCOUNT_NOT_ACTIVE");
+    if (employee.role !== Role.DRIVER && employee.role !== Role.WORKER) throw new ResponseError("FORBIDDEN");
+    if (employee.currentOutletId === null) throw new ResponseError("INVALID_STATE_TRANSITION", "Anda tidak terdaftar di outlet aktif manapun!");
   }
 
   static assertWorkStatus(employee: Employee, expectedWorkStatus: (WorkStatus | null)[]) {
     // Parameter ExpectedWorkStatus -> Array flexible mengecek WorkStatus sesuai yg diijinkan
-    if (!expectedWorkStatus.includes(employee.workStatus))
-      throw new ResponseError("INVALID_STATE_TRANSITION");
+    if (!expectedWorkStatus.includes(employee.workStatus)) throw new ResponseError("INVALID_STATE_TRANSITION");
   }
 
   // DATE-HELPER
@@ -60,10 +45,11 @@ export class AttendanceHelper {
     const startDate = new Date(Math.max(monthStart.getTime(), employeeStart.getTime()));
     const endDate = new Date(Math.min(monthEnd.getTime(), tommorow.getTime()));
 
-    const DAY = 1000 * 60 * 60 * 24;
     let totalDays = 0;
-    if (startDate < endDate) {
-      totalDays = (endDate.getTime() - startDate.getTime()) / DAY;
+    for (let currentDate = new Date(startDate); currentDate < endDate; currentDate.setUTCDate(currentDate.getUTCDate() + 1)) {
+      const day = currentDate.getUTCDay();
+      const isWorkingDay = day >= 1 && day <= 5;
+      if (isWorkingDay) totalDays++;
     }
     return { startDate, endDate, totalDays };
   }
@@ -83,8 +69,7 @@ export class AttendanceHelper {
       !todayAttendance && // ← allow kalau today sudah complete
       (workStatus === WorkStatus.OFF_DUTY || workStatus === null);
 
-    const canClockOut =
-      !!openAttendance && !hasActiveAssignment && workStatus !== WorkStatus.BUSY;
+    const canClockOut = !!openAttendance && !hasActiveAssignment && workStatus !== WorkStatus.BUSY;
 
     return { canClockIn, canClockOut };
   }
