@@ -18,5 +18,6 @@ router.get(
   PaymentController.getLatestPaymentAttempt,
 );
 router.post("/payment/webhook", PaymentController.MidtransWebhook);
+router.post("/payment/expire", PaymentController.expirePaymentHandler);
 
 export default router;

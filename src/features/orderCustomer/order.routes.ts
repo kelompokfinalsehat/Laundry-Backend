@@ -27,7 +27,7 @@ router.get(
   OrderController.getListOrder,
 );
 router.get(
-  "/:id",
+  "/:identifier",
   AuthMiddleware.authenticated(),
   AuthMiddleware.authorized([Role.CUSTOMER]),
   OrderController.getDetailOrder,

@@ -23,7 +23,7 @@ export class OrderQueryService {
   ) {
     return OrderDetailHelper.getDetail(
       payload.sub,
-      input.params.id,
+      input.params.identifier,
     );
   }
 }

@@ -52,3 +52,6 @@ export const MIDTRANS_SNAP_BASE_URL = MIDTRANS_IS_PRODUCTION
   ? "https://app.midtrans.com/snap/v1/transactions"
   : "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
+  export const MIDTRANS_CORE_API_BASE_URL = MIDTRANS_IS_PRODUCTION
+  ? "https://api.midtrans.com/v2"
+  : "https://api.sandbox.midtrans.com/v2";

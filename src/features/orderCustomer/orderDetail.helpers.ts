@@ -1,32 +1,28 @@
 import { prisma } from "../../configs/prisma-client.config";
 import { ResponseError } from "../../utils/errors/response-error.utils";
-import {
-  CUSTOMER_STATUS_LABELS,
-} from "./order.constants";
+import { CUSTOMER_STATUS_LABELS } from "./order.constants";
 import { OrderHelper } from "./order.helpers";
+import { z } from "zod";
 
 export class OrderDetailHelper {
-  static async getDetail(
-    customerId: string,
-    orderId: string,
-  ) {
-    const order =
-      await this.findCustomerOrder(
-        customerId,
-        orderId,
-      );
+  static async getDetail(customerId: string, identifier: string) {
+    const order = await this.findCustomerOrder(customerId, identifier);
 
     return this.buildResponse(order);
   }
 
   private static async findCustomerOrder(
     customerId: string,
-    orderId: string,
+    identifier: string,
   ) {
+    const isUuid = z.string().uuid().safeParse(identifier).success;
+
     const order = await prisma.order.findFirst({
       where: {
-        id: orderId,
         customerId,
+        OR: isUuid
+          ? [{ id: identifier }, { orderCode: identifier }]
+          : [{ orderCode: identifier }],
       },
       include: {
         bill: true,
@@ -52,59 +48,37 @@ export class OrderDetailHelper {
   }
 
   private static buildResponse(
-    order: Awaited<
-      ReturnType<
-        typeof OrderDetailHelper.findCustomerOrder
-      >
-    >,
+    order: Awaited<ReturnType<typeof OrderDetailHelper.findCustomerOrder>>,
   ) {
     return {
       id: order.id,
       orderCode: order.orderCode,
       customerStatus: order.customerStatus,
-      customerStatusLabel:
-        CUSTOMER_STATUS_LABELS[
-          order.customerStatus
-        ],
-      addressSnapshot:
-        order.addressSnapshot,
-      addressPhoneSnapshot:
-        order.addressPhoneSnapshot,
+      customerStatusLabel: CUSTOMER_STATUS_LABELS[order.customerStatus],
+      addressSnapshot: order.addressSnapshot,
+      addressPhoneSnapshot: order.addressPhoneSnapshot,
       pickupDate: order.pickupDate,
-      pickupScheduledAt:
-        order.pickupScheduledAt,
+      pickupScheduledAt: order.pickupScheduledAt,
       bill: order.bill,
       orderItems: order.orderItems,
       complaint: order.complaint,
-      timeline:
-        OrderHelper.buildTimeline(order),
-      allowedActions:
-        this.getAllowedActions(order),
+      timeline: OrderHelper.buildTimeline(order),
+      allowedActions: this.getAllowedActions(order),
     };
   }
 
   private static getAllowedActions(
-    order: Awaited<
-      ReturnType<
-        typeof OrderDetailHelper.findCustomerOrder
-      >
-    >,
+    order: Awaited<ReturnType<typeof OrderDetailHelper.findCustomerOrder>>,
   ) {
     const waitingConfirmation =
-      order.customerStatus ===
-      "WAITING_CUSTOMER_CONFIRMATION";
+      order.customerStatus === "WAITING_CUSTOMER_CONFIRMATION";
 
     return {
-      canPay:
-        order.bill !== null &&
-        order.bill.paymentStatus === "UNPAID",
+      canPay: order.bill !== null && order.bill.paymentStatus === "UNPAID",
 
-      canConfirmReceived:
-        waitingConfirmation,
+      canConfirmReceived: waitingConfirmation,
 
-      canFileComplaint:
-        waitingConfirmation &&
-        !order.complaint,
+      canFileComplaint: waitingConfirmation && !order.complaint,
     };
   }
 }

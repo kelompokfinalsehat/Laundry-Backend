@@ -1,28 +1,38 @@
 import { Router } from "express";
 import { executeAutoConfirmJob } from "./autoConfirm.job";
+import { executeOverdueCheckJob } from "./overdueCheck.job";
 
 const router = Router();
 
 router.get("/auto-confirm", async (req, res, next) => {
   try {
     const authorization = req.headers.authorization;
-
     if (
       process.env.CRON_SECRET &&
       authorization !== `Bearer ${process.env.CRON_SECRET}`
     ) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const result = await executeAutoConfirmJob();
+    return res.status(200).json({ success: true, confirmedCount: result.confirmedCount });
+  } catch (error) {
+    next(error);
+  }
+});
 
-    return res.status(200).json({
-      success: true,
-      confirmedCount: result.confirmedCount,
-    });
+router.get("/overdue-check", async (req, res, next) => {
+  try {
+    const authorization = req.headers.authorization;
+    if (
+      process.env.CRON_SECRET &&
+      authorization !== `Bearer ${process.env.CRON_SECRET}`
+    ) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const result = await executeOverdueCheckJob();
+    return res.status(200).json({ success: true, overdueCount: result.overdueCount });
   } catch (error) {
     next(error);
   }

@@ -80,9 +80,12 @@ export class OrderCustomerValidation {
         },
       ),
   });
+  
   static readonly ORDER_DETAIL = z.object({
-    params: z.object({ id: z.string().uuid("ID order tidak valid") }),
-  });
+  params: z.object({
+    identifier: z.string().min(1),
+  }),
+});
 }
 
 export type CreateOrderInput = z.infer<
