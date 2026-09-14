@@ -164,7 +164,6 @@ export class OrderRepository {
     })
   }
   static async createOrder(data: CreateOrderTransactionData){
-    const now = new Date()
     return await prisma.$transaction(async (tx) => {
         await tx.bill.create({data: {
             orderId: data.orderId,
@@ -173,8 +172,7 @@ export class OrderRepository {
             shippingRateId: data.shippingRateId,
             shippingFeeSnapshot: data.shippingFeeSnapshot,
             weightKg: data.weightKg,
-            totalAmount: data.totalAmount,
-            expiresAt: now
+            totalAmount: data.totalAmount
         }})
         await tx.orderItem.createMany({data: data.items.map((item) => ({
             orderId: data.orderId,
