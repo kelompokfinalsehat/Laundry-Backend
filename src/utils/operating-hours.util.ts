@@ -4,7 +4,7 @@ export class OperatingHoursUtil {
   static assertOperatingHour() {
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
 
-    const day = nowWib.getDay();
+    const day = nowWib.getUTCDay();
     const hour = nowWib.getUTCHours();
 
     const isWorkingDay = day >= 1 && day <= 5;
