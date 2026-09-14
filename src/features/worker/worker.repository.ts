@@ -175,6 +175,7 @@ export class WorkerRepository {
           where: { id: orderId },
           data: { customerStatus: paid ? CustomerStatus.READY_FOR_DELIVERY : CustomerStatus.WAITING_PAYMENT },
         });
+        await tx.bill.update({where:{orderId},data:{expiresAt:new Date()}})
         if (paid)
           await tx.driverAssignment.upsert({
             where: { orderId_taskType: { orderId, taskType: PickupDeliveryType.DELIVERY } },
