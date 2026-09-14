@@ -61,13 +61,13 @@ app.use(errorHandler);
 
 
 
-if (NODE_ENV === "development") {
-  app.listen(PORT, () => {
-    logger.info(`[🔌LaundryApp] Application is running on port: ${PORT}`);
+// if (NODE_ENV === "development") {
+//   app.listen(PORT, () => {
+//     logger.info(`[🔌LaundryApp] Application is running on port: ${PORT}`);
 
-    startAutoConfirmJob();
-    startOverdueCheckJob();
-  });
-}
+//     startAutoConfirmJob();
+//     startOverdueCheckJob();
+//   });
+// }
 
 export default app;
